@@ -5,7 +5,7 @@
     "build": "pnpm -r build",
     "dev": "pnpm -r --parallel dev",
     "typecheck": "pnpm -r typecheck",
-    "test": "pnpm -r test --if-present"
+    "test": "pnpm -r --if-present test"
   },
   "devDependencies": {
     "typescript": "^5.7.0"
