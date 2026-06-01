@@ -9,6 +9,8 @@ apps/
   cli/     - CLI アプリ (@uchi/cli)
   server/  - サーバアプリ (@uchi/server)
   web/     - Web UI (@uchi/web)
+packages/
+  db/      - DB スキーマ・マイグレーション・テストユーティリティ (@uchi/db)
 ```
 
 ## 動作環境
