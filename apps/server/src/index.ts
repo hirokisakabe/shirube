@@ -1,7 +1,7 @@
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { join, relative, resolve } from "path";
-import { createDb } from "@uchi/db";
+import { createDb } from "@shirube/db";
 import { createApp } from "./app";
 
 const db = createDb();

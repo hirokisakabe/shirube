@@ -4,7 +4,7 @@ import { resolve } from "path";
 export default defineConfig({
   resolve: {
     alias: {
-      "@uchi/db": resolve(__dirname, "../../packages/db/src/index.ts"),
+      "@shirube/db": resolve(__dirname, "../../packages/db/src/index.ts"),
     },
   },
   test: {

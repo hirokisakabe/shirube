@@ -7,16 +7,16 @@ import { join } from "path";
 function runCli(args: string[], dbPath: string, env: Record<string, string> = {}) {
   return spawnSync("node", [join(__dirname, "../dist/index.js"), ...args], {
     encoding: "utf8",
-    env: { ...process.env, UCHI_DB_PATH: dbPath, ...env },
+    env: { ...process.env, SHIRUBE_DB_PATH: dbPath, ...env },
   });
 }
 
-describe("uchi CLI", () => {
+describe("shirube CLI", () => {
   let tmpDir: string;
   let dbPath: string;
 
   beforeEach(() => {
-    tmpDir = mkdtempSync(join(tmpdir(), "uchi-test-"));
+    tmpDir = mkdtempSync(join(tmpdir(), "shirube-test-"));
     dbPath = join(tmpDir, "test.sqlite");
   });
 
@@ -128,7 +128,7 @@ describe("uchi CLI", () => {
       const result = spawnSync("node", [join(__dirname, "../dist/index.js"), "rm", String(task.id)], {
         input: "n\n",
         encoding: "utf8",
-        env: { ...process.env, UCHI_DB_PATH: dbPath },
+        env: { ...process.env, SHIRUBE_DB_PATH: dbPath },
       });
 
       expect(result.status).toBe(0);
@@ -167,7 +167,7 @@ describe("uchi CLI", () => {
   });
 
   describe("--format json (ルートコマンド)", () => {
-    it("uchi --format json でバージョンを JSON で返す", () => {
+    it("shirube --format json でバージョンを JSON で返す", () => {
       const result = runCli(["--format", "json"], dbPath);
       expect(result.status).toBe(0);
       const data = JSON.parse(result.stdout);
@@ -268,7 +268,7 @@ describe("uchi CLI", () => {
         const result = spawnSync("node", [join(__dirname, "../dist/index.js"), "goal", "rm", String(goal.id)], {
           input: "n\n",
           encoding: "utf8",
-          env: { ...process.env, UCHI_DB_PATH: dbPath },
+          env: { ...process.env, SHIRUBE_DB_PATH: dbPath },
         });
 
         expect(result.status).toBe(0);
@@ -285,7 +285,7 @@ describe("uchi CLI", () => {
         const result = spawnSync("node", [join(__dirname, "../dist/index.js"), "goal", "rm", String(goal.id)], {
           input: "y\n",
           encoding: "utf8",
-          env: { ...process.env, UCHI_DB_PATH: dbPath },
+          env: { ...process.env, SHIRUBE_DB_PATH: dbPath },
         });
 
         expect(result.status).toBe(0);
@@ -394,7 +394,7 @@ describe("uchi CLI", () => {
   });
 
   describe("serve", () => {
-    it("uchi --help に serve が含まれる", () => {
+    it("shirube --help に serve が含まれる", () => {
       const result = runCli(["--help"], dbPath);
       expect(result.status).toBe(0);
       expect(result.stdout).toContain("serve");

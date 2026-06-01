@@ -14,7 +14,7 @@ importers:
 
   apps/cli:
     dependencies:
-      '@uchi/db':
+      '@shirube/db':
         specifier: workspace:*
         version: link:../../packages/db
       commander:
@@ -39,7 +39,7 @@ importers:
       '@hono/node-server':
         specifier: ^1.14.0
         version: 1.19.14(hono@4.12.23)
-      '@uchi/db':
+      '@shirube/db':
         specifier: workspace:*
         version: link:../../packages/db
       drizzle-orm:

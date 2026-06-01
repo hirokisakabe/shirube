@@ -1,5 +1,5 @@
 {
-  "name": "@uchi/db",
+  "name": "@shirube/db",
   "version": "0.0.1",
   "private": true,
   "main": "./dist/index.js",
