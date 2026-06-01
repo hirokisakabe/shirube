@@ -2,7 +2,7 @@
 import { and, desc, eq, gte, isNull, lte } from "drizzle-orm";
 import { Command, Option } from "commander";
 import readline from "readline";
-import { spawnSync } from "child_process";
+import { spawn, spawnSync } from "child_process";
 import { writeFileSync, readFileSync, mkdtempSync, rmSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
@@ -359,6 +359,53 @@ goalCmd
       process.exit(1);
     }
     writeData(goal, options.format);
+  });
+
+program
+  .command("serve")
+  .description("サーバを起動してブラウザで開く")
+  .action(async () => {
+    const serverScript = join(__dirname, "../../server/dist/index.js");
+
+    writeLog("サーバを起動中...");
+
+    const server = spawn(process.execPath, [serverScript], {
+      stdio: ["ignore", "ignore", "inherit"],
+    });
+
+    server.on("exit", (code) => {
+      process.exit(code ?? 0);
+    });
+
+    process.on("SIGINT", () => {
+      server.kill("SIGINT");
+    });
+
+    process.on("SIGTERM", () => {
+      server.kill("SIGTERM");
+    });
+
+    const maxWaitMs = 10000;
+    const start = Date.now();
+    let ready = false;
+    while (Date.now() - start < maxWaitMs) {
+      try {
+        await fetch("http://localhost:3000/");
+        ready = true;
+        break;
+      } catch {
+        await new Promise<void>((resolve) => setTimeout(resolve, 200));
+      }
+    }
+
+    if (!ready) {
+      writeError("サーバの起動を確認できませんでした");
+      server.kill();
+      process.exit(1);
+    }
+
+    writeLog("ブラウザを開いています...");
+    spawnSync("open", ["http://localhost:3000"]);
   });
 
 program.exitOverride((err) => {
