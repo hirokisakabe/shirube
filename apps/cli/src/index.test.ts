@@ -174,4 +174,71 @@ describe("uchi CLI", () => {
       expect(data).toHaveProperty("version");
     });
   });
+
+  describe("review", () => {
+    function makeMockEditor(content: string): string {
+      const { writeFileSync, chmodSync } = require("fs") as typeof import("fs");
+      const scriptPath = join(tmpDir, `mock-editor-${Date.now()}.js`);
+      const escaped = JSON.stringify(content);
+      writeFileSync(
+        scriptPath,
+        `const fs = require('fs');\nfs.writeFileSync(process.argv[2], ${escaped}, 'utf8');\n`,
+        "utf8"
+      );
+      chmodSync(scriptPath, 0o755);
+      return scriptPath;
+    }
+
+    it("review で今週の振り返りを保存できる", () => {
+      const editor = makeMockEditor("今週の振り返り内容");
+      const result = runCli(["review"], dbPath, { EDITOR: `node ${editor}` });
+      expect(result.status).toBe(0);
+      expect(result.stderr).toContain("Saved review for");
+    });
+
+    it("review --week で指定週の振り返りを保存できる", () => {
+      const editor = makeMockEditor("振り返り内容");
+      const result = runCli(["review", "--week", "2024-W01"], dbPath, {
+        EDITOR: `node ${editor}`,
+      });
+      expect(result.status).toBe(0);
+      expect(result.stderr).toContain("Saved review for 2024-W01");
+    });
+
+    it("review --week に不正なフォーマットを渡すとエラーになる", () => {
+      const editor = makeMockEditor("");
+      const result = runCli(["review", "--week", "invalid"], dbPath, {
+        EDITOR: `node ${editor}`,
+      });
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain("Invalid week format");
+    });
+
+    it("review list --format json で振り返り一覧を JSON で取得できる", () => {
+      const editor = makeMockEditor("振り返り内容");
+      runCli(["review", "--week", "2024-W01"], dbPath, { EDITOR: `node ${editor}` });
+      runCli(["review", "--week", "2024-W02"], dbPath, { EDITOR: `node ${editor}` });
+
+      const result = runCli(["review", "list", "--format", "json"], dbPath);
+      expect(result.status).toBe(0);
+      const list = JSON.parse(result.stdout);
+      expect(Array.isArray(list)).toBe(true);
+      expect(list).toHaveLength(2);
+      expect(list[0].week).toBe("2024-W02");
+      expect(list[1].week).toBe("2024-W01");
+    });
+
+    it("同じ週を再度 review すると内容が更新される", () => {
+      const editor1 = makeMockEditor("最初の内容");
+      runCli(["review", "--week", "2024-W10"], dbPath, { EDITOR: `node ${editor1}` });
+
+      const editor2 = makeMockEditor("更新後の内容");
+      runCli(["review", "--week", "2024-W10"], dbPath, { EDITOR: `node ${editor2}` });
+
+      const result = runCli(["review", "list", "--format", "json"], dbPath);
+      const list = JSON.parse(result.stdout);
+      expect(list).toHaveLength(1);
+      expect(list[0].content).toBe("更新後の内容");
+    });
+  });
 });

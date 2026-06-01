@@ -1,8 +1,12 @@
 #!/usr/bin/env node
-import { and, eq, gte, isNull, lte } from "drizzle-orm";
+import { and, desc, eq, gte, isNull, lte } from "drizzle-orm";
 import { Command, Option } from "commander";
 import readline from "readline";
-import { createDb, tasks } from "@uchi/db";
+import { spawnSync } from "child_process";
+import { writeFileSync, readFileSync, mkdtempSync, rmSync } from "fs";
+import { tmpdir } from "os";
+import { join } from "path";
+import { createDb, tasks, reviews } from "@uchi/db";
 import { writeData, writeError, writeLog, type Format } from "./output.js";
 
 const program = new Command();
@@ -22,6 +26,30 @@ function localDateStr(d: Date = new Date()): string {
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
+}
+
+function isoWeek(date: Date = new Date()): string {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const day = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+  return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
+}
+
+function openEditor(content: string): string {
+  const editorCmd = (process.env["EDITOR"] ?? process.env["VISUAL"] ?? "vi").split(/\s+/);
+  const binary = editorCmd[0]!;
+  const extraArgs = editorCmd.slice(1);
+  const dir = mkdtempSync(join(tmpdir(), "uchi-review-"));
+  const file = join(dir, "review.md");
+  try {
+    writeFileSync(file, content, "utf8");
+    spawnSync(binary, [...extraArgs, file], { stdio: "inherit" });
+    return readFileSync(file, "utf8");
+  } finally {
+    rmSync(dir, { recursive: true });
+  }
 }
 
 program
@@ -185,6 +213,44 @@ program
       process.exit(1);
     }
     writeData(task, options.format);
+  });
+
+const reviewCmd = program
+  .command("review")
+  .description("週次振り返りを開く/編集する")
+  .option("--week <week>", "週の指定 (YYYY-Www形式、省略時は今週)")
+  .action(async (options: { week?: string }) => {
+    const db = getDb();
+    const week = options.week ?? isoWeek();
+    if (options.week && !/^\d{4}-W\d{2}$/.test(options.week)) {
+      writeError(`Invalid week format: ${options.week} (expected YYYY-Www)`);
+      process.exit(1);
+    }
+    const existing = await db.query.reviews.findFirst({
+      where: eq(reviews.week, week),
+    });
+    const content = openEditor(existing?.content ?? "");
+    await db
+      .insert(reviews)
+      .values({ week, content })
+      .onConflictDoUpdate({
+        target: reviews.week,
+        set: { content, updatedAt: new Date().toISOString() },
+      });
+    writeLog(`Saved review for ${week}`);
+  });
+
+reviewCmd
+  .command("list")
+  .description("過去の振り返り一覧を表示する")
+  .addOption(formatOption())
+  .action(async (options: { format: Format }) => {
+    const db = getDb();
+    const results = await db
+      .select()
+      .from(reviews)
+      .orderBy(desc(reviews.week));
+    writeData(results, options.format);
   });
 
 program.exitOverride((err) => {
