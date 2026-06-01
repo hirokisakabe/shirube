@@ -99,7 +99,7 @@ describe("Server API", () => {
         const res = await app.request("/api/tasks", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title: "" }),
+          body: JSON.stringify({ title: "", date: "2026-06-01" }),
         });
         expect(res.status).toBe(400);
       });
