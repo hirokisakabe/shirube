@@ -2,7 +2,7 @@
 import { and, desc, eq, gte, isNull, lte } from "drizzle-orm";
 import { Command, Option } from "commander";
 import readline from "readline";
-import { spawnSync } from "child_process";
+import { spawn, spawnSync } from "child_process";
 import { writeFileSync, readFileSync, mkdtempSync, rmSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
@@ -359,6 +359,43 @@ goalCmd
       process.exit(1);
     }
     writeData(goal, options.format);
+  });
+
+program
+  .command("serve")
+  .description("サーバを起動してブラウザで開く")
+  .action(() => {
+    const serverScript = join(__dirname, "../../server/dist/index.js");
+
+    writeLog("サーバを起動中...");
+
+    const server = spawn(process.execPath, [serverScript], {
+      stdio: ["ignore", "pipe", "inherit"],
+    });
+
+    let browserOpened = false;
+
+    server.stdout?.on("data", (chunk: Buffer) => {
+      const text = chunk.toString();
+      process.stderr.write(text);
+      if (!browserOpened && text.includes("Server running")) {
+        browserOpened = true;
+        writeLog("ブラウザを開いています...");
+        spawnSync("open", ["http://localhost:3000"]);
+      }
+    });
+
+    server.on("exit", (code) => {
+      process.exit(code ?? 0);
+    });
+
+    process.on("SIGINT", () => {
+      server.kill("SIGINT");
+    });
+
+    process.on("SIGTERM", () => {
+      server.kill("SIGTERM");
+    });
   });
 
 program.exitOverride((err) => {
