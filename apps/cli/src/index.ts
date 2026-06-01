@@ -6,7 +6,7 @@ import { spawn, spawnSync } from "child_process";
 import { writeFileSync, readFileSync, mkdtempSync, rmSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
-import { createDb, tasks, reviews, goals } from "@uchi/db";
+import { createDb, tasks, reviews, goals } from "@shirube/db";
 import { writeData, writeError, writeLog, type Format } from "./output.js";
 
 const program = new Command();
@@ -40,7 +40,7 @@ function isoWeek(date: Date = new Date()): string {
 function openEditor(content: string): string {
   const editorCmd = process.env["EDITOR"] ?? process.env["VISUAL"] ?? "vi";
   const shell = process.env["SHELL"] ?? "sh";
-  const dir = mkdtempSync(join(tmpdir(), "uchi-review-"));
+  const dir = mkdtempSync(join(tmpdir(), "shirube-review-"));
   const file = join(dir, "review.md");
   try {
     writeFileSync(file, content, "utf8");
@@ -58,8 +58,8 @@ function openEditor(content: string): string {
 }
 
 program
-  .name("uchi")
-  .description("uchi CLI")
+  .name("shirube")
+  .description("shirube CLI")
   .version("0.0.1")
   .enablePositionalOptions()
   .addOption(formatOption());

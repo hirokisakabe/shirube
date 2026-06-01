@@ -1,15 +1,15 @@
 {
-  "name": "@uchi/cli",
+  "name": "@shirube/cli",
   "version": "0.0.1",
   "private": true,
   "bin": {
-    "uchi": "dist/index.js"
+    "shirube": "dist/index.js"
   },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "typecheck": "pnpm --filter @uchi/db build && tsc --noEmit",
-    "test": "pnpm --filter @uchi/db build && pnpm build && vitest run"
+    "typecheck": "pnpm --filter @shirube/db build && tsc --noEmit",
+    "test": "pnpm --filter @shirube/db build && pnpm build && vitest run"
   },
   "devDependencies": {
     "@types/node": "^25.9.1",
@@ -17,7 +17,7 @@
     "vitest": "^4.1.8"
   },
   "dependencies": {
-    "@uchi/db": "workspace:*",
+    "@shirube/db": "workspace:*",
     "commander": "^15.0.0",
     "drizzle-orm": "^0.44.0"
   },
