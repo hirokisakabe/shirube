@@ -3,13 +3,21 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "build": "tsc && node -e \"const fs=require('fs'); fs.cpSync('public', 'dist', {recursive: true})\"",
-    "dev": "node -e \"const fs=require('fs'); fs.cpSync('public', 'dist', {recursive: true})\" && tsc --watch",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "build": "vite build",
+    "dev": "vite",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@tanstack/react-router": "^1.121.12",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
   },
   "devDependencies": {
+    "@types/react": "^19.1.6",
+    "@types/react-dom": "^19.1.5",
+    "@vitejs/plugin-react": "^4.5.2",
     "typescript": "^5.7.0",
-    "vitest": "^4.1.8"
+    "vite": "^6.3.5"
   }
 }
