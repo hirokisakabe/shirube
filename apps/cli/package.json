@@ -9,7 +9,7 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "typecheck": "pnpm --filter @uchi/db build && tsc --noEmit",
-    "test": "vitest run"
+    "test": "pnpm --filter @uchi/db build && pnpm build && vitest run"
   },
   "devDependencies": {
     "@types/node": "^25.9.1",
