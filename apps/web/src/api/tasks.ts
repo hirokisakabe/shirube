@@ -14,3 +14,13 @@ export async function fetchTasks(date?: string): Promise<Task[]> {
   if (!res.ok) throw new Error(`Failed to fetch tasks: ${res.status}`);
   return res.json() as Promise<Task[]>;
 }
+
+export async function createTask(title: string, date: string): Promise<Task> {
+  const res = await fetch("/api/tasks", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ title, date }),
+  });
+  if (!res.ok) throw new Error(`Failed to create task: ${res.status}`);
+  return res.json() as Promise<Task>;
+}
