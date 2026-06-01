@@ -38,9 +38,6 @@ uchi serve
 # pnpm から直接起動する場合
 pnpm build
 pnpm --filter @uchi/server start
-
-# 開発時（ファイル変更を watch して再起動）
-pnpm --filter @uchi/server dev
 ```
 
 起動後は以下でアクセスできます。
@@ -49,6 +46,22 @@ pnpm --filter @uchi/server dev
 - API: `http://localhost:3000/api/tasks`、`/api/reviews`、`/api/goals`
 
 > **注意**: サーバは `apps/web/dist` を静的ファイルとして配信します。`pnpm build` を先に実行してください。
+
+## フロントエンド開発
+
+`apps/web` の変更を開発中に確認するには、Vite dev サーバーを使います。
+
+```bash
+# ターミナル 1: API サーバーを起動
+pnpm --filter @uchi/server dev
+
+# ターミナル 2: Vite dev サーバーを起動（HMR 有効、/api を 3000 番にプロキシ）
+pnpm --filter @uchi/web dev
+```
+
+Vite dev サーバーは `http://localhost:5173/` で起動し、`/api/*` は自動的に `http://localhost:3000` へプロキシされます。
+
+> **注意**: `pnpm dev`（全 app 並列起動）も同様に動作しますが、フロント変更は `http://localhost:5173/` で確認してください。`http://localhost:3000/` は `dist` を配信するため、ビルドなしでは最新変更が反映されません。
 
 ## CLI の使い方
 
