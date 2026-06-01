@@ -38,14 +38,19 @@ function isoWeek(date: Date = new Date()): string {
 }
 
 function openEditor(content: string): string {
-  const editorCmd = (process.env["EDITOR"] ?? process.env["VISUAL"] ?? "vi").split(/\s+/);
-  const binary = editorCmd[0]!;
-  const extraArgs = editorCmd.slice(1);
+  const editorCmd = process.env["EDITOR"] ?? process.env["VISUAL"] ?? "vi";
+  const shell = process.env["SHELL"] ?? "sh";
   const dir = mkdtempSync(join(tmpdir(), "uchi-review-"));
   const file = join(dir, "review.md");
   try {
     writeFileSync(file, content, "utf8");
-    spawnSync(binary, [...extraArgs, file], { stdio: "inherit" });
+    // Use the shell to interpret EDITOR (handles paths with spaces and embedded flags like "vim -n")
+    const result = spawnSync(shell, ["-c", `${editorCmd} "$1"`, "--", file], { stdio: "inherit" });
+    if (result.error !== undefined || result.status !== 0) {
+      const msg = result.error?.message ?? `editor exited with status ${result.status ?? "unknown"}`;
+      writeError(`Failed to open editor: ${msg}`);
+      process.exit(1);
+    }
     return readFileSync(file, "utf8");
   } finally {
     rmSync(dir, { recursive: true });
@@ -222,8 +227,8 @@ const reviewCmd = program
   .action(async (options: { week?: string }) => {
     const db = getDb();
     const week = options.week ?? isoWeek();
-    if (options.week && !/^\d{4}-W\d{2}$/.test(options.week)) {
-      writeError(`Invalid week format: ${options.week} (expected YYYY-Www)`);
+    if (options.week && !/^\d{4}-W(?:0[1-9]|[1-4]\d|5[0-3])$/.test(options.week)) {
+      writeError(`Invalid week format: ${options.week} (expected YYYY-Www, weeks 01-53)`);
       process.exit(1);
     }
     const existing = await db.query.reviews.findFirst({

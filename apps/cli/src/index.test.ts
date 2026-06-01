@@ -214,6 +214,32 @@ describe("uchi CLI", () => {
       expect(result.stderr).toContain("Invalid week format");
     });
 
+    it("review --week W00 は ISO 週として不正なためエラーになる", () => {
+      const editor = makeMockEditor("");
+      const result = runCli(["review", "--week", "2024-W00"], dbPath, {
+        EDITOR: `node ${editor}`,
+      });
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain("Invalid week format");
+    });
+
+    it("review --week W54 は ISO 週として不正なためエラーになる", () => {
+      const editor = makeMockEditor("");
+      const result = runCli(["review", "--week", "2024-W54"], dbPath, {
+        EDITOR: `node ${editor}`,
+      });
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain("Invalid week format");
+    });
+
+    it("存在しない EDITOR を指定するとエラーになる", () => {
+      const result = runCli(["review", "--week", "2024-W01"], dbPath, {
+        EDITOR: "/nonexistent-editor-binary",
+      });
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain("Failed to open editor");
+    });
+
     it("review list --format json で振り返り一覧を JSON で取得できる", () => {
       const editor = makeMockEditor("振り返り内容");
       runCli(["review", "--week", "2024-W01"], dbPath, { EDITOR: `node ${editor}` });
