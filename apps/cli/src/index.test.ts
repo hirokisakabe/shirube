@@ -175,6 +175,131 @@ describe("uchi CLI", () => {
     });
   });
 
+  describe("goal", () => {
+    describe("add", () => {
+      it("目標を追加して JSON で返す", () => {
+        const result = runCli(["goal", "add", "テスト目標", "--format", "json"], dbPath);
+        expect(result.status).toBe(0);
+        const goal = JSON.parse(result.stdout);
+        expect(goal).toMatchObject({ title: "テスト目標", deletedAt: null, doneAt: null });
+        expect(typeof goal.id).toBe("number");
+      });
+    });
+
+    describe("list", () => {
+      it("未達成の目標のみ表示する（デフォルト）", () => {
+        const g1 = JSON.parse(runCli(["goal", "add", "目標1", "--format", "json"], dbPath).stdout);
+        const g2 = JSON.parse(runCli(["goal", "add", "目標2", "--format", "json"], dbPath).stdout);
+        runCli(["goal", "done", String(g1.id), "--format", "json"], dbPath);
+
+        const result = runCli(["goal", "list", "--format", "json"], dbPath);
+        expect(result.status).toBe(0);
+        const list = JSON.parse(result.stdout) as Array<{ id: number }>;
+        expect(list.find((g) => g.id === g1.id)).toBeUndefined();
+        expect(list.find((g) => g.id === g2.id)).toBeDefined();
+      });
+
+      it("--all で達成済みも含めて表示する", () => {
+        const g1 = JSON.parse(runCli(["goal", "add", "目標1", "--format", "json"], dbPath).stdout);
+        runCli(["goal", "done", String(g1.id)], dbPath);
+
+        const result = runCli(["goal", "list", "--all", "--format", "json"], dbPath);
+        expect(result.status).toBe(0);
+        const list = JSON.parse(result.stdout) as Array<{ id: number }>;
+        expect(list.find((g) => g.id === g1.id)).toBeDefined();
+      });
+
+      it("削除済み目標は一覧に含まれない", () => {
+        const g1 = JSON.parse(runCli(["goal", "add", "削除する目標", "--format", "json"], dbPath).stdout);
+        runCli(["goal", "rm", String(g1.id), "--yes"], dbPath);
+
+        const result = runCli(["goal", "list", "--all", "--format", "json"], dbPath);
+        expect(result.status).toBe(0);
+        const list = JSON.parse(result.stdout) as Array<{ id: number }>;
+        expect(list.find((g) => g.id === g1.id)).toBeUndefined();
+      });
+    });
+
+    describe("done", () => {
+      it("目標を達成にして doneAt をセットする", () => {
+        const goal = JSON.parse(runCli(["goal", "add", "達成目標", "--format", "json"], dbPath).stdout);
+
+        const result = runCli(["goal", "done", String(goal.id), "--format", "json"], dbPath);
+        expect(result.status).toBe(0);
+        const updated = JSON.parse(result.stdout);
+        expect(updated.doneAt).not.toBeNull();
+        expect(updated.id).toBe(goal.id);
+      });
+
+      it("存在しない ID は 1 で終了する", () => {
+        const result = runCli(["goal", "done", "99999"], dbPath);
+        expect(result.status).toBe(1);
+        expect(result.stderr).toContain("Goal not found");
+      });
+
+      it("数字以外の ID は Invalid id エラーになる", () => {
+        const result = runCli(["goal", "done", "1abc"], dbPath);
+        expect(result.status).toBe(1);
+        expect(result.stderr).toContain("Invalid id");
+      });
+    });
+
+    describe("rm", () => {
+      it("--yes で確認なしにソフトデリートできる", () => {
+        const goal = JSON.parse(runCli(["goal", "add", "削除目標", "--format", "json"], dbPath).stdout);
+
+        const result = runCli(["goal", "rm", String(goal.id), "--yes", "--format", "json"], dbPath);
+        expect(result.status).toBe(0);
+        const deleted = JSON.parse(result.stdout);
+        expect(deleted.deletedAt).not.toBeNull();
+        expect(deleted.id).toBe(goal.id);
+      });
+
+      it("削除は deleted_at をセットするソフトデリートになっている", () => {
+        const goal = JSON.parse(runCli(["goal", "add", "ソフトデリートテスト", "--format", "json"], dbPath).stdout);
+        const deleted = JSON.parse(runCli(["goal", "rm", String(goal.id), "--yes", "--format", "json"], dbPath).stdout);
+        expect(deleted.deletedAt).not.toBeNull();
+        expect(deleted.id).toBe(goal.id);
+      });
+
+      it("--yes なしでキャンセルすると削除されない", () => {
+        const goal = JSON.parse(runCli(["goal", "add", "キャンセルテスト", "--format", "json"], dbPath).stdout);
+
+        const result = spawnSync("node", [join(__dirname, "../dist/index.js"), "goal", "rm", String(goal.id)], {
+          input: "n\n",
+          encoding: "utf8",
+          env: { ...process.env, UCHI_DB_PATH: dbPath },
+        });
+
+        expect(result.status).toBe(0);
+        expect(result.stderr).toContain("Cancelled");
+
+        const listResult = runCli(["goal", "list", "--all", "--format", "json"], dbPath);
+        const list = JSON.parse(listResult.stdout) as Array<{ id: number }>;
+        expect(list.find((g) => g.id === goal.id)).toBeDefined();
+      });
+
+      it("--yes なしで確認プロンプトが出る", () => {
+        const goal = JSON.parse(runCli(["goal", "add", "プロンプトテスト", "--format", "json"], dbPath).stdout);
+
+        const result = spawnSync("node", [join(__dirname, "../dist/index.js"), "goal", "rm", String(goal.id)], {
+          input: "y\n",
+          encoding: "utf8",
+          env: { ...process.env, UCHI_DB_PATH: dbPath },
+        });
+
+        expect(result.status).toBe(0);
+        expect(result.stderr).toContain(`Delete goal ${goal.id}?`);
+      });
+
+      it("数字以外の ID は Invalid id エラーになる", () => {
+        const result = runCli(["goal", "rm", "1abc", "--yes"], dbPath);
+        expect(result.status).toBe(1);
+        expect(result.stderr).toContain("Invalid id");
+      });
+    });
+  });
+
   describe("review", () => {
     function makeMockEditor(content: string): string {
       const { writeFileSync, chmodSync } = require("fs") as typeof import("fs");
