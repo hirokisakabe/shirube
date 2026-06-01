@@ -2,12 +2,19 @@
   "name": "@uchi/cli",
   "version": "0.0.1",
   "private": true,
+  "bin": {
+    "uchi": "dist/index.js"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "@types/node": "^25.9.1",
     "typescript": "^5.7.0"
+  },
+  "dependencies": {
+    "commander": "^15.0.0"
   }
 }
