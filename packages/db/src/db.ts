@@ -1,7 +1,9 @@
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
+import { migrate } from "drizzle-orm/better-sqlite3/migrator";
+import { mkdirSync } from "fs";
 import { homedir } from "os";
-import { join } from "path";
+import { dirname, join } from "path";
 import * as schema from "./schema";
 
 export function getDbPath(): string {
@@ -9,7 +11,10 @@ export function getDbPath(): string {
 }
 
 export function createDb(dbPath: string = getDbPath()) {
+  mkdirSync(dirname(dbPath), { recursive: true });
   const sqlite = new Database(dbPath);
   sqlite.pragma("journal_mode = WAL");
-  return drizzle(sqlite, { schema });
+  const db = drizzle(sqlite, { schema });
+  migrate(db, { migrationsFolder: join(__dirname, "../drizzle") });
+  return db;
 }

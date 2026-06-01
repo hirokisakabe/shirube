@@ -17,7 +17,9 @@
     "vitest": "^4.1.8"
   },
   "dependencies": {
-    "commander": "^15.0.0"
+    "@uchi/db": "workspace:*",
+    "commander": "^15.0.0",
+    "drizzle-orm": "^0.44.0"
   },
   "engines": {
     "node": ">=22.12.0"

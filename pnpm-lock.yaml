@@ -14,9 +14,15 @@ importers:
 
   apps/cli:
     dependencies:
+      '@uchi/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       commander:
         specifier: ^15.0.0
         version: 15.0.0
+      drizzle-orm:
+        specifier: ^0.44.0
+        version: 0.44.7(@types/better-sqlite3@7.6.13)(better-sqlite3@11.10.0)
     devDependencies:
       '@types/node':
         specifier: ^25.9.1
