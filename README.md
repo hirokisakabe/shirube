@@ -25,6 +25,26 @@ pnpm install
 pnpm build
 ```
 
+## サーバの起動
+
+Web UI のバックエンドサーバを起動します。ポート 3000 で待ち受けます。
+
+```bash
+# ビルド（apps/web/dist を含む全 app）してから起動
+pnpm build
+pnpm --filter @uchi/server start
+
+# 開発時（ファイル変更を watch して再起動）
+pnpm --filter @uchi/server dev
+```
+
+起動後は以下でアクセスできます。
+
+- Web UI: `http://localhost:3000/`
+- API: `http://localhost:3000/api/tasks`、`/api/reviews`、`/api/goals`
+
+> **注意**: サーバは `apps/web/dist` を静的ファイルとして配信します。`pnpm build` を先に実行してください。
+
 ## CLI の使い方
 
 ```bash
