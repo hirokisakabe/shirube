@@ -6,7 +6,7 @@ import { spawnSync } from "child_process";
 import { writeFileSync, readFileSync, mkdtempSync, rmSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
-import { createDb, tasks, reviews } from "@uchi/db";
+import { createDb, tasks, reviews, goals } from "@uchi/db";
 import { writeData, writeError, writeLog, type Format } from "./output.js";
 
 const program = new Command();
@@ -256,6 +256,109 @@ reviewCmd
       .from(reviews)
       .orderBy(desc(reviews.week));
     writeData(results, options.format);
+  });
+
+const goalCmd = program
+  .command("goal")
+  .description("目標を管理する");
+
+goalCmd
+  .command("add")
+  .description("目標を追加する")
+  .argument("<title>", "目標のタイトル")
+  .addOption(formatOption())
+  .action(async (title: string, options: { format: Format }) => {
+    const db = getDb();
+    const [goal] = await db.insert(goals).values({ title }).returning();
+    writeData(goal, options.format);
+  });
+
+goalCmd
+  .command("list")
+  .description("目標一覧を表示する")
+  .option("--all", "達成済みの目標も含めて表示する")
+  .addOption(formatOption())
+  .action(async (options: { all?: boolean; format: Format }) => {
+    const db = getDb();
+    const results = await db
+      .select()
+      .from(goals)
+      .where(
+        options.all
+          ? isNull(goals.deletedAt)
+          : and(isNull(goals.deletedAt), isNull(goals.doneAt))
+      )
+      .orderBy(desc(goals.createdAt));
+    writeData(results, options.format);
+  });
+
+goalCmd
+  .command("done")
+  .description("目標を達成にする")
+  .argument("<id>", "目標ID")
+  .addOption(formatOption())
+  .action(async (id: string, options: { format: Format }) => {
+    const db = getDb();
+    const goalId = parseInt(id, 10);
+    if (isNaN(goalId)) {
+      writeError(`Invalid id: ${id}`);
+      process.exit(1);
+    }
+    const [goal] = await db
+      .update(goals)
+      .set({ doneAt: new Date().toISOString() })
+      .where(and(eq(goals.id, goalId), isNull(goals.deletedAt)))
+      .returning();
+    if (!goal) {
+      writeError(`Goal not found: ${id}`);
+      process.exit(1);
+    }
+    writeData(goal, options.format);
+  });
+
+goalCmd
+  .command("rm")
+  .description("目標を削除する（ソフトデリート）")
+  .argument("<id>", "目標ID")
+  .option("--yes", "確認なしで削除する（エージェント向け）")
+  .addOption(formatOption())
+  .action(async (id: string, options: { yes?: boolean; format: Format }) => {
+    const db = getDb();
+    const goalId = parseInt(id, 10);
+    if (isNaN(goalId)) {
+      writeError(`Invalid id: ${id}`);
+      process.exit(1);
+    }
+
+    if (!options.yes) {
+      const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stderr,
+      });
+      const confirmed = await new Promise<boolean>((resolve) => {
+        rl.question(`Delete goal ${goalId}? [y/N] `, (answer) => {
+          rl.close();
+          resolve(
+            answer.toLowerCase() === "y" || answer.toLowerCase() === "yes"
+          );
+        });
+      });
+      if (!confirmed) {
+        writeLog("Cancelled.");
+        process.exit(0);
+      }
+    }
+
+    const [goal] = await db
+      .update(goals)
+      .set({ deletedAt: new Date().toISOString() })
+      .where(and(eq(goals.id, goalId), isNull(goals.deletedAt)))
+      .returning();
+    if (!goal) {
+      writeError(`Goal not found: ${id}`);
+      process.exit(1);
+    }
+    writeData(goal, options.format);
   });
 
 program.exitOverride((err) => {
