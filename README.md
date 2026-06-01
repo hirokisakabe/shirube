@@ -17,6 +17,7 @@ packages/
 
 - Node.js >= 22.12.0
 - pnpm
+- macOS（`uchi serve` のブラウザ自動起動は macOS の `open` コマンドを使用）
 
 ## セットアップ
 
@@ -30,7 +31,11 @@ pnpm build
 Web UI のバックエンドサーバを起動します。ポート 3000 で待ち受けます。
 
 ```bash
-# ビルド（apps/web/dist を含む全 app）してから起動
+# CLI でサーバを起動してブラウザを自動で開く（macOS）
+pnpm build
+uchi serve
+
+# pnpm から直接起動する場合
 pnpm build
 pnpm --filter @uchi/server start
 
@@ -86,6 +91,9 @@ uchi goal done <id>
 # 目標を削除（ソフトデリート）
 uchi goal rm <id>         # 確認プロンプトあり
 uchi goal rm <id> --yes   # 確認なし（AI エージェント向け）
+
+# サーバを起動してブラウザで開く（事前に pnpm build が必要）
+uchi serve
 ```
 
 各コマンドに `--format json` を付けると機械可読な JSON 形式で出力します。

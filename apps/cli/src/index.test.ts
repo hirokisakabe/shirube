@@ -392,4 +392,18 @@ describe("uchi CLI", () => {
       expect(list[0].content).toBe("更新後の内容");
     });
   });
+
+  describe("serve", () => {
+    it("uchi --help に serve が含まれる", () => {
+      const result = runCli(["--help"], dbPath);
+      expect(result.status).toBe(0);
+      expect(result.stdout).toContain("serve");
+    });
+
+    it("serve コマンドはヘルプ表示時に stdout にのみ出力する", () => {
+      const result = runCli(["serve", "--help"], dbPath);
+      expect(result.status).toBe(0);
+      expect(result.stderr).toBe("");
+    });
+  });
 });
