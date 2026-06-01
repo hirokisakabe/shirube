@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { Command } from "commander";
+import { Command, Option } from "commander";
 import { writeData, writeError, type Format } from "./output.js";
 
 const program = new Command();
@@ -8,7 +8,11 @@ program
   .name("uchi")
   .description("uchi CLI")
   .version("0.0.1")
-  .option("--format <format>", "output format (json|table)", "table");
+  .addOption(
+    new Option("--format <format>", "output format (json|table)")
+      .choices(["json", "table"])
+      .default("table")
+  );
 
 program.addHelpCommand(false);
 

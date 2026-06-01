@@ -11,11 +11,35 @@ apps/
   web/     - Web UI (@uchi/web)
 ```
 
+## 動作環境
+
+- Node.js >= 22.12.0
+- pnpm
+
 ## セットアップ
 
 ```bash
 pnpm install
+pnpm build
 ```
+
+## CLI の使い方
+
+```bash
+# ヘルプを表示
+uchi --help
+
+# バージョンを表示
+uchi --version
+
+# JSON 形式で出力（AI エージェント連携向け）
+uchi --format json
+
+# テーブル形式で出力（デフォルト）
+uchi --format table
+```
+
+`--format` オプションは全サブコマンドで共通して利用できます。
 
 ## コマンド
 
