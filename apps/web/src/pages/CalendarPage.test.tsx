@@ -9,7 +9,7 @@ vi.mock("../api/tasks");
 const mockedFetchTasks = vi.mocked(tasksApi.fetchTasks);
 const mockedCreateTask = vi.mocked(tasksApi.createTask);
 
-// Fix Date to 2026-06-01 (Monday) — week starts on 2026-05-31 (Sun) per CLI convention
+// Fix Date to 2026-06-01 (Monday) — week starts on 2026-06-01 (Mon) in Monday-start convention
 const FIXED_NOW = new Date("2026-06-01T12:00:00.000Z");
 
 beforeEach(() => {
@@ -75,11 +75,11 @@ describe("CalendarPage", () => {
     const undoneEl = await screen.findByText("未完了タスク");
     const doneEl = screen.getByText("完了タスク");
 
-    expect(undoneEl.closest("li")).toHaveAttribute("data-done", "false");
-    expect(doneEl.closest("li")).toHaveAttribute("data-done", "true");
+    expect(undoneEl.closest("[data-todo-done]")).toHaveAttribute("data-todo-done", "false");
+    expect(doneEl.closest("[data-todo-done]")).toHaveAttribute("data-todo-done", "true");
   });
 
-  it("日付をクリックするとタスク追加フォームが表示され、タスクを追加できる", async () => {
+  it("add inputにタスクを入力してEnterで追加できる", async () => {
     mockedFetchTasks.mockResolvedValue([]);
     mockedCreateTask.mockResolvedValue({
       id: 10,
@@ -94,15 +94,11 @@ describe("CalendarPage", () => {
     render(<CalendarPage />);
 
     // 読み込み完了を待つ
-    await screen.findByRole("button", { name: /6\/1/ });
-
-    // 日付ボタンをクリックしてフォームを表示
-    await user.click(screen.getByRole("button", { name: /6\/1/ }));
-    expect(screen.getByPlaceholderText("タスク名")).toBeInTheDocument();
-
-    // タスク名を入力して送信
-    await user.type(screen.getByPlaceholderText("タスク名"), "新タスク");
-    await user.click(screen.getByRole("button", { name: "追加" }));
+    const inputs = await screen.findAllByPlaceholderText("タスクを追加");
+    // 月曜列（最初の列）のinputに入力
+    await user.click(inputs[0]);
+    await user.type(inputs[0], "新タスク");
+    await user.keyboard("{Enter}");
 
     expect(mockedCreateTask).toHaveBeenCalledWith("新タスク", "2026-06-01");
     expect(await screen.findByText("新タスク")).toBeInTheDocument();

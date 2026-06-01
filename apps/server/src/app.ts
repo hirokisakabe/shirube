@@ -38,10 +38,15 @@ export function createApp(db: Db) {
   app.patch("/api/tasks/:id", async (c) => {
     const id = Number(c.req.param("id"));
     if (isNaN(id)) return c.json({ error: "Invalid id" }, 400);
-    const body = await c.req.json<{ doneAt?: string | null }>();
+    const body = await c.req.json<{ doneAt?: string | null; title?: string; date?: string }>();
+    const set: { doneAt?: string | null; title?: string; date?: string } = {};
+    if ("doneAt" in body) set.doneAt = body.doneAt ?? null;
+    if (body.title !== undefined) set.title = body.title;
+    if (body.date !== undefined) set.date = body.date;
+    if (Object.keys(set).length === 0) return c.json({ error: "No fields to update" }, 400);
     const [task] = await db
       .update(tasks)
-      .set({ doneAt: body.doneAt ?? null })
+      .set(set)
       .where(and(eq(tasks.id, id), isNull(tasks.deletedAt)))
       .returning();
     if (!task) return c.json({ error: "Not found" }, 404);

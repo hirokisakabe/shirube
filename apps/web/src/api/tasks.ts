@@ -24,3 +24,22 @@ export async function createTask(title: string, date: string): Promise<Task> {
   if (!res.ok) throw new Error(`Failed to create task: ${res.status}`);
   return res.json() as Promise<Task>;
 }
+
+export async function updateTask(
+  id: number,
+  updates: { doneAt?: string | null; title?: string; date?: string },
+): Promise<Task> {
+  const res = await fetch(`/api/tasks/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(updates),
+  });
+  if (!res.ok) throw new Error(`Failed to update task: ${res.status}`);
+  return res.json() as Promise<Task>;
+}
+
+export async function deleteTask(id: number): Promise<Task> {
+  const res = await fetch(`/api/tasks/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error(`Failed to delete task: ${res.status}`);
+  return res.json() as Promise<Task>;
+}
