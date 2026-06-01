@@ -2,7 +2,7 @@ import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { Hono } from "hono";
-import { join } from "path";
+import { join, relative, resolve } from "path";
 import { createDb, goals, reviews, tasks } from "@uchi/db";
 
 const db = createDb();
@@ -42,7 +42,7 @@ app.patch("/api/tasks/:id", async (c) => {
   const body = await c.req.json<{ doneAt?: string | null }>();
   const [task] = await db
     .update(tasks)
-    .set(body)
+    .set({ doneAt: body.doneAt ?? null })
     .where(and(eq(tasks.id, id), isNull(tasks.deletedAt)))
     .returning();
   if (!task) return c.json({ error: "Not found" }, 404);
@@ -135,7 +135,7 @@ app.patch("/api/goals/:id", async (c) => {
   const body = await c.req.json<{ doneAt?: string | null }>();
   const [goal] = await db
     .update(goals)
-    .set(body)
+    .set({ doneAt: body.doneAt ?? null })
     .where(and(eq(goals.id, id), isNull(goals.deletedAt)))
     .returning();
   if (!goal) return c.json({ error: "Not found" }, 404);
@@ -155,7 +155,8 @@ app.delete("/api/goals/:id", async (c) => {
 });
 
 // Static files (built web UI)
-const WEB_DIST = join(__dirname, "../../web/dist");
+const webDistAbs = resolve(__dirname, "../../web/dist");
+const WEB_DIST = relative(process.cwd(), webDistAbs);
 app.use("/*", serveStatic({ root: WEB_DIST }));
 
 serve({ fetch: app.fetch, port: 3000 }, (info) => {

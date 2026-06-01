@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "tsc && node -e \"const fs=require('fs'); fs.cpSync('public', 'dist', {recursive: true})\"",
-    "dev": "tsc --watch",
+    "dev": "node -e \"const fs=require('fs'); fs.cpSync('public', 'dist', {recursive: true})\" && tsc --watch",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
