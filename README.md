@@ -34,14 +34,32 @@ uchi --help
 # バージョンを表示
 uchi --version
 
-# JSON 形式で出力（AI エージェント連携向け）
-uchi --format json
+# タスクを追加（--date 省略時は今日）
+uchi add "タスクのタイトル"
+uchi add "タスクのタイトル" --date 2026-06-15
 
-# テーブル形式で出力（デフォルト）
-uchi --format table
+# タスク一覧を表示（デフォルトは今日）
+uchi list
+uchi list --date 2026-06-15
+uchi list --week          # 今週のタスクを一覧表示
+
+# タスクを完了にする
+uchi done <id>
+
+# タスクを削除（ソフトデリート）
+uchi rm <id>              # 確認プロンプトあり
+uchi rm <id> --yes        # 確認なし（AI エージェント向け）
+
+# タスクの詳細を表示
+uchi show <id>
 ```
 
-`--format` オプションは全サブコマンドで共通して利用できます。
+各コマンドに `--format json` を付けると機械可読な JSON 形式で出力します。
+
+```bash
+uchi list --format json
+uchi add "テスト" --format json
+```
 
 ## コマンド
 

@@ -7,7 +7,7 @@ import { dirname, join } from "path";
 import * as schema from "./schema";
 
 export function getDbPath(): string {
-  return join(homedir(), ".uchi", "db.sqlite");
+  return process.env["UCHI_DB_PATH"] ?? join(homedir(), ".uchi", "db.sqlite");
 }
 
 export function createDb(dbPath: string = getDbPath()) {

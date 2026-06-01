@@ -17,14 +17,19 @@ function getDb() {
   return createDb();
 }
 
-function todayStr(): string {
-  return new Date().toISOString().split("T")[0]!;
+function localDateStr(d: Date = new Date()): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 program
   .name("uchi")
   .description("uchi CLI")
-  .version("0.0.1");
+  .version("0.0.1")
+  .enablePositionalOptions()
+  .addOption(formatOption());
 
 program.addHelpCommand(false);
 
@@ -32,8 +37,8 @@ program.configureOutput({
   writeErr: () => {},
 });
 
-program.action(() => {
-  writeData({ version: program.version() }, "table");
+program.action((options: { format: Format }) => {
+  writeData({ version: program.version() }, options.format);
 });
 
 program
@@ -44,7 +49,7 @@ program
   .addOption(formatOption())
   .action(async (title: string, options: { date?: string; format: Format }) => {
     const db = getDb();
-    const date = options.date ?? todayStr();
+    const date = options.date ?? localDateStr();
     const [task] = await db.insert(tasks).values({ title, date }).returning();
     writeData(task, options.format);
   });
@@ -68,8 +73,8 @@ program
         const endOfWeek = new Date(startOfWeek);
         endOfWeek.setDate(startOfWeek.getDate() + 6);
 
-        const startStr = startOfWeek.toISOString().split("T")[0]!;
-        const endStr = endOfWeek.toISOString().split("T")[0]!;
+        const startStr = localDateStr(startOfWeek);
+        const endStr = localDateStr(endOfWeek);
 
         results = await db
           .select()
@@ -78,7 +83,7 @@ program
             and(isNull(tasks.deletedAt), gte(tasks.date, startStr), lte(tasks.date, endStr))
           );
       } else {
-        const date = options.date ?? todayStr();
+        const date = options.date ?? localDateStr();
         results = await db
           .select()
           .from(tasks)
@@ -173,7 +178,7 @@ program
       process.exit(1);
     }
     const task = await db.query.tasks.findFirst({
-      where: eq(tasks.id, taskId),
+      where: and(eq(tasks.id, taskId), isNull(tasks.deletedAt)),
     });
     if (!task) {
       writeError(`Task not found: ${id}`);
