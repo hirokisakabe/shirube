@@ -299,11 +299,11 @@ goalCmd
   .addOption(formatOption())
   .action(async (id: string, options: { format: Format }) => {
     const db = getDb();
-    const goalId = parseInt(id, 10);
-    if (isNaN(goalId)) {
+    if (!/^\d+$/.test(id)) {
       writeError(`Invalid id: ${id}`);
       process.exit(1);
     }
+    const goalId = Number(id);
     const [goal] = await db
       .update(goals)
       .set({ doneAt: new Date().toISOString() })
@@ -324,11 +324,11 @@ goalCmd
   .addOption(formatOption())
   .action(async (id: string, options: { yes?: boolean; format: Format }) => {
     const db = getDb();
-    const goalId = parseInt(id, 10);
-    if (isNaN(goalId)) {
+    if (!/^\d+$/.test(id)) {
       writeError(`Invalid id: ${id}`);
       process.exit(1);
     }
+    const goalId = Number(id);
 
     if (!options.yes) {
       const rl = readline.createInterface({

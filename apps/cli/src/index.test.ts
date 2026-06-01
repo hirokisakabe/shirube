@@ -236,6 +236,12 @@ describe("uchi CLI", () => {
         expect(result.status).toBe(1);
         expect(result.stderr).toContain("Goal not found");
       });
+
+      it("数字以外の ID は Invalid id エラーになる", () => {
+        const result = runCli(["goal", "done", "1abc"], dbPath);
+        expect(result.status).toBe(1);
+        expect(result.stderr).toContain("Invalid id");
+      });
     });
 
     describe("rm", () => {
@@ -284,6 +290,12 @@ describe("uchi CLI", () => {
 
         expect(result.status).toBe(0);
         expect(result.stderr).toContain(`Delete goal ${goal.id}?`);
+      });
+
+      it("数字以外の ID は Invalid id エラーになる", () => {
+        const result = runCli(["goal", "rm", "1abc", "--yes"], dbPath);
+        expect(result.status).toBe(1);
+        expect(result.stderr).toContain("Invalid id");
       });
     });
   });

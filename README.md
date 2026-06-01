@@ -52,6 +52,20 @@ uchi rm <id> --yes        # 確認なし（AI エージェント向け）
 
 # タスクの詳細を表示
 uchi show <id>
+
+# 目標を追加する
+uchi goal add "目標のタイトル"
+
+# 目標一覧を表示（デフォルトは未達成のみ）
+uchi goal list
+uchi goal list --all      # 達成済みも含めて表示
+
+# 目標を達成にする
+uchi goal done <id>
+
+# 目標を削除（ソフトデリート）
+uchi goal rm <id>         # 確認プロンプトあり
+uchi goal rm <id> --yes   # 確認なし（AI エージェント向け）
 ```
 
 各コマンドに `--format json` を付けると機械可読な JSON 形式で出力します。
