@@ -1,21 +1,24 @@
 import { useEffect, useState } from "react";
 import { type Task, createTask, fetchTasks } from "../api/tasks";
 
-const WEEKDAYS = ["月", "火", "水", "木", "金", "土", "日"];
+const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
 
 function getWeekDates(base: Date): Date[] {
-  const dow = base.getDay();
-  const monday = new Date(base);
-  monday.setDate(base.getDate() - ((dow + 6) % 7));
+  const dow = base.getDay(); // 0=Sun, CLI と同じ日曜始まり
+  const sunday = new Date(base);
+  sunday.setDate(base.getDate() - dow);
   return Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(monday);
-    d.setDate(monday.getDate() + i);
+    const d = new Date(sunday);
+    d.setDate(sunday.getDate() + i);
     return d;
   });
 }
 
 function toDateStr(d: Date): string {
-  return d.toISOString().slice(0, 10);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 export function CalendarPage() {

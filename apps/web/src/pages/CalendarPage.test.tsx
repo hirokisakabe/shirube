@@ -9,7 +9,7 @@ vi.mock("../api/tasks");
 const mockedFetchTasks = vi.mocked(tasksApi.fetchTasks);
 const mockedCreateTask = vi.mocked(tasksApi.createTask);
 
-// Fix Date to 2026-06-01 (Monday) so week is 2026-06-01 ~ 2026-06-07
+// Fix Date to 2026-06-01 (Monday) — week starts on 2026-05-31 (Sun) per CLI convention
 const FIXED_NOW = new Date("2026-06-01T12:00:00.000Z");
 
 beforeEach(() => {
