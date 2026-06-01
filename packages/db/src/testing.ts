@@ -8,5 +8,5 @@ export function createTestDb() {
   const sqlite = new Database(":memory:");
   const db = drizzle(sqlite, { schema });
   migrate(db, { migrationsFolder: join(__dirname, "../drizzle") });
-  return db;
+  return { db, close: (): void => { sqlite.close(); } };
 }
