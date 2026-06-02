@@ -1,6 +1,6 @@
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { Hono } from "hono";
-import { createDb, goals, reviews, tasks } from "@shirube/db";
+import { createDb, goals, reviews, tasks } from "../db/index";
 
 type Db = ReturnType<typeof createDb>;
 

@@ -5,7 +5,7 @@ import { tmpdir } from "os";
 import { join } from "path";
 
 function runCli(args: string[], dbPath: string, env: Record<string, string> = {}) {
-  return spawnSync("node", [join(__dirname, "../dist/index.js"), ...args], {
+  return spawnSync("node", [join(__dirname, "../../dist/cli.js"), ...args], {
     encoding: "utf8",
     env: { ...process.env, SHIRUBE_DB_PATH: dbPath, ...env },
   });
@@ -125,7 +125,7 @@ describe("shirube CLI", () => {
     it("--yes なしでキャンセルすると削除されない", () => {
       const task = JSON.parse(runCli(["add", "キャンセルテスト", "--format", "json"], dbPath).stdout);
 
-      const result = spawnSync("node", [join(__dirname, "../dist/index.js"), "rm", String(task.id)], {
+      const result = spawnSync("node", [join(__dirname, "../../dist/cli.js"), "rm", String(task.id)], {
         input: "n\n",
         encoding: "utf8",
         env: { ...process.env, SHIRUBE_DB_PATH: dbPath },
@@ -265,7 +265,7 @@ describe("shirube CLI", () => {
       it("--yes なしでキャンセルすると削除されない", () => {
         const goal = JSON.parse(runCli(["goal", "add", "キャンセルテスト", "--format", "json"], dbPath).stdout);
 
-        const result = spawnSync("node", [join(__dirname, "../dist/index.js"), "goal", "rm", String(goal.id)], {
+        const result = spawnSync("node", [join(__dirname, "../../dist/cli.js"), "goal", "rm", String(goal.id)], {
           input: "n\n",
           encoding: "utf8",
           env: { ...process.env, SHIRUBE_DB_PATH: dbPath },
@@ -282,7 +282,7 @@ describe("shirube CLI", () => {
       it("--yes なしで確認プロンプトが出る", () => {
         const goal = JSON.parse(runCli(["goal", "add", "プロンプトテスト", "--format", "json"], dbPath).stdout);
 
-        const result = spawnSync("node", [join(__dirname, "../dist/index.js"), "goal", "rm", String(goal.id)], {
+        const result = spawnSync("node", [join(__dirname, "../../dist/cli.js"), "goal", "rm", String(goal.id)], {
           input: "y\n",
           encoding: "utf8",
           env: { ...process.env, SHIRUBE_DB_PATH: dbPath },
