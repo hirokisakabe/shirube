@@ -139,6 +139,46 @@ describe("shirube CLI", () => {
     });
   });
 
+  describe("edit", () => {
+    it("--title でタスクのタイトルを変更して JSON で返す", () => {
+      const task = JSON.parse(runCli(["add", "元のタイトル", "--format", "json"], dbPath).stdout);
+
+      const result = runCli(["edit", String(task.id), "--title", "新しいタイトル", "--format", "json"], dbPath);
+      expect(result.status).toBe(0);
+      const updated = JSON.parse(result.stdout);
+      expect(updated.id).toBe(task.id);
+      expect(updated.title).toBe("新しいタイトル");
+    });
+
+    it("存在しない ID は 1 で終了する", () => {
+      const result = runCli(["edit", "99999", "--title", "新しいタイトル"], dbPath);
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain("Task not found");
+    });
+
+    it("数字以外の ID は Invalid id エラーになる", () => {
+      const result = runCli(["edit", "abc", "--title", "新しいタイトル"], dbPath);
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain("Invalid id");
+    });
+
+    it("削除済みタスクは編集できない", () => {
+      const task = JSON.parse(runCli(["add", "削除タスク", "--format", "json"], dbPath).stdout);
+      runCli(["rm", String(task.id), "--yes"], dbPath);
+
+      const result = runCli(["edit", String(task.id), "--title", "新タイトル"], dbPath);
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain("Task not found");
+    });
+
+    it("--format table でもエラーなく実行できる", () => {
+      const task = JSON.parse(runCli(["add", "テーブルテスト", "--format", "json"], dbPath).stdout);
+
+      const result = runCli(["edit", String(task.id), "--title", "変更後", "--format", "table"], dbPath);
+      expect(result.status).toBe(0);
+    });
+  });
+
   describe("show", () => {
     it("タスクの詳細を JSON で返す", () => {
       const task = JSON.parse(runCli(["add", "詳細テスト", "--format", "json"], dbPath).stdout);
