@@ -10,8 +10,8 @@ export function ReviewPage() {
   const [expandedWeek, setExpandedWeek] = useState<string | null>(null);
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const { review, loading: loadingWeek, saving, save } = useWeekReview(currentWeek);
-  const { reviews, loading: loadingList, reload } = useReviews();
+  const { review, loading: loadingWeek, saving, error: weekError, save } = useWeekReview(currentWeek);
+  const { reviews, loading: loadingList, error: listError, reload } = useReviews();
 
   useEffect(() => {
     setDraft(review?.content ?? "");
@@ -71,6 +71,7 @@ export function ReviewPage() {
 
       <main className="review-main">
         <section className="review-editor-section">
+          {weekError && <div className="review-error">エラー: {weekError}</div>}
           {loadingWeek ? (
             <div className="review-loading">読み込み中…</div>
           ) : (
@@ -104,6 +105,7 @@ export function ReviewPage() {
 
         <section className="review-history-section">
           <h2 className="review-history-title">過去の振り返り</h2>
+          {listError && <div className="review-error">エラー: {listError}</div>}
           {loadingList ? (
             <div className="review-loading">読み込み中…</div>
           ) : pastReviews.length === 0 ? (

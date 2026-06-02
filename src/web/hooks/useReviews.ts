@@ -29,15 +29,19 @@ export function useWeekReview(week: string) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     setLoading(true);
+    setError(null);
     fetchReview(week)
-      .then(setReview)
-      .catch((e: unknown) => setError(String(e)))
-      .finally(() => setLoading(false));
+      .then((data) => { if (!cancelled) setReview(data); })
+      .catch((e: unknown) => { if (!cancelled) setError(String(e)); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, [week]);
 
   const save = useCallback(async (content: string) => {
     setSaving(true);
+    setError(null);
     try {
       const updated = await upsertReview(week, content);
       setReview(updated);

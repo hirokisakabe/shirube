@@ -61,9 +61,17 @@ export const DateU = {
   },
 
   addWeeks: (weekStr: string, delta: number): string => {
-    const [year, wPart] = weekStr.split("-W");
-    const weekNum = parseInt(wPart, 10) + delta;
-    const d = new Date(Date.UTC(parseInt(year, 10), 0, 1 + (weekNum - 1) * 7));
+    const [yearStr, wPart] = weekStr.split("-W");
+    const year = parseInt(yearStr, 10);
+    const weekNum = parseInt(wPart, 10);
+    // Jan 4 is always in ISO week 1; find its Monday
+    const jan4 = new Date(Date.UTC(year, 0, 4));
+    const dow = jan4.getUTCDay() || 7; // Mon=1 ... Sun=7
+    const week1Mon = new Date(jan4.getTime() - (dow - 1) * 86400000);
+    // Monday of target week
+    const target = new Date(week1Mon.getTime() + (weekNum - 1 + delta) * 7 * 86400000);
+    // Compute ISO week string (pure UTC to avoid local-offset issues)
+    const d = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth(), target.getUTCDate()));
     const day = d.getUTCDay() || 7;
     d.setUTCDate(d.getUTCDate() + 4 - day);
     const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
