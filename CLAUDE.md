@@ -7,63 +7,65 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```bash
 # 依存関係インストール＆ビルド
 pnpm install
-pnpm build          # 全パッケージをビルド (pnpm -r build)
+pnpm build          # Web (Vite) + CLI/Server (esbuild) をビルドして dist/ に出力
 
 # 型チェック
-pnpm typecheck      # 全パッケージ (pnpm -r typecheck)
+pnpm typecheck      # CLI/Server/DB と Web の型チェック
 
 # テスト
-pnpm test           # 全パッケージ (pnpm -r --if-present test)
+pnpm test           # 全テスト (DB・Server・Web・CLI)
 
-# 個別パッケージのテスト
-pnpm --filter @shirube/db test
-pnpm --filter @shirube/server test
-pnpm --filter @shirube/cli test
-pnpm --filter @shirube/web test
-
-# DB マイグレーション生成・適用 (packages/db で実行)
-pnpm --filter @shirube/db generate   # drizzle-kit generate
-pnpm --filter @shirube/db migrate    # drizzle-kit migrate
+# DB マイグレーション生成・適用
+pnpm generate       # drizzle-kit generate
+pnpm migrate        # drizzle-kit migrate
 
 # 開発サーバ起動（フロントエンド開発時）
-pnpm --filter @shirube/server dev    # ターミナル1: API サーバ (port 3000)
-pnpm --filter @shirube/web dev       # ターミナル2: Vite dev サーバ (port 5173, /api を 3000 にプロキシ)
+pnpm dev:server     # ターミナル1: API サーバ (port 3000)
+pnpm dev:web        # ターミナル2: Vite dev サーバ (port 5173, /api を 3000 にプロキシ)
 ```
 
 ## アーキテクチャ
 
-### モノレポ構成
+### 単一パッケージ構成
 
-pnpm workspaces による monorepo。依存関係の方向は `cli/server → @shirube/db`、`web` は独立（`@shirube/db` に依存しない）。
+単一の `package.json` による単一パッケージ。esbuild でバンドルして npm 公開可能な形式に出力する。
 
 ```
-apps/cli/     - Commander.js ベースの CLI (@shirube/cli)
-apps/server/  - Hono + @hono/node-server の API サーバ (@shirube/server)
-apps/web/     - React 19 + TanStack Router + Vite の SPA (@shirube/web)
-packages/db/  - better-sqlite3 + Drizzle ORM のスキーマ・マイグレーション (@shirube/db)
+src/cli/     - Commander.js ベースの CLI
+src/server/  - Hono + @hono/node-server の API サーバ
+src/web/     - React 19 + TanStack Router + Vite の SPA
+src/db/      - better-sqlite3 + Drizzle ORM のスキーマ・マイグレーション
+drizzle/     - DB マイグレーションファイル
+dist/        - ビルド成果物
+  cli.js     - CLI バンドル (bin: shirube)
+  server.js  - サーバーバンドル
+  web/       - Web 静的ファイル
+  drizzle/   - マイグレーションファイル (コピー)
 ```
 
-### データ層 (`packages/db`)
+### データ層 (`src/db`)
 
 - SQLite ファイルは `~/.shirube/db.sqlite`（`SHIRUBE_DB_PATH` 環境変数で上書き可能）
 - `createDb(dbPath?)` が DB 接続を返す。起動時に `drizzle/` フォルダのマイグレーションを自動適用
+- マイグレーションパスは `SHIRUBE_MIGRATIONS_PATH` 環境変数で上書き可能（テスト時に注入）
+- バンドル済みは `dist/drizzle/`、ソース実行 (tsx) 時はプロジェクトルートの `drizzle/` を自動判別
 - スキーマ: `tasks`（date, doneAt, deletedAt）・`reviews`（week が UNIQUE キー）・`goals`（doneAt, deletedAt）
 - 削除はすべてソフトデリート（`deletedAt` に ISO 文字列をセット）
 - テスト用に `createTestDb()` を公開。in-memory SQLite を返すため DB ファイルを汚染しない
 
-### サーバ (`apps/server`)
+### サーバ (`src/server`)
 
 - `createApp(db)` が Hono app を返すファクトリパターン。テスト時に `createTestDb()` の DB を注入できる
 - エンドポイント: `/api/tasks`・`/api/reviews`・`/api/goals`（CRUD）
-- `apps/web/dist` を静的ファイルとして配信（本番時）
+- `dist/web/` を静的ファイルとして配信（本番時）
 
-### CLI (`apps/cli`)
+### CLI (`src/cli`)
 
-- `shirube serve` は `apps/server/dist/index.js` を子プロセスで起動し、macOS の `open` でブラウザを開く（`pnpm build` が前提）
+- `shirube serve` は `dist/server.js` を子プロセスで起動し、macOS の `open` でブラウザを開く（`pnpm build` が前提）
 - `--format json` オプションで機械可読出力。`--yes` フラグで削除の確認プロンプトをスキップ（AI エージェント向け）
 
 ### テストの注意点
 
-- `@shirube/server` の vitest は `@shirube/db` を `packages/db/src/index.ts` へエイリアス解決するため、`@shirube/db` のビルドなしで実行できる
-- `@shirube/cli` のテストスクリプトは `pnpm --filter @shirube/db build && pnpm build` を前置実行する（ビルド成果物を require するため）
-- `@shirube/web` のテストは jsdom 環境で動作し `src/test/setup.ts` でセットアップされる
+- `vitest.node.config.ts`: DB・Server テスト (node 環境)。`SHIRUBE_MIGRATIONS_PATH` を `drizzle/` に設定
+- `vitest.web.config.ts`: Web テスト (jsdom 環境)
+- `vitest.cli.config.ts`: CLI テスト (node 環境)。ビルド済み `dist/cli.js` を使用するため `pnpm build` が前提
