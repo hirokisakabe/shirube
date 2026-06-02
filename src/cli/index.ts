@@ -199,6 +199,31 @@ program
   );
 
 program
+  .command("edit")
+  .description("タスクのタイトルを変更する")
+  .argument("<id>", "タスクID")
+  .requiredOption("--title <title>", "新しいタイトル")
+  .addOption(formatOption())
+  .action(async (id: string, options: { title: string; format: Format }) => {
+    const db = getDb();
+    if (!/^\d+$/.test(id)) {
+      writeError(`Invalid id: ${id}`);
+      process.exit(1);
+    }
+    const taskId = Number(id);
+    const [task] = await db
+      .update(tasks)
+      .set({ title: options.title })
+      .where(and(eq(tasks.id, taskId), isNull(tasks.deletedAt)))
+      .returning();
+    if (!task) {
+      writeError(`Task not found: ${id}`);
+      process.exit(1);
+    }
+    writeData(task, options.format);
+  });
+
+program
   .command("show")
   .description("タスクの詳細を表示する")
   .argument("<id>", "タスクID")
