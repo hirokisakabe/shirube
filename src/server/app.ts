@@ -1,6 +1,6 @@
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { Hono } from "hono";
-import { createDb, goals, reviews, tasks } from "../db/index";
+import { type createDb, goals, reviews, tasks } from "../db/index";
 
 type Db = ReturnType<typeof createDb>;
 
@@ -19,7 +19,7 @@ export function createApp(db: Db) {
 
   app.get("/api/tasks/:id", async (c) => {
     const id = Number(c.req.param("id"));
-    if (isNaN(id)) return c.json({ error: "Invalid id" }, 400);
+    if (Number.isNaN(id)) return c.json({ error: "Invalid id" }, 400);
     const task = await db.query.tasks.findFirst({
       where: and(eq(tasks.id, id), isNull(tasks.deletedAt)),
     });
@@ -37,7 +37,7 @@ export function createApp(db: Db) {
 
   app.patch("/api/tasks/:id", async (c) => {
     const id = Number(c.req.param("id"));
-    if (isNaN(id)) return c.json({ error: "Invalid id" }, 400);
+    if (Number.isNaN(id)) return c.json({ error: "Invalid id" }, 400);
     const body = await c.req.json<{ doneAt?: string | null; title?: string; date?: string }>();
     const set: { doneAt?: string | null; title?: string; date?: string } = {};
     if ("doneAt" in body) set.doneAt = body.doneAt ?? null;
@@ -55,7 +55,7 @@ export function createApp(db: Db) {
 
   app.delete("/api/tasks/:id", async (c) => {
     const id = Number(c.req.param("id"));
-    if (isNaN(id)) return c.json({ error: "Invalid id" }, 400);
+    if (Number.isNaN(id)) return c.json({ error: "Invalid id" }, 400);
     const [task] = await db
       .update(tasks)
       .set({ deletedAt: new Date().toISOString() })
@@ -118,7 +118,7 @@ export function createApp(db: Db) {
 
   app.get("/api/goals/:id", async (c) => {
     const id = Number(c.req.param("id"));
-    if (isNaN(id)) return c.json({ error: "Invalid id" }, 400);
+    if (Number.isNaN(id)) return c.json({ error: "Invalid id" }, 400);
     const goal = await db.query.goals.findFirst({
       where: and(eq(goals.id, id), isNull(goals.deletedAt)),
     });
@@ -135,7 +135,7 @@ export function createApp(db: Db) {
 
   app.patch("/api/goals/:id", async (c) => {
     const id = Number(c.req.param("id"));
-    if (isNaN(id)) return c.json({ error: "Invalid id" }, 400);
+    if (Number.isNaN(id)) return c.json({ error: "Invalid id" }, 400);
     const body = await c.req.json<{ doneAt?: string | null }>();
     const [goal] = await db
       .update(goals)
@@ -148,7 +148,7 @@ export function createApp(db: Db) {
 
   app.delete("/api/goals/:id", async (c) => {
     const id = Number(c.req.param("id"));
-    if (isNaN(id)) return c.json({ error: "Invalid id" }, 400);
+    if (Number.isNaN(id)) return c.json({ error: "Invalid id" }, 400);
     const [goal] = await db
       .update(goals)
       .set({ deletedAt: new Date().toISOString() })

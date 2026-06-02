@@ -29,6 +29,8 @@ function DropZone({
 }) {
   const [over, setOver] = useState(false);
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: drag-and-drop drop zone; keyboard reordering not yet implemented
+    // biome-ignore lint/a11y/useKeyWithClickEvents: cell click is for UX convenience only; primary actions use child buttons
     <div
       className={className + (over ? ' drop-over' : '')}
       onClick={onClick}
@@ -68,12 +70,15 @@ function MonthCell({ date, ctx, inMonth, today, onPickDay }: {
         <span className="mcell-num">{date.getDate()}</span>
         {today && <span className="today-dot" />}
       </div>
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: focus/blur used to track input focus state, not for interaction */}
       <div
         className="mcell-body"
         onFocus={() => { clearTimeout(blurTimerRef.current); inputFocusedRef.current = true; }}
         onBlur={() => { blurTimerRef.current = setTimeout(() => { inputFocusedRef.current = false; }, 0); }}
       >
         {items.slice(0, 4).map((t) => (
+          // biome-ignore lint/a11y/noStaticElementInteractions: draggable todo item with toggle click
+          // biome-ignore lint/a11y/useKeyWithClickEvents: month view only shows compact todo dots; full keyboard interaction is in the week view
           <div
             key={t.id}
             className={`mtodo${t.doneAt ? ' done' : ''}`}
@@ -86,6 +91,8 @@ function MonthCell({ date, ctx, inMonth, today, onPickDay }: {
           </div>
         ))}
         {items.length > 4 && <div className="mmore">＋{items.length - 4}件</div>}
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: stopPropagation wrapper to prevent cell click when adding tasks */}
+        {/* biome-ignore lint/a11y/useKeyWithClickEvents: wrapper does not trigger navigation; AddInput handles its own keyboard interaction */}
         <div onClick={(e) => e.stopPropagation()}>
           <AddInput onAdd={(text) => ctx.add(k, text)} />
         </div>

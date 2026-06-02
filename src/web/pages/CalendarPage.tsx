@@ -38,16 +38,17 @@ export function CalendarPage() {
         </div>
 
         <div className="nav">
-          <button className="nav-btn" onClick={goPrev} aria-label="前へ">‹</button>
+          <button type="button" className="nav-btn" onClick={goPrev} aria-label="前へ">‹</button>
           <span className="nav-range">
             {view === 'week' ? DateU.fmtWeek(weekStart) : DateU.fmtMonth(monthAnchor)}
           </span>
-          <button className="nav-btn" onClick={goNext} aria-label="次へ">›</button>
-          <button className="today-btn" onClick={goToday}>今日</button>
+          <button type="button" className="nav-btn" onClick={goNext} aria-label="次へ">›</button>
+          <button type="button" className="today-btn" onClick={goToday}>今日</button>
         </div>
 
         <div className="topbar-right">
           <button
+            type="button"
             className={`weekend-toggle${showWeekend ? ' on' : ''}`}
             onClick={() => setShowWeekend((v) => !v)}
             title="週末の表示切替"
@@ -55,8 +56,8 @@ export function CalendarPage() {
             土日
           </button>
           <div className="viewtoggle">
-            <button className={`vt${view === 'week' ? ' on' : ''}`} onClick={() => setView('week')}>週</button>
-            <button className={`vt${view === 'month' ? ' on' : ''}`} onClick={() => setView('month')}>月</button>
+            <button type="button" className={`vt${view === 'week' ? ' on' : ''}`} onClick={() => setView('week')}>週</button>
+            <button type="button" className={`vt${view === 'month' ? ' on' : ''}`} onClick={() => setView('month')}>月</button>
           </div>
           <Link to="/goals" className="review-nav-link">目標</Link>
           <Link to="/review" className="review-nav-link">振り返り</Link>

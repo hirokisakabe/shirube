@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 import { and, desc, eq, gte, isNull, lte } from "drizzle-orm";
 import { Command, Option } from "commander";
-import readline from "readline";
-import { spawn, spawnSync } from "child_process";
-import { writeFileSync, readFileSync, mkdtempSync, rmSync } from "fs";
-import { tmpdir } from "os";
-import { join } from "path";
+import readline from "node:readline";
+import { spawn, spawnSync } from "node:child_process";
+import { writeFileSync, readFileSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { createDb, tasks, reviews, goals } from "../db/index";
 import { writeData, writeError, writeLog, type Format } from "./output";
 
@@ -38,8 +38,8 @@ function isoWeek(date: Date = new Date()): string {
 }
 
 function openEditor(content: string): string {
-  const editorCmd = process.env["EDITOR"] ?? process.env["VISUAL"] ?? "vi";
-  const shell = process.env["SHELL"] ?? "sh";
+  const editorCmd = process.env.EDITOR ?? process.env.VISUAL ?? "vi";
+  const shell = process.env.SHELL ?? "sh";
   const dir = mkdtempSync(join(tmpdir(), "shirube-review-"));
   const file = join(dir, "review.md");
   try {
@@ -97,7 +97,7 @@ program
     async (options: { date?: string; week?: boolean; format: Format }) => {
       const db = getDb();
 
-      let results;
+      let results: (typeof tasks.$inferSelect)[];
       if (options.week) {
         const today = new Date();
         const dayOfWeek = today.getDay();
@@ -135,7 +135,7 @@ program
   .action(async (id: string, options: { format: Format }) => {
     const db = getDb();
     const taskId = parseInt(id, 10);
-    if (isNaN(taskId)) {
+    if (Number.isNaN(taskId)) {
       writeError(`Invalid id: ${id}`);
       process.exit(1);
     }
@@ -161,7 +161,7 @@ program
     async (id: string, options: { yes?: boolean; format: Format }) => {
       const db = getDb();
       const taskId = parseInt(id, 10);
-      if (isNaN(taskId)) {
+      if (Number.isNaN(taskId)) {
         writeError(`Invalid id: ${id}`);
         process.exit(1);
       }
@@ -231,7 +231,7 @@ program
   .action(async (id: string, options: { format: Format }) => {
     const db = getDb();
     const taskId = parseInt(id, 10);
-    if (isNaN(taskId)) {
+    if (Number.isNaN(taskId)) {
       writeError(`Invalid id: ${id}`);
       process.exit(1);
     }

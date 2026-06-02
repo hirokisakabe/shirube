@@ -104,25 +104,25 @@ input { font-family: inherit; }
 /* ===== WEEK : columns / focus ===== */
 .wk-columns { height: 100%; display: grid; gap: 0; }
 .wk-focus { height: 100%; display: flex; gap: 0; }
-.wk-focus .col { flex: 1 1 0; }
-.wk-focus .col-today {
-  flex: 2.6 1 0; background: var(--surface);
-  box-shadow: 0 0 0 1px var(--hair), 0 8px 30px -20px rgba(40,30,20,.35);
-  border-radius: 9px; border-left: none; margin: 0 4px;
-}
 
 .col {
   min-height: 0; min-width: 0; display: flex; flex-direction: column;
   border-left: 1px solid var(--hair-soft); padding: 0 12px; transition: background .15s;
 }
 .col:first-child { border-left: none; }
-.col.dim { background: linear-gradient(var(--surface-2), var(--surface-2)); }
-.col.dim .col-body { opacity: .78; }
 .col-today { background: color-mix(in srgb, var(--accent) 5%, transparent); }
-.col.drop-over { background: color-mix(in srgb, var(--accent) 12%, transparent); }
 .col-body {
   flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column;
   gap: 5px; padding-top: 8px;
+}
+.col.dim { background: linear-gradient(var(--surface-2), var(--surface-2)); }
+.col.dim .col-body { opacity: .78; }
+.col.drop-over { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.wk-focus .col { flex: 1 1 0; }
+.wk-focus .col-today {
+  flex: 2.6 1 0; background: var(--surface);
+  box-shadow: 0 0 0 1px var(--hair), 0 8px 30px -20px rgba(40,30,20,.35);
+  border-radius: 9px; border-left: none; margin: 0 4px;
 }
 
 .dayhead {
@@ -226,10 +226,10 @@ input { font-family: inherit; }
 .mcell:nth-child(7n) { border-right: none; }
 .mcell:hover { background: var(--surface-2); }
 .mcell.out { background: var(--surface-2); }
-.mcell.out .mcell-num { color: var(--ink-faint); }
-.mcell.drop-over { background: color-mix(in srgb, var(--accent) 10%, transparent); }
 .mcell-head { display: flex; align-items: center; gap: 5px; }
 .mcell-num { font-family: var(--num); font-size: 14px; font-weight: 500; }
+.mcell.out .mcell-num { color: var(--ink-faint); }
+.mcell.drop-over { background: color-mix(in srgb, var(--accent) 10%, transparent); }
 .mcell.today .mcell-num {
   color: #fff; background: var(--accent); width: 22px; height: 22px;
   border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px;

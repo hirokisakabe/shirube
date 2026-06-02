@@ -16,6 +16,7 @@ export function GoalPage() {
 
         <div className="nav">
           <button
+            type="button"
             className={`weekend-toggle${showAchieved ? ' on' : ''}`}
             onClick={toggleShowAchieved}
           >
@@ -38,6 +39,7 @@ export function GoalPage() {
             {goals.map((goal) => (
               <div key={goal.id} className={`todo${goal.doneAt ? ' done' : ''}`}>
                 <button
+                  type="button"
                   className="check"
                   aria-label={goal.doneAt ? '未達成に戻す' : '達成済みにする'}
                   onClick={() => toggle(goal.id)}
@@ -46,7 +48,7 @@ export function GoalPage() {
                 </button>
                 <span className="todo-text">{goal.title}</span>
                 <span className="todo-actions">
-                  <button className="act" title="削除" onClick={() => remove(goal.id)}>×</button>
+                  <button type="button" className="act" title="削除" onClick={() => remove(goal.id)}>×</button>
                 </span>
               </div>
             ))}
