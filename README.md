@@ -102,6 +102,7 @@ pnpm dev:server # API サーバを watch モードで起動（port 3000）
 pnpm dev:web    # Vite dev サーバを起動（port 5173、/api を 3000 にプロキシ）
 pnpm typecheck  # TypeScript 型チェック
 pnpm test       # 全テスト実行
+pnpm knip       # 未使用ファイル・export・依存パッケージの検出（CI 組み込みは別途対応予定）
 ```
 
 ### CI
