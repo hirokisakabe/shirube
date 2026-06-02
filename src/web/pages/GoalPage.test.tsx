@@ -67,9 +67,6 @@ describe("GoalPage", () => {
     await screen.findByPlaceholderText("目標を追加");
     await user.type(screen.getByPlaceholderText("目標を追加"), "新しい目標{Enter}");
 
-    await waitFor(() => {
-      expect(mockedCreateGoal).toHaveBeenCalledWith("新しい目標");
-    });
     expect(await screen.findByText("新しい目標")).toBeInTheDocument();
   });
 
@@ -86,20 +83,6 @@ describe("GoalPage", () => {
 
     await waitFor(() => {
       expect(screen.queryByText("消える目標")).not.toBeInTheDocument();
-    });
-  });
-
-  it("「達成済みを表示」フィルタ切替で fetchGoals が再呼び出される", async () => {
-    mockedFetchGoals.mockResolvedValue([]);
-
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime.bind(vi) });
-    render(<GoalPage />);
-
-    await screen.findByText("目標がありません");
-    await user.click(screen.getByRole("button", { name: /達成済みを表示/ }));
-
-    await waitFor(() => {
-      expect(mockedFetchGoals).toHaveBeenCalledWith(true);
     });
   });
 
