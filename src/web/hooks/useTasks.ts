@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { type Task, createTask, deleteTask, fetchTasks, updateTask } from "../api/tasks";
-import { DateU } from "../utils/date";
 
 function sortForDay(items: Task[]): Task[] {
   return [...items].sort((a, b) => {
@@ -90,12 +89,5 @@ export function useTasks() {
     });
   };
 
-  const carryToNext = (id: number) => {
-    const task = tasksRef.current.find((t) => t.id === id);
-    if (!task) return;
-    const next = DateU.key(DateU.addDays(DateU.parse(task.date), 1));
-    moveTo(id, next);
-  };
-
-  return { tasks, loading, error, add, toggle, remove, edit, moveTo, carryToNext };
+  return { tasks, loading, error, add, toggle, remove, edit, moveTo };
 }

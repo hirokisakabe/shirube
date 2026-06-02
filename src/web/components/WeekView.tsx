@@ -12,7 +12,6 @@ type Ctx = {
   remove: (id: number) => void;
   edit: (id: number, text: string) => void;
   moveTo: (id: number, date: string) => void;
-  carryToNext: (id: number) => void;
 };
 
 type Props = {
@@ -75,7 +74,6 @@ export function WeekView({ weekStart, ctx, layout, showWeekend }: Props) {
         key={t.id}
         todo={t}
         onToggle={ctx.toggle}
-        onCarry={ctx.carryToNext}
         onRemove={ctx.remove}
         onEdit={ctx.edit}
       />
