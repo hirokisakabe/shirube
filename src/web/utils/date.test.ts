@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { DateU } from "./date";
 
+describe("DateU.fmtIsoWeek", () => {
+  it("ISO週をM/D週形式で返す", () => {
+    expect(DateU.fmtIsoWeek("2026-W23")).toBe("6/1週");  // 2026-W23 の月曜は6/1
+    expect(DateU.fmtIsoWeek("2021-W01")).toBe("1/4週");  // 2021-W01 の月曜は1/4
+    expect(DateU.fmtIsoWeek("2020-W53")).toBe("12/28週"); // 2020-W53 の月曜は12/28
+  });
+});
+
 describe("DateU.addWeeks", () => {
   it("通常週の加算", () => {
     expect(DateU.addWeeks("2025-W10", 1)).toBe("2025-W11");

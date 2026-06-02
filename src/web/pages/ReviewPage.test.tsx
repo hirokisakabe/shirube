@@ -14,7 +14,7 @@ const mockedFetchReviews = vi.mocked(reviewsApi.fetchReviews);
 const mockedFetchReview = vi.mocked(reviewsApi.fetchReview);
 const mockedUpsertReview = vi.mocked(reviewsApi.upsertReview);
 
-const FIXED_NOW = new Date("2026-06-01T12:00:00.000Z"); // 2026-W23
+const FIXED_NOW = new Date("2026-06-01T12:00:00.000Z"); // 2026-W23 (月曜 6/1)
 
 beforeEach(() => {
   vi.useFakeTimers({ shouldAdvanceTime: true });
@@ -48,33 +48,33 @@ describe("ReviewPage", () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime.bind(vi) });
     render(<ReviewPage />);
 
-    await screen.findByText(/2026年 第23週/);
+    await screen.findByText(/6\/1週/);
 
     await user.click(screen.getByRole("button", { name: "前の週" }));
-    expect(await screen.findByText(/2026年 第22週/)).toBeInTheDocument();
+    expect(await screen.findByText(/5\/25週/)).toBeInTheDocument();
   });
 
   it("週ナビゲーション: 次週ボタンで週が変わる", async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime.bind(vi) });
     render(<ReviewPage />);
 
-    await screen.findByText(/2026年 第23週/);
+    await screen.findByText(/6\/1週/);
 
     await user.click(screen.getByRole("button", { name: "次の週" }));
-    expect(await screen.findByText(/2026年 第24週/)).toBeInTheDocument();
+    expect(await screen.findByText(/6\/8週/)).toBeInTheDocument();
   });
 
   it("今週ボタン: 別の週から今週に戻れる", async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime.bind(vi) });
     render(<ReviewPage />);
 
-    await screen.findByText(/2026年 第23週/);
+    await screen.findByText(/6\/1週/);
 
     await user.click(screen.getByRole("button", { name: "前の週" }));
-    await screen.findByText(/2026年 第22週/);
+    await screen.findByText(/5\/25週/);
 
     await user.click(screen.getByRole("button", { name: "今週" }));
-    expect(await screen.findByText(/2026年 第23週/)).toBeInTheDocument();
+    expect(await screen.findByText(/6\/1週/)).toBeInTheDocument();
   });
 
   it("振り返りを保存できる", async () => {
@@ -120,6 +120,6 @@ describe("ReviewPage", () => {
 
     render(<ReviewPage />);
 
-    expect(await screen.findByText(/2026年 第22週/)).toBeInTheDocument();
+    expect(await screen.findByText(/5\/25週/)).toBeInTheDocument();
   });
 });

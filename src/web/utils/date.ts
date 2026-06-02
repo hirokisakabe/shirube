@@ -80,7 +80,13 @@ export const DateU = {
   },
 
   fmtIsoWeek: (weekStr: string): string => {
-    const [year, wPart] = weekStr.split("-W");
-    return `${year}年 第${parseInt(wPart, 10)}週`;
+    const [yearStr, wPart] = weekStr.split("-W");
+    const year = parseInt(yearStr, 10);
+    const weekNum = parseInt(wPart, 10);
+    const jan4 = new Date(Date.UTC(year, 0, 4));
+    const dow = jan4.getUTCDay() || 7;
+    const week1Mon = new Date(jan4.getTime() - (dow - 1) * 86400000);
+    const monday = new Date(week1Mon.getTime() + (weekNum - 1) * 7 * 86400000);
+    return `${monday.getUTCMonth() + 1}/${monday.getUTCDate()}週`;
   },
 };
