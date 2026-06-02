@@ -1,6 +1,6 @@
 {
   "name": "shirube",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "仕事のtodo",
   "bin": {
     "shirube": "dist/cli.js"
