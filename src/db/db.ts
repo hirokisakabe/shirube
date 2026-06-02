@@ -6,7 +6,7 @@ import { homedir } from "os";
 import { dirname, join } from "path";
 import * as schema from "./schema";
 
-export function getDbPath(): string {
+function getDbPath(): string {
   return process.env["SHIRUBE_DB_PATH"] ?? join(homedir(), ".shirube", "db.sqlite");
 }
 
