@@ -58,6 +58,7 @@ export function CalendarPage() {
             <button className={`vt${view === 'week' ? ' on' : ''}`} onClick={() => setView('week')}>週</button>
             <button className={`vt${view === 'month' ? ' on' : ''}`} onClick={() => setView('month')}>月</button>
           </div>
+          <Link to="/goals" className="review-nav-link">目標</Link>
           <Link to="/review" className="review-nav-link">振り返り</Link>
         </div>
       </header>
