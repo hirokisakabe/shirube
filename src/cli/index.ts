@@ -385,12 +385,13 @@ program
       server.kill("SIGTERM");
     });
 
+    const serverUrl = "http://localhost:3000";
     const maxWaitMs = 10000;
     const start = Date.now();
     let ready = false;
     while (Date.now() - start < maxWaitMs) {
       try {
-        await fetch("http://localhost:3000/");
+        await fetch(`${serverUrl}/`);
         ready = true;
         break;
       } catch {
@@ -404,9 +405,9 @@ program
       process.exit(1);
     }
 
-    writeLog("http://localhost:3000");
+    writeLog(serverUrl);
     writeLog("ブラウザを開いています...");
-    spawnSync("open", ["http://localhost:3000"]);
+    spawnSync("open", [serverUrl]);
   });
 
 program.exitOverride((err) => {
