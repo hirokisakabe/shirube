@@ -1,10 +1,8 @@
-# shirube（しるべ）
+# shirube
 
-> 道しるべ — 毎日のタスク・週次レビュー・長期目標を束ねて、進む方向を示すツール。
+毎日のタスク・週次レビュー・長期目標を束ねて、進む方向を示すツール。
 
 ## コンセプト
-
-「しるべ」は古語で **道しるべ（道標）** を意味します。
 
 タスクをこなすだけでなく、週の終わりに振り返り（review）、長期目標（goal）と照らし合わせる — この 3 つのサイクルを続けることで、日々の行動が自分の向かいたい方向へと積み重なっていきます。shirube はその羅針盤となるツールです。
 
@@ -18,14 +16,12 @@
 npm install -g shirube
 ```
 
-インストール後、`shirube --version` でバージョンを確認できます。
-
 ## 動作環境
 
 - Node.js >= 22.12.0
-- macOS（`shirube serve` のブラウザ自動起動は macOS の `open` コマンドを使用）
+- macOS
 
-## CLI の使い方
+## 使い方
 
 ```bash
 # ヘルプを表示
@@ -84,61 +80,3 @@ shirube serve
 shirube list --format json
 shirube add "テスト" --format json
 ```
-
-## 開発者向け
-
-### セットアップ
-
-```bash
-pnpm install
-pnpm build
-```
-
-### コマンド
-
-```bash
-pnpm build      # Web (Vite) + CLI/Server (esbuild) をビルドして dist/ に出力
-pnpm dev:server # API サーバを watch モードで起動（port 3000）
-pnpm dev:web    # Vite dev サーバを起動（port 5173、/api を 3000 にプロキシ）
-pnpm typecheck  # TypeScript 型チェック
-pnpm test       # 全テスト実行
-pnpm knip       # 未使用ファイル・export・依存パッケージの検出（CI でも自動実行）
-```
-
-### CI
-
-PR 作成・更新および `main` への push で GitHub Actions が自動実行される。
-
-| ステップ | コマンド |
-| --- | --- |
-| 型チェック | `pnpm typecheck` |
-| ビルド | `pnpm build` |
-| テスト | `pnpm test` |
-
-## リリース
-
-[Changesets](https://github.com/changesets/changesets) でバージョン管理・CHANGELOG 生成・npm publish を自動化している。
-
-### リリースフロー
-
-1. 実装 PR に changeset ファイルを添付する
-
-   ```bash
-   pnpm changeset
-   ```
-
-   対話式で変更の種類（major / minor / patch）と概要を入力する。
-
-2. PR をマージすると、GitHub Actions が「Version Packages」PR を自動作成する。
-
-3. 「Version Packages」PR をレビューしてマージすると、`CHANGELOG.md` の更新・バージョン bump・npm publish が自動で実行される。
-
-### 初回セットアップ（リポジトリ管理者向け）
-
-OIDC Trusted Publishing を使用しているため、`NPM_TOKEN` シークレットは不要。npmjs.com 側でこのリポジトリを信頼済みパブリッシャーとして登録するだけでよい。
-
-1. npmjs.com でパッケージを一度手動で publish するか、先に scoped で登録しておく。
-2. npmjs.com の **パッケージ設定 → Publishing Access → Granular Access Tokens → Setup OIDC** からこのリポジトリの GitHub Actions ワークフローを Trusted Publisher として登録する。
-   - Repository: `hirokisakabe/shirube`
-   - Workflow: `release.yml`
-   - Environment: （空欄でよい）
