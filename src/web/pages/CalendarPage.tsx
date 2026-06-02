@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { MonthView } from "../components/MonthView";
 import { WeekSummary } from "../components/WeekSummary";
 import { WeekView } from "../components/WeekView";
@@ -57,6 +58,7 @@ export function CalendarPage() {
             <button className={`vt${view === 'week' ? ' on' : ''}`} onClick={() => setView('week')}>週</button>
             <button className={`vt${view === 'month' ? ' on' : ''}`} onClick={() => setView('month')}>月</button>
           </div>
+          <Link to="/review" className="review-nav-link">振り返り</Link>
         </div>
       </header>
 

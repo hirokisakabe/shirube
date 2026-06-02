@@ -5,6 +5,10 @@ import * as tasksApi from "../api/tasks";
 import { CalendarPage } from "./CalendarPage";
 
 vi.mock("../api/tasks");
+vi.mock("@tanstack/react-router", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@tanstack/react-router")>();
+  return { ...actual, Link: ({ children, to }: { children: React.ReactNode; to: string }) => <a href={to}>{children}</a> };
+});
 
 const mockedFetchTasks = vi.mocked(tasksApi.fetchTasks);
 const mockedCreateTask = vi.mocked(tasksApi.createTask);

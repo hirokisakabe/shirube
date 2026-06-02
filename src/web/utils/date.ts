@@ -50,4 +50,43 @@ export const DateU = {
   fmtMonth: (d: Date) => `${d.getFullYear()}年 ${d.getMonth() + 1}月`,
 
   fmtWeek: (a: Date) => `${a.getMonth() + 1}/${a.getDate()}週`,
+
+  isoWeek: (date: Date = new Date()): string => {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const day = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - day);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+    return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
+  },
+
+  addWeeks: (weekStr: string, delta: number): string => {
+    const [yearStr, wPart] = weekStr.split("-W");
+    const year = parseInt(yearStr, 10);
+    const weekNum = parseInt(wPart, 10);
+    // Jan 4 is always in ISO week 1; find its Monday
+    const jan4 = new Date(Date.UTC(year, 0, 4));
+    const dow = jan4.getUTCDay() || 7; // Mon=1 ... Sun=7
+    const week1Mon = new Date(jan4.getTime() - (dow - 1) * 86400000);
+    // Monday of target week
+    const target = new Date(week1Mon.getTime() + (weekNum - 1 + delta) * 7 * 86400000);
+    // Compute ISO week string (pure UTC to avoid local-offset issues)
+    const d = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth(), target.getUTCDate()));
+    const day = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - day);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const actualWeek = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+    return `${d.getUTCFullYear()}-W${String(actualWeek).padStart(2, "0")}`;
+  },
+
+  fmtIsoWeek: (weekStr: string): string => {
+    const [yearStr, wPart] = weekStr.split("-W");
+    const year = parseInt(yearStr, 10);
+    const weekNum = parseInt(wPart, 10);
+    const jan4 = new Date(Date.UTC(year, 0, 4));
+    const dow = jan4.getUTCDay() || 7;
+    const week1Mon = new Date(jan4.getTime() - (dow - 1) * 86400000);
+    const monday = new Date(week1Mon.getTime() + (weekNum - 1) * 7 * 86400000);
+    return `${monday.getUTCMonth() + 1}/${monday.getUTCDate()}週`;
+  },
 };
