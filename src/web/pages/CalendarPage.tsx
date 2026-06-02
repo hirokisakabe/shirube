@@ -34,7 +34,6 @@ export function CalendarPage() {
         <div className="brand">
           <span className="brand-mark" />
           <span className="brand-name">shirube</span>
-          <span className="brand-sub">仕事のtodo</span>
         </div>
 
         <div className="nav">
