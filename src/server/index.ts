@@ -1,13 +1,13 @@
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
-import { join, relative, resolve } from "path";
-import { createDb } from "@shirube/db";
+import { resolve, relative } from "path";
+import { createDb } from "../db/index";
 import { createApp } from "./app";
 
 const db = createDb();
 const app = createApp(db);
 
-const webDistAbs = resolve(__dirname, "../../web/dist");
+const webDistAbs = resolve(__dirname, "web");
 const WEB_DIST = relative(process.cwd(), webDistAbs);
 app.use("/*", serveStatic({ root: WEB_DIST }));
 

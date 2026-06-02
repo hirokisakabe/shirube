@@ -10,11 +10,15 @@ export function getDbPath(): string {
   return process.env["SHIRUBE_DB_PATH"] ?? join(homedir(), ".shirube", "db.sqlite");
 }
 
+function getMigrationsFolder(): string {
+  return process.env["SHIRUBE_MIGRATIONS_PATH"] ?? join(__dirname, "drizzle");
+}
+
 export function createDb(dbPath: string = getDbPath()) {
   mkdirSync(dirname(dbPath), { recursive: true });
   const sqlite = new Database(dbPath);
   sqlite.pragma("journal_mode = WAL");
   const db = drizzle(sqlite, { schema });
-  migrate(db, { migrationsFolder: join(__dirname, "../drizzle") });
+  migrate(db, { migrationsFolder: getMigrationsFolder() });
   return db;
 }

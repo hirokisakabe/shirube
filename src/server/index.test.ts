@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createTestDb } from "@shirube/db";
+import { createTestDb } from "../db/index";
 import { createApp } from "./app";
 
 describe("Server API", () => {

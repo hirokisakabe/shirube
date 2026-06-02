@@ -6,8 +6,8 @@ import { spawn, spawnSync } from "child_process";
 import { writeFileSync, readFileSync, mkdtempSync, rmSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
-import { createDb, tasks, reviews, goals } from "@shirube/db";
-import { writeData, writeError, writeLog, type Format } from "./output.js";
+import { createDb, tasks, reviews, goals } from "../db/index";
+import { writeData, writeError, writeLog, type Format } from "./output";
 
 const program = new Command();
 
@@ -365,7 +365,7 @@ program
   .command("serve")
   .description("サーバを起動してブラウザで開く")
   .action(async () => {
-    const serverScript = join(__dirname, "../../server/dist/index.js");
+    const serverScript = join(__dirname, "server.js");
 
     writeLog("サーバを起動中...");
 
