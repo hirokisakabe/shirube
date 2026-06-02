@@ -16,7 +16,7 @@ pnpm typecheck      # CLI/Server/DB と Web の型チェック
 pnpm test           # 全テスト (DB・Server・Web・CLI)
 
 # 未使用ファイル・export・依存パッケージの検出
-pnpm knip           # knip による静的解析（CI 組み込みは別途対応予定）
+pnpm knip           # knip による静的解析（CI でも自動実行）
 
 # DB マイグレーション生成・適用
 pnpm generate       # drizzle-kit generate
