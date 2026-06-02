@@ -79,6 +79,38 @@ describe("CalendarPage", () => {
     expect(doneEl.closest("[data-todo-done]")).toHaveAttribute("data-todo-done", "true");
   });
 
+  it("月ビューのAddInputでタスクを追加できる", async () => {
+    mockedFetchTasks.mockResolvedValue([]);
+    mockedCreateTask.mockResolvedValue({
+      id: 10,
+      title: "月ビュータスク",
+      date: "2026-06-01",
+      doneAt: null,
+      deletedAt: null,
+      createdAt: "2026-06-01T00:00:00.000Z",
+    });
+
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime.bind(vi) });
+    const { container } = render(<CalendarPage />);
+
+    // 読み込み完了を待つ & 月ビューに切り替え
+    await screen.findAllByPlaceholderText("タスクを追加");
+    await user.click(screen.getByRole("button", { name: "月" }));
+
+    // 今日（2026-06-01）のセル内の input を取得
+    const todayCell = container.querySelector(".mcell.today");
+    expect(todayCell).not.toBeNull();
+    const todayInput = todayCell!.querySelector("input.add-input") as HTMLInputElement;
+    expect(todayInput).not.toBeNull();
+
+    await user.click(todayInput);
+    await user.type(todayInput, "月ビュータスク");
+    await user.keyboard("{Enter}");
+
+    expect(mockedCreateTask).toHaveBeenCalledWith("月ビュータスク", "2026-06-01");
+    expect(await screen.findByText("月ビュータスク")).toBeInTheDocument();
+  });
+
   it("add inputにタスクを入力してEnterで追加できる", async () => {
     mockedFetchTasks.mockResolvedValue([]);
     mockedCreateTask.mockResolvedValue({
