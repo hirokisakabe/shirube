@@ -404,6 +404,7 @@ program
       process.exit(1);
     }
 
+    writeLog("http://localhost:3000");
     writeLog("ブラウザを開いています...");
     spawnSync("open", ["http://localhost:3000"]);
   });
