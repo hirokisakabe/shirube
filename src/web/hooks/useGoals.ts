@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { type Goal, createGoal, deleteGoal, fetchGoals, updateGoal } from "../api/goals";
 
 export function useGoals() {
@@ -8,19 +8,19 @@ export function useGoals() {
   const [showAchieved, setShowAchieved] = useState(false);
   const goalsRef = useRef(goals);
   goalsRef.current = goals;
+  const showAchievedRef = useRef(showAchieved);
+  showAchievedRef.current = showAchieved;
 
-  const load = useCallback(async (includeAchieved: boolean) => {
-    try {
-      const data = await fetchGoals(includeAchieved);
-      setGoals(data);
-    } catch (e) {
-      setError(String(e));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { void load(showAchieved); }, [load, showAchieved]);
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    fetchGoals(showAchieved)
+      .then((data) => { if (!cancelled) setGoals(data); })
+      .catch((e: unknown) => { if (!cancelled) setError(String(e)); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [showAchieved]);
 
   const toggleShowAchieved = () => setShowAchieved((v) => !v);
 
@@ -35,12 +35,24 @@ export function useGoals() {
   const toggle = (id: number) => {
     const goal = goalsRef.current.find((g) => g.id === id);
     if (!goal) return;
-    const doneAt = goal.doneAt ? null : new Date().toISOString();
-    setGoals((prev) => prev.map((g) => g.id === id ? { ...g, doneAt } : g));
+    const becomingDone = !goal.doneAt;
+    const doneAt = becomingDone ? new Date().toISOString() : null;
+    const currentShowAchieved = showAchievedRef.current;
+    if (becomingDone && !currentShowAchieved) {
+      setGoals((prev) => prev.filter((g) => g.id !== id));
+    } else {
+      setGoals((prev) => prev.map((g) => g.id === id ? { ...g, doneAt } : g));
+    }
     updateGoal(id, { doneAt }).then((updated) => {
-      setGoals((prev) => prev.map((g) => g.id === id ? updated : g));
+      if (!becomingDone || currentShowAchieved) {
+        setGoals((prev) => prev.map((g) => g.id === id ? updated : g));
+      }
     }).catch(() => {
-      setGoals((prev) => prev.map((g) => g.id === id ? goal : g));
+      if (becomingDone && !currentShowAchieved) {
+        setGoals((prev) => [goal, ...prev]);
+      } else {
+        setGoals((prev) => prev.map((g) => g.id === id ? goal : g));
+      }
     });
   };
 
