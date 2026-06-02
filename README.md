@@ -46,6 +46,9 @@ shirube done <id>
 shirube rm <id>              # 確認プロンプトあり
 shirube rm <id> --yes        # 確認なし（AI エージェント向け）
 
+# タスクのタイトルを変更する
+shirube edit <id> --title "新しいタイトル"
+
 # タスクの詳細を表示
 shirube show <id>
 

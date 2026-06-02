@@ -162,6 +162,12 @@ describe("shirube CLI", () => {
       expect(result.stderr).toContain("Invalid id");
     });
 
+    it("数字+文字列の混合 ID (例: 12abc) は Invalid id エラーになる", () => {
+      const result = runCli(["edit", "12abc", "--title", "新しいタイトル"], dbPath);
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain("Invalid id");
+    });
+
     it("削除済みタスクは編集できない", () => {
       const task = JSON.parse(runCli(["add", "削除タスク", "--format", "json"], dbPath).stdout);
       runCli(["rm", String(task.id), "--yes"], dbPath);

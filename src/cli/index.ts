@@ -206,11 +206,11 @@ program
   .addOption(formatOption())
   .action(async (id: string, options: { title: string; format: Format }) => {
     const db = getDb();
-    const taskId = parseInt(id, 10);
-    if (isNaN(taskId)) {
+    if (!/^\d+$/.test(id)) {
       writeError(`Invalid id: ${id}`);
       process.exit(1);
     }
+    const taskId = Number(id);
     const [task] = await db
       .update(tasks)
       .set({ title: options.title })
