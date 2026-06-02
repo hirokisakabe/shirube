@@ -29,8 +29,8 @@ function DropZone({
 }) {
   const [over, setOver] = useState(false);
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: calendar drop zone with drag-and-drop interaction
-    // biome-ignore lint/a11y/useKeyWithClickEvents: calendar cell click is optional; keyboard navigation handled at higher level
+    // biome-ignore lint/a11y/noStaticElementInteractions: drag-and-drop drop zone; keyboard reordering not yet implemented
+    // biome-ignore lint/a11y/useKeyWithClickEvents: cell click is for UX convenience only; primary actions use child buttons
     <div
       className={className + (over ? ' drop-over' : '')}
       onClick={onClick}
@@ -78,7 +78,7 @@ function MonthCell({ date, ctx, inMonth, today, onPickDay }: {
       >
         {items.slice(0, 4).map((t) => (
           // biome-ignore lint/a11y/noStaticElementInteractions: draggable todo item with toggle click
-          // biome-ignore lint/a11y/useKeyWithClickEvents: keyboard interaction handled by the week view TodoItem component
+          // biome-ignore lint/a11y/useKeyWithClickEvents: month view only shows compact todo dots; full keyboard interaction is in the week view
           <div
             key={t.id}
             className={`mtodo${t.doneAt ? ' done' : ''}`}

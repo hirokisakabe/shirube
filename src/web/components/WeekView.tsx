@@ -33,8 +33,8 @@ function DropZone({
 }) {
   const [over, setOver] = useState(false);
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: calendar drop zone with drag-and-drop interaction
-    // biome-ignore lint/a11y/useKeyWithClickEvents: calendar column click is optional; keyboard navigation handled at higher level
+    // biome-ignore lint/a11y/noStaticElementInteractions: drag-and-drop drop zone; keyboard reordering not yet implemented
+    // biome-ignore lint/a11y/useKeyWithClickEvents: column click is for UX convenience only; primary actions use child buttons
     <div
       className={className + (over ? ' drop-over' : '')}
       style={style}

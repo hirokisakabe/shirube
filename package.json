@@ -20,7 +20,7 @@
     "generate": "drizzle-kit generate",
     "migrate": "drizzle-kit migrate",
     "test": "vitest run --config vitest.node.config.ts && vitest run --config vitest.web.config.ts && vitest run --config vitest.cli.config.ts",
-    "lint": "biome lint src/",
+    "lint": "biome lint --error-on-warnings src/",
     "knip": "knip",
     "release": "pnpm build && changeset publish"
   },
