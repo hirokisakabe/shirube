@@ -50,4 +50,29 @@ export const DateU = {
   fmtMonth: (d: Date) => `${d.getFullYear()}年 ${d.getMonth() + 1}月`,
 
   fmtWeek: (a: Date) => `${a.getMonth() + 1}/${a.getDate()}週`,
+
+  isoWeek: (date: Date = new Date()): string => {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const day = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - day);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+    return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
+  },
+
+  addWeeks: (weekStr: string, delta: number): string => {
+    const [year, wPart] = weekStr.split("-W");
+    const weekNum = parseInt(wPart, 10) + delta;
+    const d = new Date(Date.UTC(parseInt(year, 10), 0, 1 + (weekNum - 1) * 7));
+    const day = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - day);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const actualWeek = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+    return `${d.getUTCFullYear()}-W${String(actualWeek).padStart(2, "0")}`;
+  },
+
+  fmtIsoWeek: (weekStr: string): string => {
+    const [year, wPart] = weekStr.split("-W");
+    return `${year}年 第${parseInt(wPart, 10)}週`;
+  },
 };
