@@ -4,12 +4,11 @@ import type { Task } from "../api/tasks";
 type Props = {
   todo: Task;
   onToggle: (id: number) => void;
-  onCarry: ((id: number) => void) | null;
   onRemove: (id: number) => void;
   onEdit: (id: number, text: string) => void;
 };
 
-export function TodoItem({ todo, onToggle, onCarry, onRemove, onEdit }: Props) {
+export function TodoItem({ todo, onToggle, onRemove, onEdit }: Props) {
   const [editing, setEditing] = useState(false);
   const [val, setVal] = useState(todo.title);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -68,9 +67,6 @@ export function TodoItem({ todo, onToggle, onCarry, onRemove, onEdit }: Props) {
       )}
 
       <span className="todo-actions">
-        {!done && onCarry && (
-          <button className="act" title="翌日へ繰り越し" onClick={() => onCarry(todo.id)}>›</button>
-        )}
         <button className="act" title="削除" onClick={() => onRemove(todo.id)}>×</button>
       </span>
     </div>
