@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { spawnSync } from "child_process";
+import { spawn, spawnSync } from "child_process";
 import { mkdtempSync, rmSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
@@ -405,5 +405,30 @@ describe("shirube CLI", () => {
       expect(result.status).toBe(0);
       expect(result.stderr).toBe("");
     });
+
+    it("serve 起動後に URL を stderr に出力する", async () => {
+      const child = spawn("node", [join(__dirname, "../../dist/cli.js"), "serve"], {
+        env: { ...process.env, SHIRUBE_DB_PATH: dbPath },
+      });
+
+      let stderrOutput = "";
+      const urlLogged = await new Promise<boolean>((resolve) => {
+        const timeout = setTimeout(() => {
+          child.kill();
+          resolve(false);
+        }, 15000);
+
+        child.stderr.on("data", (data: Buffer) => {
+          stderrOutput += data.toString();
+          if (stderrOutput.includes("http://localhost:3000")) {
+            clearTimeout(timeout);
+            child.kill();
+            resolve(true);
+          }
+        });
+      });
+
+      expect(urlLogged, `stderr was: ${stderrOutput}`).toBe(true);
+    }, 20000);
   });
 });
