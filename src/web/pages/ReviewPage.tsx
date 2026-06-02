@@ -66,6 +66,7 @@ export function ReviewPage() {
 
         <div className="topbar-right">
           <Link to="/" className="review-nav-link">カレンダー</Link>
+          <Link to="/goals" className="review-nav-link">目標</Link>
         </div>
       </header>
 
