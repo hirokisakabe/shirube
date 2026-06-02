@@ -67,6 +67,13 @@ shirube goal done <id>
 shirube goal rm <id>         # 確認プロンプトあり
 shirube goal rm <id> --yes   # 確認なし（AI エージェント向け）
 
+# 週次振り返りをエディタで開く（省略時は今週）
+shirube review
+shirube review --week 2026-W22
+
+# 過去の振り返り一覧を表示する
+shirube review list
+
 # サーバを起動してブラウザで開く（事前に pnpm build が必要）
 shirube serve
 ```
