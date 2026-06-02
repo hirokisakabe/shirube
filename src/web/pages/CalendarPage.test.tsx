@@ -1,4 +1,5 @@
 import { cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as tasksApi from "../api/tasks";
 import { CalendarPage } from "./CalendarPage";
@@ -10,6 +11,7 @@ vi.mock("@tanstack/react-router", async (importOriginal) => {
 });
 
 const mockedFetchTasks = vi.mocked(tasksApi.fetchTasks);
+const mockedCreateTask = vi.mocked(tasksApi.createTask);
 
 // Fix Date to 2026-06-01 (Monday) — week starts on 2026-06-01 (Mon) in Monday-start convention
 const FIXED_NOW = new Date("2026-06-01T12:00:00.000Z");
@@ -79,5 +81,28 @@ describe("CalendarPage", () => {
 
     expect(undoneEl.closest("[data-todo-done]")).toHaveAttribute("data-todo-done", "false");
     expect(doneEl.closest("[data-todo-done]")).toHaveAttribute("data-todo-done", "true");
+  });
+
+  it("add inputにタスクを入力してEnterで追加できる", async () => {
+    mockedFetchTasks.mockResolvedValue([]);
+    mockedCreateTask.mockResolvedValue({
+      id: 10,
+      title: "新タスク",
+      date: "2026-06-01",
+      doneAt: null,
+      deletedAt: null,
+      createdAt: "2026-06-01T00:00:00.000Z",
+    });
+
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime.bind(vi) });
+    render(<CalendarPage />);
+
+    const inputs = await screen.findAllByPlaceholderText("タスクを追加");
+    await user.click(inputs[0]);
+    await user.type(inputs[0], "新タスク");
+    await user.keyboard("{Enter}");
+
+    expect(mockedCreateTask).toHaveBeenCalledWith("新タスク", "2026-06-01");
+    expect(await screen.findByText("新タスク")).toBeInTheDocument();
   });
 });

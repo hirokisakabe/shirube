@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as reviewsApi from "../api/reviews";
@@ -93,6 +93,9 @@ describe("ReviewPage", () => {
     await user.type(textarea, "新しい振り返り");
     await user.click(screen.getByRole("button", { name: "保存" }));
 
+    await waitFor(() => {
+      expect(mockedUpsertReview).toHaveBeenCalledWith("2026-W23", "新しい振り返り");
+    });
     expect(await screen.findByText("保存しました")).toBeInTheDocument();
   });
 
