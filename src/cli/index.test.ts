@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { spawn, spawnSync } from "child_process";
-import { mkdtempSync, rmSync } from "fs";
-import { tmpdir } from "os";
-import { join } from "path";
+import { spawn, spawnSync } from "node:child_process";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 function runCli(args: string[], dbPath: string, env: Record<string, string> = {}) {
   return spawnSync("node", [join(__dirname, "../../dist/cli.js"), ...args], {
@@ -80,13 +80,14 @@ describe("shirube CLI", () => {
       const addedTask = JSON.parse(addResult.stdout);
 
       const tasks = JSON.parse(runCli(["list", "--date", "2026-06-01", "--format", "json"], dbPath).stdout) as Array<{id: number}>;
-      const taskToDelete = tasks.find((t) => t.id !== addedTask.id)!;
+      const taskToDelete = tasks.find((t) => t.id !== addedTask.id);
+      if (!taskToDelete) throw new Error("taskToDelete not found");
       runCli(["rm", String(taskToDelete.id), "--yes"], dbPath);
 
       const afterResult = runCli(["list", "--date", "2026-06-01", "--format", "json"], dbPath);
       const remaining = JSON.parse(afterResult.stdout) as Array<{id: number}>;
       expect(remaining).toHaveLength(1);
-      expect(remaining[0]!.id).toBe(addedTask.id);
+      expect(remaining[0]?.id).toBe(addedTask.id);
     });
   });
 
@@ -348,7 +349,7 @@ describe("shirube CLI", () => {
 
   describe("review", () => {
     function makeMockEditor(content: string): string {
-      const { writeFileSync, chmodSync } = require("fs") as typeof import("fs");
+      const { writeFileSync, chmodSync } = require("node:fs") as typeof import("fs");
       const scriptPath = join(tmpDir, `mock-editor-${Date.now()}.js`);
       const escaped = JSON.stringify(content);
       writeFileSync(

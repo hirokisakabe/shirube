@@ -43,6 +43,7 @@ export function ReviewPage() {
 
         <div className="nav">
           <button
+            type="button"
             className="nav-btn"
             onClick={() => setCurrentWeek((w) => DateU.addWeeks(w, -1))}
             aria-label="前の週"
@@ -51,6 +52,7 @@ export function ReviewPage() {
           </button>
           <span className="nav-range">{DateU.fmtIsoWeek(currentWeek)}</span>
           <button
+            type="button"
             className="nav-btn"
             onClick={() => setCurrentWeek((w) => DateU.addWeeks(w, 1))}
             aria-label="次の週"
@@ -58,7 +60,7 @@ export function ReviewPage() {
             ›
           </button>
           {!isCurrentWeek && (
-            <button className="today-btn" onClick={() => setCurrentWeek(DateU.isoWeek())}>
+            <button type="button" className="today-btn" onClick={() => setCurrentWeek(DateU.isoWeek())}>
               今週
             </button>
           )}
@@ -92,6 +94,7 @@ export function ReviewPage() {
                 <div className="review-actions">
                   {saved && <span className="review-saved">保存しました</span>}
                   <button
+                    type="button"
                     className="review-save-btn"
                     onClick={() => void handleSave()}
                     disabled={saving || !isDirty}
@@ -116,6 +119,7 @@ export function ReviewPage() {
               {pastReviews.map((r) => (
                 <li key={r.week} className="review-item">
                   <button
+                    type="button"
                     className="review-item-header"
                     onClick={() => setExpandedWeek(expandedWeek === r.week ? null : r.week)}
                   >

@@ -30,6 +30,7 @@ export function TodoItem({ todo, onToggle, onRemove, onEdit }: Props) {
   const done = !!todo.doneAt;
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: draggable list item; keyboard reordering not yet implemented
     <div
       className={`todo${done ? ' done' : ''}`}
       data-todo-done={done ? 'true' : 'false'}
@@ -37,6 +38,7 @@ export function TodoItem({ todo, onToggle, onRemove, onEdit }: Props) {
       onDragStart={onDragStart}
     >
       <button
+        type="button"
         className="check"
         aria-label={done ? '未完了に戻す' : '完了にする'}
         onClick={() => onToggle(todo.id)}
@@ -57,6 +59,7 @@ export function TodoItem({ todo, onToggle, onRemove, onEdit }: Props) {
           onBlur={commit}
         />
       ) : (
+        // biome-ignore lint/a11y/noStaticElementInteractions: double-click to edit; Enter key handled via the edit input
         <span
           className="todo-text"
           onDoubleClick={() => { setVal(todo.title); setEditing(true); }}
@@ -67,7 +70,7 @@ export function TodoItem({ todo, onToggle, onRemove, onEdit }: Props) {
       )}
 
       <span className="todo-actions">
-        <button className="act" title="削除" onClick={() => onRemove(todo.id)}>×</button>
+        <button type="button" className="act" title="削除" onClick={() => onRemove(todo.id)}>×</button>
       </span>
     </div>
   );

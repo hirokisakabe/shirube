@@ -1,6 +1,6 @@
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
-import { resolve } from "path";
+import { resolve } from "node:path";
 import { createDb } from "../db/index";
 import { createApp } from "./app";
 

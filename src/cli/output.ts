@@ -2,18 +2,18 @@ export type Format = "table" | "json";
 
 export function writeData(data: unknown, format: Format): void {
   if (format === "json") {
-    process.stdout.write(JSON.stringify(data) + "\n");
+    process.stdout.write(`${JSON.stringify(data)}\n`);
   } else {
     const rows = Array.isArray(data) ? data : [data];
     for (const row of rows) {
       if (typeof row === "object" && row !== null) {
         process.stdout.write(
-          Object.entries(row)
+          `${Object.entries(row)
             .map(([k, v]) => `${k}: ${v}`)
-            .join("\t") + "\n"
+            .join("\t")}\n`
         );
       } else {
-        process.stdout.write(String(row) + "\n");
+        process.stdout.write(`${String(row)}\n`);
       }
     }
   }

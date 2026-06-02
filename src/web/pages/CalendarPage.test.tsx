@@ -104,7 +104,7 @@ describe("CalendarPage", () => {
     // 今日（2026-06-01）のセル内の input を取得
     const todayCell = container.querySelector(".mcell.today");
     expect(todayCell).not.toBeNull();
-    const todayInput = todayCell!.querySelector("input.add-input") as HTMLInputElement;
+    const todayInput = todayCell?.querySelector("input.add-input") as HTMLInputElement;
     expect(todayInput).not.toBeNull();
 
     await user.click(todayInput);

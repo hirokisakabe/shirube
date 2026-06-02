@@ -20,6 +20,7 @@
     "generate": "drizzle-kit generate",
     "migrate": "drizzle-kit migrate",
     "test": "vitest run --config vitest.node.config.ts && vitest run --config vitest.web.config.ts && vitest run --config vitest.cli.config.ts",
+    "lint": "biome lint src/",
     "knip": "knip",
     "release": "pnpm build && changeset publish"
   },
@@ -27,6 +28,7 @@
     "better-sqlite3": "^11.0.0"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.4.16",
     "@changesets/cli": "^2.31.0",
     "@hono/node-server": "^1.14.0",
     "@tanstack/react-router": "^1.121.12",

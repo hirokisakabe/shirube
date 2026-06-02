@@ -30,8 +30,8 @@ export function WeekSummary({ weekStart, tasks, showWeekend }: Props) {
         <span className="sum-label">今週 完了</span>
       </div>
       <div className="sum-bars">
-        {per.map((p, i) => (
-          <div key={i} className={`sum-bar${p.today ? ' today' : ''}`} title={`${p.done}/${p.tot}`}>
+        {per.map((p) => (
+          <div key={p.dow} className={`sum-bar${p.today ? ' today' : ''}`} title={`${p.done}/${p.tot}`}>
             <div className="sum-bar-track">
               <div
                 className="sum-bar-fill"

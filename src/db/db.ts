@@ -1,18 +1,18 @@
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
-import { existsSync, mkdirSync } from "fs";
-import { homedir } from "os";
-import { dirname, join } from "path";
+import { existsSync, mkdirSync } from "node:fs";
+import { homedir } from "node:os";
+import { dirname, join } from "node:path";
 import * as schema from "./schema";
 
 function getDbPath(): string {
-  return process.env["SHIRUBE_DB_PATH"] ?? join(homedir(), ".shirube", "db.sqlite");
+  return process.env.SHIRUBE_DB_PATH ?? join(homedir(), ".shirube", "db.sqlite");
 }
 
 function getMigrationsFolder(): string {
-  if (process.env["SHIRUBE_MIGRATIONS_PATH"]) {
-    return process.env["SHIRUBE_MIGRATIONS_PATH"];
+  if (process.env.SHIRUBE_MIGRATIONS_PATH) {
+    return process.env.SHIRUBE_MIGRATIONS_PATH;
   }
   // バンドル済み: __dirname = dist/ → dist/drizzle/ が存在する
   // ソース実行 (tsx): __dirname = src/db/ → src/db/drizzle/ は存在しないため 2 段上の drizzle/ にフォールバック
