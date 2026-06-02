@@ -2,9 +2,11 @@ import { useState } from "react";
 import type { Task } from "../api/tasks";
 import { DateU, WEEKDAYS_JP } from "../utils/date";
 import { dayItems } from "../hooks/useTasks";
+import { AddInput } from "./AddInput";
 
 type Ctx = {
   tasks: Task[];
+  add: (date: string, text: string) => void;
   toggle: (id: number) => void;
   moveTo: (id: number, date: string) => void;
 };
@@ -92,6 +94,9 @@ export function MonthView({ monthDate, ctx, onPickDay, showWeekend }: Props) {
                   </div>
                 ))}
                 {items.length > 4 && <div className="mmore">＋{items.length - 4}件</div>}
+                <div onClick={(e) => e.stopPropagation()}>
+                  <AddInput onAdd={(text) => ctx.add(k, text)} />
+                </div>
               </div>
             </DropZone>
           );
