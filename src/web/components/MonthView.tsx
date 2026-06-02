@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { Task } from "../api/tasks";
 import { DateU, WEEKDAYS_JP } from "../utils/date";
 import { dayItems } from "../hooks/useTasks";
@@ -45,6 +45,55 @@ function DropZone({
   );
 }
 
+function MonthCell({ date, ctx, inMonth, today, onPickDay }: {
+  date: Date;
+  ctx: Ctx;
+  inMonth: boolean;
+  today: boolean;
+  onPickDay: (date: Date) => void;
+}) {
+  const k = DateU.key(date);
+  const items = dayItems(ctx.tasks, k);
+  const inputFocusedRef = useRef(false);
+  const blurTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  return (
+    <DropZone
+      dateKey={k}
+      onMove={ctx.moveTo}
+      className={`mcell${inMonth ? '' : ' out'}${today ? ' today' : ''}`}
+      onClick={() => { if (!inputFocusedRef.current) onPickDay(date); }}
+    >
+      <div className="mcell-head">
+        <span className="mcell-num">{date.getDate()}</span>
+        {today && <span className="today-dot" />}
+      </div>
+      <div
+        className="mcell-body"
+        onFocus={() => { clearTimeout(blurTimerRef.current); inputFocusedRef.current = true; }}
+        onBlur={() => { blurTimerRef.current = setTimeout(() => { inputFocusedRef.current = false; }, 0); }}
+      >
+        {items.slice(0, 4).map((t) => (
+          <div
+            key={t.id}
+            className={`mtodo${t.doneAt ? ' done' : ''}`}
+            draggable
+            onClick={(e) => { e.stopPropagation(); ctx.toggle(t.id); }}
+            onDragStart={(e) => { e.dataTransfer.setData('text/todo-id', String(t.id)); }}
+          >
+            <span className="mtodo-dot" />
+            <span className="mtodo-text">{t.title}</span>
+          </div>
+        ))}
+        {items.length > 4 && <div className="mmore">＋{items.length - 4}件</div>}
+        <div onClick={(e) => e.stopPropagation()}>
+          <AddInput onAdd={(text) => ctx.add(k, text)} />
+        </div>
+      </div>
+    </DropZone>
+  );
+}
+
 export function MonthView({ monthDate, ctx, onPickDay, showWeekend }: Props) {
   const first = DateU.startOfMonth(monthDate);
   const gridStart = DateU.startOfWeek(first);
@@ -67,40 +116,16 @@ export function MonthView({ monthDate, ctx, onPickDay, showWeekend }: Props) {
           gridTemplateColumns: `repeat(${cols},1fr)`,
         }}
       >
-        {cells.map((date) => {
-          const k = DateU.key(date);
-          const inMonth = date.getMonth() === thisMonth;
-          const items = dayItems(ctx.tasks, k);
-          const today = DateU.isToday(date);
-          return (
-            <DropZone key={k} dateKey={k} onMove={ctx.moveTo}
-              className={`mcell${inMonth ? '' : ' out'}${today ? ' today' : ''}`}
-              onClick={() => onPickDay(date)}>
-              <div className="mcell-head">
-                <span className="mcell-num">{date.getDate()}</span>
-                {today && <span className="today-dot" />}
-              </div>
-              <div className="mcell-body">
-                {items.slice(0, 4).map((t) => (
-                  <div
-                    key={t.id}
-                    className={`mtodo${t.doneAt ? ' done' : ''}`}
-                    draggable
-                    onClick={(e) => { e.stopPropagation(); ctx.toggle(t.id); }}
-                    onDragStart={(e) => { e.dataTransfer.setData('text/todo-id', String(t.id)); }}
-                  >
-                    <span className="mtodo-dot" />
-                    <span className="mtodo-text">{t.title}</span>
-                  </div>
-                ))}
-                {items.length > 4 && <div className="mmore">＋{items.length - 4}件</div>}
-                <div onClick={(e) => e.stopPropagation()}>
-                  <AddInput onAdd={(text) => ctx.add(k, text)} />
-                </div>
-              </div>
-            </DropZone>
-          );
-        })}
+        {cells.map((date) => (
+          <MonthCell
+            key={DateU.key(date)}
+            date={date}
+            ctx={ctx}
+            inMonth={date.getMonth() === thisMonth}
+            today={DateU.isToday(date)}
+            onPickDay={onPickDay}
+          />
+        ))}
       </div>
     </div>
   );
