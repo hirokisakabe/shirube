@@ -6,6 +6,7 @@ import { spawn, spawnSync } from "node:child_process";
 import { writeFileSync, readFileSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import packageJson from "../../package.json";
 import { createDb, tasks, reviews, goals } from "../db/index";
 import { writeData, writeError, writeLog, type Format } from "./output";
 
@@ -60,7 +61,7 @@ function openEditor(content: string): string {
 program
   .name("shirube")
   .description("shirube CLI")
-  .version("0.0.1")
+  .version(packageJson.version)
   .enablePositionalOptions()
   .addOption(formatOption());
 

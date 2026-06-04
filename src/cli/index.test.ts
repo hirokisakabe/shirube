@@ -3,6 +3,7 @@ import { spawn, spawnSync } from "node:child_process";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import packageJson from "../../package.json";
 
 function runCli(args: string[], dbPath: string, env: Record<string, string> = {}) {
   return spawnSync("node", [join(__dirname, "../../dist/cli.js"), ...args], {
@@ -218,7 +219,7 @@ describe("shirube CLI", () => {
       const result = runCli(["--format", "json"], dbPath);
       expect(result.status).toBe(0);
       const data = JSON.parse(result.stdout);
-      expect(data).toHaveProperty("version");
+      expect(data).toHaveProperty("version", packageJson.version);
     });
   });
 
