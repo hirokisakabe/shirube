@@ -42,7 +42,7 @@
     "@vitejs/plugin-react": "^4.5.2",
     "commander": "^15.0.0",
     "drizzle-kit": "^0.31.0",
-    "drizzle-orm": "^0.44.0",
+    "drizzle-orm": "^0.45.2",
     "esbuild": "^0.25.0",
     "hono": "^4.7.0",
     "jsdom": "^26.1.0",
