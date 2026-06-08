@@ -52,6 +52,8 @@ describe("CalendarPage", () => {
 
     expect(await screen.findByText("月曜タスク")).toBeInTheDocument();
     expect(screen.getByText("水曜タスク")).toBeInTheDocument();
+    expect(screen.queryByText("今週 完了")).not.toBeInTheDocument();
+    expect(screen.queryByText("%")).not.toBeInTheDocument();
   });
 
   it("完了タスクと未完了タスクが視覚的に区別できる", async () => {
