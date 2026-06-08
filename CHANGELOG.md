@@ -1,5 +1,11 @@
 # shirube
 
+## 0.3.1
+
+### Patch Changes
+
+- 3b19bd6: 日本語 IME 変換中の Enter キーでアイテムが意図せず追加される問題を修正しました。`AddInput` および `TodoItem` の `onKeyDown` ハンドラで `isComposing` を確認することで、IME 確定時の Enter とアイテム追加の Enter を正しく区別します。
+
 ## 0.3.0
 
 ### Minor Changes
