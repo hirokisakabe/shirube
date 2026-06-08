@@ -87,7 +87,7 @@ function MonthCell({ date, ctx, inMonth, today, onPickDay }: {
             onDragStart={(e) => { e.dataTransfer.setData('text/todo-id', String(t.id)); }}
           >
             <span className="mtodo-dot" />
-            <span className="mtodo-text">{t.title}</span>
+            <span className="mtodo-text" title={t.title}>{t.title}</span>
           </div>
         ))}
         {items.length > 4 && <div className="mmore">＋{items.length - 4}件</div>}

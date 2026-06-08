@@ -58,6 +58,46 @@ describe("CalendarPage", () => {
     expect(screen.queryByText("%")).not.toBeInTheDocument();
   });
 
+  it("週表示の長いタスク名に全文確認用のtitleが付く", async () => {
+    const longTitle = "週表示で省略される可能性があるとても長いタスク名";
+    mockedFetchTasks.mockResolvedValue([
+      {
+        id: 1,
+        title: longTitle,
+        date: "2026-06-01",
+        doneAt: null,
+        deletedAt: null,
+        createdAt: "2026-06-01T00:00:00.000Z",
+      },
+    ]);
+
+    render(<CalendarPage />);
+
+    expect(await screen.findByText(longTitle)).toHaveAttribute("title", longTitle);
+  });
+
+  it("月表示の長いタスク名に全文確認用のtitleが付く", async () => {
+    const longTitle = "月表示で省略される可能性があるとても長いタスク名";
+    mockedFetchTasks.mockResolvedValue([
+      {
+        id: 1,
+        title: longTitle,
+        date: "2026-06-01",
+        doneAt: null,
+        deletedAt: null,
+        createdAt: "2026-06-01T00:00:00.000Z",
+      },
+    ]);
+
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime.bind(vi) });
+    render(<CalendarPage />);
+
+    await screen.findByText(longTitle);
+    await user.click(screen.getByRole("button", { name: "月" }));
+
+    expect(screen.getByText(longTitle)).toHaveAttribute("title", longTitle);
+  });
+
   it("完了タスクと未完了タスクが視覚的に区別できる", async () => {
     mockedFetchTasks.mockResolvedValue([
       {

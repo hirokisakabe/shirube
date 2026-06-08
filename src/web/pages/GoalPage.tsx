@@ -46,7 +46,7 @@ export function GoalPage() {
                 >
                   <span className="check-mark" />
                 </button>
-                <span className="todo-text">{goal.title}</span>
+                <span className="todo-text" title={goal.title}>{goal.title}</span>
                 <span className="todo-actions">
                   <button type="button" className="act" title="削除" onClick={() => remove(goal.id)}>×</button>
                 </span>
