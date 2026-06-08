@@ -73,7 +73,7 @@ describe("CalendarPage", () => {
 
     render(<CalendarPage />);
 
-    expect(await screen.findByText(longTitle)).toHaveAttribute("title", longTitle);
+    expect(await screen.findByText(longTitle)).toHaveAttribute("title", expect.stringContaining(longTitle));
   });
 
   it("月表示の長いタスク名に全文確認用のtitleが付く", async () => {

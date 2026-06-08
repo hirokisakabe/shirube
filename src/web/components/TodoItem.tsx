@@ -63,7 +63,7 @@ export function TodoItem({ todo, onToggle, onRemove, onEdit }: Props) {
         <span
           className="todo-text"
           onDoubleClick={() => { setVal(todo.title); setEditing(true); }}
-          title={todo.title}
+          title={`${todo.title}\nダブルクリックで編集`}
         >
           {todo.title}
         </span>
