@@ -94,7 +94,7 @@ function MonthCell({ date, ctx, inMonth, today, onPickDay }: {
         {/* biome-ignore lint/a11y/noStaticElementInteractions: stopPropagation wrapper to prevent cell click when adding tasks */}
         {/* biome-ignore lint/a11y/useKeyWithClickEvents: wrapper does not trigger navigation; AddInput handles its own keyboard interaction */}
         <div onClick={(e) => e.stopPropagation()}>
-          <AddInput onAdd={(text) => ctx.add(k, text)} />
+          <AddInput onAdd={(text) => ctx.add(k, text)} variant="compact" />
         </div>
       </div>
     </DropZone>

@@ -3,9 +3,10 @@ import { useState } from "react";
 type Props = {
   onAdd: (text: string) => void;
   placeholder?: string;
+  variant?: 'default' | 'compact';
 };
 
-export function AddInput({ onAdd, placeholder }: Props) {
+export function AddInput({ onAdd, placeholder, variant = 'default' }: Props) {
   const [val, setVal] = useState('');
 
   const submit = () => {
@@ -13,7 +14,7 @@ export function AddInput({ onAdd, placeholder }: Props) {
   };
 
   return (
-    <div className="add">
+    <div className={`add${variant === 'compact' ? ' add-compact' : ''}`}>
       <span className="add-plus">+</span>
       <input
         className="add-input"
