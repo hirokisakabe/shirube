@@ -186,6 +186,9 @@ input { font-family: inherit; }
 }
 .add-input::placeholder { color: var(--ink-faint); }
 .add:focus-within .add-plus { color: var(--accent); }
+.add-compact { gap: 4px; padding: 1px 0; margin-top: 1px; min-height: 16px; }
+.add-compact .add-plus { width: 10px; font-size: 10.5px; line-height: 1; }
+.add-compact .add-input { font-size: 11px; line-height: 1.2; }
 
 /* ---------- month ---------- */
 .month { height: 100%; display: flex; flex-direction: column; }
