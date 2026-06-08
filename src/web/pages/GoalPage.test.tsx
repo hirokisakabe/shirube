@@ -49,6 +49,17 @@ describe("GoalPage", () => {
     expect(screen.getByText("目標B")).toBeInTheDocument();
   });
 
+  it("長い目標名に全文確認用のtitleが付く", async () => {
+    const longTitle = "目標一覧で省略される可能性があるとても長い目標名";
+    mockedFetchGoals.mockResolvedValue([
+      makeGoal({ id: 1, title: longTitle }),
+    ]);
+
+    render(<GoalPage />);
+
+    expect(await screen.findByText(longTitle)).toHaveAttribute("title", longTitle);
+  });
+
   it("目標がない場合にメッセージを表示する", async () => {
     mockedFetchGoals.mockResolvedValue([]);
 
