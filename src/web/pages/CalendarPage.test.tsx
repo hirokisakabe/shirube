@@ -12,6 +12,8 @@ vi.mock("@tanstack/react-router", async (importOriginal) => {
 
 const mockedFetchTasks = vi.mocked(tasksApi.fetchTasks);
 const mockedCreateTask = vi.mocked(tasksApi.createTask);
+const mockedUpdateTask = vi.mocked(tasksApi.updateTask);
+const mockedDeleteTask = vi.mocked(tasksApi.deleteTask);
 
 // Fix Date to 2026-06-01 (Monday) — week starts on 2026-06-01 (Mon) in Monday-start convention
 const FIXED_NOW = new Date("2026-06-01T12:00:00.000Z");
@@ -106,5 +108,36 @@ describe("CalendarPage", () => {
 
     expect(mockedCreateTask).toHaveBeenCalledWith("新タスク", "2026-06-01");
     expect(await screen.findByText("新タスク")).toBeInTheDocument();
+  });
+
+  it("週表示でタスクを完了・削除できる", async () => {
+    const task = {
+      id: 1,
+      title: "操作対象タスク",
+      date: "2026-06-01",
+      doneAt: null,
+      deletedAt: null,
+      createdAt: "2026-06-01T00:00:00.000Z",
+    };
+
+    mockedFetchTasks.mockResolvedValue([task]);
+    mockedUpdateTask.mockImplementation(async (_id, updates) => ({ ...task, ...updates }));
+    mockedDeleteTask.mockResolvedValue({ ...task, deletedAt: "2026-06-01T10:00:00.000Z" });
+
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime.bind(vi) });
+    render(<CalendarPage />);
+
+    const item = (await screen.findByText("操作対象タスク")).closest("[data-todo-done]");
+    expect(item).toHaveAttribute("data-todo-done", "false");
+
+    await user.click(screen.getByLabelText("完了にする"));
+
+    expect(mockedUpdateTask).toHaveBeenCalledWith(1, { doneAt: expect.any(String) });
+    expect(item).toHaveAttribute("data-todo-done", "true");
+
+    await user.click(screen.getByTitle("削除"));
+
+    expect(mockedDeleteTask).toHaveBeenCalledWith(1);
+    expect(screen.queryByText("操作対象タスク")).not.toBeInTheDocument();
   });
 });
