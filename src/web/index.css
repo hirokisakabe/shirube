@@ -75,29 +75,6 @@ input { font-family: inherit; }
 .weekend-toggle.on { border-color: var(--ink-faint); color: var(--ink-soft); }
 .weekend-toggle:hover { border-color: var(--accent); color: var(--accent); }
 
-/* ---------- weekly summary ---------- */
-.summary {
-  display: flex; align-items: center; gap: 26px; padding: 12px 26px;
-  border-bottom: 1px solid var(--hair); background: var(--surface);
-}
-.sum-stat { display: flex; align-items: baseline; gap: 4px; }
-.sum-num { font-family: var(--num); font-size: 30px; font-weight: 500; line-height: 1; }
-.sum-slash { color: var(--ink-faint); font-size: 20px; }
-.sum-tot { font-family: var(--num); font-size: 20px; color: var(--ink-soft); }
-.sum-label { margin-left: 8px; font-size: 12px; color: var(--ink-faint); letter-spacing: .08em; white-space: nowrap; }
-.sum-bars { display: flex; gap: 10px; align-items: flex-end; flex: 1; }
-.sum-bar { display: flex; flex-direction: column; align-items: center; gap: 5px; }
-.sum-bar-track {
-  width: 8px; height: 30px; background: var(--hair-soft); border-radius: 4px;
-  display: flex; align-items: flex-end; overflow: hidden;
-}
-.sum-bar-fill { width: 100%; background: var(--ink-faint); border-radius: 4px; transition: height .3s; }
-.sum-bar.today .sum-bar-fill { background: var(--accent); }
-.sum-bar-lab { font-size: 10px; color: var(--ink-faint); }
-.sum-bar.today .sum-bar-lab { color: var(--accent); font-weight: 700; }
-.sum-pct { font-family: var(--num); font-size: 22px; font-weight: 500; color: var(--ink-soft); }
-.sum-pct-sign { font-size: 13px; color: var(--ink-faint); margin-left: 1px; }
-
 /* ---------- stage ---------- */
 .stage { flex: 1; min-height: 0; padding: 18px 26px 26px; overflow: hidden; }
 

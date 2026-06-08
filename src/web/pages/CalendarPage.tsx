@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { MonthView } from "../components/MonthView";
-import { WeekSummary } from "../components/WeekSummary";
 import { WeekView } from "../components/WeekView";
 import { useTasks } from "../hooks/useTasks";
 import { DateU } from "../utils/date";
@@ -63,10 +62,6 @@ export function CalendarPage() {
           <Link to="/review" className="review-nav-link">振り返り</Link>
         </div>
       </header>
-
-      {view === 'week' && (
-        <WeekSummary weekStart={weekStart} tasks={ctx.tasks} showWeekend={showWeekend} />
-      )}
 
       <main className="stage">
         {view === 'week' ? (
