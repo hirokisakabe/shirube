@@ -53,7 +53,7 @@ export function TodoItem({ todo, onToggle, onRemove, onEdit }: Props) {
           value={val}
           onChange={(e) => setVal(e.target.value.replace(/\n/g, ''))}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') commit();
+            if (e.key === 'Enter' && !e.nativeEvent.isComposing) commit();
             if (e.key === 'Escape') { setVal(todo.title); setEditing(false); }
           }}
           onBlur={commit}

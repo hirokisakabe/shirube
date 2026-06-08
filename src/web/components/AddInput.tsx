@@ -21,7 +21,7 @@ export function AddInput({ onAdd, placeholder }: Props) {
         placeholder={placeholder ?? 'タスクを追加'}
         onChange={(e) => setVal(e.target.value.replace(/\n/g, ''))}
         onKeyDown={(e) => {
-          if (e.key === 'Enter') submit();
+          if (e.key === 'Enter' && !e.nativeEvent.isComposing) submit();
           if (e.key === 'Escape') setVal('');
         }}
         onBlur={submit}
