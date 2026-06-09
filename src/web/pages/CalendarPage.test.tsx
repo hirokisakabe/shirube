@@ -1,7 +1,9 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { makeTask, setMockTasks } from "../test/handlers";
+import { server } from "../test/server";
 import { CalendarPage } from "./CalendarPage";
 
 vi.mock("@tanstack/react-router", async (importOriginal) => {
@@ -90,6 +92,18 @@ describe("CalendarPage", () => {
 
 	it("週表示でタスクを完了・削除できる", async () => {
 		setMockTasks([makeTask({ id: 1, title: "操作対象タスク" })]);
+		const requests: Array<{ method: string; id: string; body?: unknown }> = [];
+		server.use(
+			http.patch("/api/tasks/:id", async ({ params, request }) => {
+				const body = await request.json() as { doneAt?: string | null };
+				requests.push({ method: "PATCH", id: String(params.id), body });
+				return HttpResponse.json(makeTask({ id: 1, title: "操作対象タスク", ...body }));
+			}),
+			http.delete("/api/tasks/:id", ({ params }) => {
+				requests.push({ method: "DELETE", id: String(params.id) });
+				return HttpResponse.json(makeTask({ id: 1, title: "操作対象タスク", deletedAt: "2026-06-01T12:00:00.000Z" }));
+			}),
+		);
 
 		const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime.bind(vi) });
 		render(<CalendarPage />);
@@ -100,9 +114,19 @@ describe("CalendarPage", () => {
 		await user.click(screen.getByLabelText("完了にする"));
 
 		expect(item).toHaveAttribute("data-todo-done", "true");
+		await waitFor(() => {
+			expect(requests).toContainEqual({
+				method: "PATCH",
+				id: "1",
+				body: { doneAt: expect.any(String) },
+			});
+		});
 
 		await user.click(screen.getByTitle("削除"));
 
 		expect(screen.queryByText("操作対象タスク")).not.toBeInTheDocument();
+		await waitFor(() => {
+			expect(requests).toContainEqual({ method: "DELETE", id: "1" });
+		});
 	});
 });

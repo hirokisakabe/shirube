@@ -67,6 +67,14 @@ describe("ReviewPage", () => {
 
 	it("振り返りを保存できる", async () => {
 		setMockReviews([]);
+		const requests: Array<{ week: string; body: unknown }> = [];
+		server.use(
+			http.put("/api/reviews/:week", async ({ params, request }) => {
+				const body = await request.json();
+				requests.push({ week: String(params.week), body });
+				return HttpResponse.json(makeReview({ id: 1, week: String(params.week), content: (body as { content: string }).content }));
+			}),
+		);
 
 		const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime.bind(vi) });
 		render(<ReviewPage />);
@@ -76,6 +84,10 @@ describe("ReviewPage", () => {
 		await user.click(screen.getByRole("button", { name: "保存" }));
 
 		expect(await screen.findByText("保存しました")).toBeInTheDocument();
+		expect(requests).toContainEqual({
+			week: "2026-W23",
+			body: { content: "新しい振り返り" },
+		});
 	});
 
 	it("取得エラー時にエラーメッセージを表示する", async () => {

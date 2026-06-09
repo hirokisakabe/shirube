@@ -79,15 +79,24 @@ export const handlers = [
 	}),
 	http.patch("/api/tasks/:id", async ({ params, request }) => {
 		const id = Number(params.id);
+		if (Number.isNaN(id)) return HttpResponse.json({ error: "Invalid id" }, { status: 400 });
 		const body = await request.json() as { doneAt?: string | null; title?: string; date?: string };
+		const updates: { doneAt?: string | null; title?: string; date?: string } = {};
+		if ("doneAt" in body) updates.doneAt = body.doneAt ?? null;
+		if (body.title !== undefined) updates.title = body.title;
+		if (body.date !== undefined) updates.date = body.date;
+		if (Object.keys(updates).length === 0) {
+			return HttpResponse.json({ error: "No fields to update" }, { status: 400 });
+		}
 		const task = tasks.find((item) => item.id === id && !item.deletedAt);
 		if (!task) return HttpResponse.json({ error: "Not found" }, { status: 404 });
-		const updated = { ...task, ...body, doneAt: "doneAt" in body ? (body.doneAt ?? null) : task.doneAt };
+		const updated = { ...task, ...updates };
 		tasks = tasks.map((item) => item.id === id ? updated : item);
 		return HttpResponse.json(updated);
 	}),
 	http.delete("/api/tasks/:id", ({ params }) => {
 		const id = Number(params.id);
+		if (Number.isNaN(id)) return HttpResponse.json({ error: "Invalid id" }, { status: 400 });
 		const task = tasks.find((item) => item.id === id && !item.deletedAt);
 		if (!task) return HttpResponse.json({ error: "Not found" }, { status: 404 });
 		const deleted = { ...task, deletedAt: now() };
@@ -111,6 +120,7 @@ export const handlers = [
 	}),
 	http.patch("/api/goals/:id", async ({ params, request }) => {
 		const id = Number(params.id);
+		if (Number.isNaN(id)) return HttpResponse.json({ error: "Invalid id" }, { status: 400 });
 		const body = await request.json() as { doneAt?: string | null };
 		const goal = goals.find((item) => item.id === id && !item.deletedAt);
 		if (!goal) return HttpResponse.json({ error: "Not found" }, { status: 404 });
@@ -120,6 +130,7 @@ export const handlers = [
 	}),
 	http.delete("/api/goals/:id", ({ params }) => {
 		const id = Number(params.id);
+		if (Number.isNaN(id)) return HttpResponse.json({ error: "Invalid id" }, { status: 400 });
 		const goal = goals.find((item) => item.id === id && !item.deletedAt);
 		if (!goal) return HttpResponse.json({ error: "Not found" }, { status: 404 });
 		const deleted = { ...goal, deletedAt: now() };
