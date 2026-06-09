@@ -6,8 +6,18 @@ import { type createDb, goals, reviews, tasks } from "../db/index";
 
 type Db = ReturnType<typeof createDb>;
 
-const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
-const weekSchema = z.string().regex(/^\d{4}-W\d{2}$/);
+const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+const dateSchema = z.string().refine((value) => {
+	if (!datePattern.test(value)) return false;
+	const [year, month, day] = value.split("-").map(Number);
+	const date = new Date(Date.UTC(year, month - 1, day));
+	return (
+		date.getUTCFullYear() === year &&
+		date.getUTCMonth() === month - 1 &&
+		date.getUTCDate() === day
+	);
+});
+const weekSchema = z.string().regex(/^\d{4}-W(0[1-9]|[1-4]\d|5[0-3])$/);
 const idParamSchema = z.object({
 	id: z.string().regex(/^\d+$/).transform(Number),
 });
@@ -35,6 +45,27 @@ function validationError(message: string) {
 		c: { json: (body: { error: string }, status: 400) => Response },
 	) => {
 		if (!result.success) return c.json({ error: message }, 400);
+	};
+}
+
+function bodyValidationError(requiredField: string, requiredMessage: string) {
+	return (
+		result: {
+			success: boolean;
+			error?: { issues: Array<{ path: PropertyKey[] }> };
+		},
+		c: { json: (body: { error: string }, status: 400) => Response },
+	) => {
+		if (result.success) return;
+		const hasRequiredFieldError = result.error?.issues.some(
+			(issue) => issue.path[0] === requiredField,
+		);
+		return c.json(
+			{
+				error: hasRequiredFieldError ? requiredMessage : "Invalid request body",
+			},
+			400,
+		);
 	};
 }
 
@@ -73,7 +104,7 @@ export function createApp(db: Db) {
 			zValidator(
 				"json",
 				taskCreateSchema,
-				validationError("title is required"),
+				bodyValidationError("title", "title is required"),
 			),
 			async (c) => {
 				const body = c.req.valid("json");
@@ -151,7 +182,7 @@ export function createApp(db: Db) {
 			zValidator(
 				"json",
 				reviewUpdateSchema,
-				validationError("content is required"),
+				bodyValidationError("content", "content is required"),
 			),
 			async (c) => {
 				const { week } = c.req.valid("param");
@@ -214,7 +245,7 @@ export function createApp(db: Db) {
 			zValidator(
 				"json",
 				goalCreateSchema,
-				validationError("title is required"),
+				bodyValidationError("title", "title is required"),
 			),
 			async (c) => {
 				const body = c.req.valid("json");

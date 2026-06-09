@@ -59,7 +59,7 @@ describe("Server API", () => {
 			});
 
 			it("date query が不正な場合は 400 を返す", async () => {
-				const res = await app.request("/api/tasks?date=invalid");
+				const res = await app.request("/api/tasks?date=2026-99-99");
 				expect(res.status).toBe(400);
 			});
 		});
@@ -122,9 +122,12 @@ describe("Server API", () => {
 				const res = await app.request("/api/tasks", {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ title: "日付不正", date: "invalid" }),
+					body: JSON.stringify({ title: "日付不正", date: "2026-99-99" }),
 				});
 				expect(res.status).toBe(400);
+				await expect(res.json()).resolves.toEqual({
+					error: "Invalid request body",
+				});
 			});
 		});
 
@@ -280,7 +283,7 @@ describe("Server API", () => {
 			});
 
 			it("不正な週は 400 を返す", async () => {
-				const res = await app.request("/api/reviews/not-a-week");
+				const res = await app.request("/api/reviews/2026-W00");
 				expect(res.status).toBe(400);
 			});
 		});
@@ -329,7 +332,7 @@ describe("Server API", () => {
 			});
 
 			it("不正な週は 400 を返す", async () => {
-				const res = await app.request("/api/reviews/not-a-week", {
+				const res = await app.request("/api/reviews/2026-W00", {
 					method: "PUT",
 					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify({ content: "振り返り内容" }),
@@ -363,7 +366,7 @@ describe("Server API", () => {
 			});
 
 			it("不正な週は 400 を返す", async () => {
-				const res = await app.request("/api/reviews/not-a-week", {
+				const res = await app.request("/api/reviews/2026-W00", {
 					method: "DELETE",
 				});
 				expect(res.status).toBe(400);
