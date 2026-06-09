@@ -4,6 +4,16 @@
 
 This is a single-package TypeScript project published as the `shirube` CLI. Active source lives in `src/`: `src/cli/` is the Commander CLI, `src/server/` is the Hono API server, `src/web/` is the React/Vite SPA, and `src/db/` contains Drizzle schema, database setup, and test helpers. Database migrations are in `drizzle/`. Web entry points are `index.html` and `src/web/main.tsx`. Build output goes to `dist/`; do not edit generated files.
 
+The build produces npm-publishable output with esbuild and Vite:
+
+```text
+dist/
+  cli.js     - CLI bundle (bin: shirube)
+  server.js  - server bundle
+  web/       - web static files
+  drizzle/   - copied migration files
+```
+
 ## Build, Test, and Development Commands
 
 Use pnpm with Node.js `>=22.12.0`.
@@ -18,6 +28,32 @@ Use pnpm with Node.js `>=22.12.0`.
 - `pnpm test` runs DB/server, web, and CLI Vitest suites.
 - `pnpm generate` and `pnpm migrate` manage Drizzle migrations.
 
+`pnpm dev:server` and `pnpm dev:web` should usually run in separate terminals during frontend development.
+
+## Architecture Notes
+
+### Data Layer (`src/db`)
+
+- The default SQLite database is `~/.shirube/db.sqlite`; override it with `SHIRUBE_DB_PATH`.
+- `createDb(dbPath?)` returns a database connection and applies migrations from `drizzle/` at startup.
+- `SHIRUBE_MIGRATIONS_PATH` can point at alternate migrations, mainly for tests.
+- Migration lookup automatically handles bundled execution from `dist/drizzle/` and source execution from the project `drizzle/`.
+- Main tables are `tasks` (`date`, `doneAt`, `deletedAt`), `reviews` (`week` is unique), and `goals` (`doneAt`, `deletedAt`).
+- Deletes are soft deletes using an ISO string in `deletedAt`.
+- Use `createTestDb()` in tests; it returns an in-memory SQLite database and does not touch the user database.
+
+### Server (`src/server`)
+
+- `createApp(db)` returns a Hono app and supports injecting a `createTestDb()` database in tests.
+- API routes live under `/api/tasks`, `/api/reviews`, and `/api/goals`.
+- Production serving uses `dist/web/` for static web assets.
+
+### CLI (`src/cli`)
+
+- `shirube serve` starts `dist/server.js` as a child process and opens the browser with macOS `open`; it assumes `pnpm build` has already produced `dist/`.
+- `--format json` provides machine-readable output.
+- `--yes` skips deletion confirmation prompts for agent-driven usage.
+
 ## Coding Style & Naming Conventions
 
 Code is TypeScript. Follow Biome: tabs, double quotes, recommended lint rules, and organized imports. React components use PascalCase file names such as `GoalPage.tsx`; hooks use `useX.ts`; tests live beside code as `*.test.ts` or `*.test.tsx`. Prefer small functions and existing dependency injection patterns such as `createApp(db)` and `createTestDb()`.
@@ -25,6 +61,8 @@ Code is TypeScript. Follow Biome: tabs, double quotes, recommended lint rules, a
 ## Testing Guidelines
 
 Vitest is split by environment: `vitest.node.config.ts` for DB/server tests, `vitest.web.config.ts` for jsdom React tests, and `vitest.cli.config.ts` for CLI tests. CLI tests depend on built output, so run `pnpm build` before targeted CLI debugging or rely on `pnpm test`, which builds in CI before tests. Use `createTestDb()` for database tests to avoid writing to the user database.
+
+`vitest.node.config.ts` sets `SHIRUBE_MIGRATIONS_PATH` to `drizzle/` for DB/server tests.
 
 ## Commit & Pull Request Guidelines
 
