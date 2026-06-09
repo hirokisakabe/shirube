@@ -1,5 +1,7 @@
 import js from "@eslint/js";
 import prettier from "eslint-config-prettier";
+import jsxA11y from "eslint-plugin-jsx-a11y";
+import globals from "globals";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
@@ -11,6 +13,10 @@ export default tseslint.config(
 		...config,
 		files: ["**/*.{ts,tsx}"],
 	})),
+	{
+		...jsxA11y.flatConfigs.recommended,
+		files: ["src/web/**/*.{tsx,jsx}"],
+	},
 	prettier,
 	{
 		files: ["src/**/*.{ts,tsx}", "*.config.ts", "vitest.*.ts"],
@@ -25,6 +31,7 @@ export default tseslint.config(
 			},
 		},
 		rules: {
+			"no-undef": "off",
 			"@typescript-eslint/no-unnecessary-type-assertion": "error",
 			"@typescript-eslint/no-require-imports": "off",
 			"@typescript-eslint/no-unsafe-argument": "off",
@@ -39,6 +46,24 @@ export default tseslint.config(
 				},
 			],
 			"no-constant-binary-expression": "off",
+		},
+	},
+	{
+		files: [
+			"src/cli/**/*.ts",
+			"src/server/**/*.ts",
+			"src/db/**/*.ts",
+			"*.config.ts",
+			"vitest.*.ts",
+		],
+		languageOptions: {
+			globals: globals.node,
+		},
+	},
+	{
+		files: ["src/web/**/*.{ts,tsx}"],
+		languageOptions: {
+			globals: globals.browser,
 		},
 	},
 );

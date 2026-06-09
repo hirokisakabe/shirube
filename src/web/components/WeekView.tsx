@@ -38,6 +38,7 @@ function DropZone({
 }) {
 	const [over, setOver] = useState(false);
 	return (
+		// eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- Column click is a pointer convenience; primary actions use child controls.
 		<div
 			className={className + (over ? " drop-over" : "")}
 			style={style}

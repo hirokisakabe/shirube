@@ -33,6 +33,7 @@ function DropZone({
 }) {
 	const [over, setOver] = useState(false);
 	return (
+		// eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- Cell click is a pointer convenience; primary actions use child controls.
 		<div
 			className={className + (over ? " drop-over" : "")}
 			onClick={onClick}
@@ -97,6 +98,7 @@ function MonthCell({
 				}}
 			>
 				{items.slice(0, 4).map((t) => (
+					// eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- Compact month items are pointer-only; full keyboard task controls are in week view.
 					<div
 						key={t.id}
 						className={`mtodo${t.doneAt ? " done" : ""}`}
@@ -118,6 +120,7 @@ function MonthCell({
 				{items.length > 4 && (
 					<div className="mmore">＋{items.length - 4}件</div>
 				)}
+				{/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- Wrapper only prevents parent cell selection; AddInput handles keyboard interaction. */}
 				<div onClick={(e) => e.stopPropagation()}>
 					<AddInput onAdd={(text) => ctx.add(k, text)} variant="compact" />
 				</div>
