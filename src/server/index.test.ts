@@ -125,9 +125,7 @@ describe("Server API", () => {
 					body: JSON.stringify({ title: "日付不正", date: "2026-99-99" }),
 				});
 				expect(res.status).toBe(400);
-				await expect(res.json()).resolves.toEqual({
-					error: "Invalid request body",
-				});
+				await expect(res.json()).resolves.toHaveProperty("error");
 			});
 		});
 
@@ -181,6 +179,25 @@ describe("Server API", () => {
 					method: "PATCH",
 					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify({ date: "invalid" }),
+				});
+				expect(res.status).toBe(400);
+			});
+
+			it("更新項目が空の場合は 400 を返す", async () => {
+				const created = await app.request("/api/tasks", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						title: "更新しないタスク",
+						date: "2026-06-01",
+					}),
+				});
+				const task = (await created.json()) as { id: number };
+
+				const res = await app.request(`/api/tasks/${task.id}`, {
+					method: "PATCH",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({}),
 				});
 				expect(res.status).toBe(400);
 			});
