@@ -3,11 +3,14 @@ import type { Task } from "../api/tasks";
 import { DateU, WEEKDAYS_JP } from "../utils/date";
 import { dayItems } from "../hooks/useTasks";
 import { AddInput } from "./AddInput";
+import { TodoItem } from "./TodoItem";
 
 type Ctx = {
   tasks: Task[];
   add: (date: string, text: string) => void;
   toggle: (id: number) => void;
+  remove: (id: number) => void;
+  edit: (id: number, text: string) => void;
   moveTo: (id: number, date: string) => void;
 };
 
@@ -69,14 +72,17 @@ function MonthCell({
 }) {
   const k = DateU.key(date);
   const items = dayItems(ctx.tasks, k);
+  const [expanded, setExpanded] = useState(false);
   const inputFocusedRef = useRef(false);
   const blurTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const isExpanded = expanded && items.length > 4;
+  const visibleItems = isExpanded ? items : items.slice(0, 4);
 
   return (
     <DropZone
       dateKey={k}
       onMove={ctx.moveTo}
-      className={`mcell${inMonth ? "" : " out"}${today ? " today" : ""}`}
+      className={`mcell${inMonth ? "" : " out"}${today ? " today" : ""}${isExpanded ? " expanded" : ""}`}
       onClick={() => {
         if (!inputFocusedRef.current) onPickDay(date);
       }}
@@ -97,28 +103,27 @@ function MonthCell({
           }, 0);
         }}
       >
-        {items.slice(0, 4).map((t) => (
-          // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- Compact month items are pointer-only; full keyboard task controls are in week view.
-          <div
+        {visibleItems.map((t) => (
+          <TodoItem
             key={t.id}
-            className={`mtodo${t.doneAt ? " done" : ""}`}
-            draggable
-            onClick={(e) => {
-              e.stopPropagation();
-              ctx.toggle(t.id);
-            }}
-            onDragStart={(e) => {
-              e.dataTransfer.setData("text/todo-id", String(t.id));
-            }}
-          >
-            <span className="mtodo-dot" />
-            <span className="mtodo-text" title={t.title}>
-              {t.title}
-            </span>
-          </div>
+            todo={t}
+            onToggle={ctx.toggle}
+            onRemove={ctx.remove}
+            onEdit={ctx.edit}
+            variant="compact"
+          />
         ))}
         {items.length > 4 && (
-          <div className="mmore">＋{items.length - 4}件</div>
+          <button
+            type="button"
+            className="mmore"
+            onClick={(e) => {
+              e.stopPropagation();
+              setExpanded((current) => !current);
+            }}
+          >
+            {isExpanded ? "折りたたむ" : `＋${items.length - 4}件`}
+          </button>
         )}
         {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- Wrapper only prevents parent cell selection; AddInput handles keyboard interaction. */}
         <div onClick={(e) => e.stopPropagation()}>

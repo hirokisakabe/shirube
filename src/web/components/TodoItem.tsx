@@ -6,9 +6,16 @@ type Props = {
   onToggle: (id: number) => void;
   onRemove: (id: number) => void;
   onEdit: (id: number, text: string) => void;
+  variant?: "default" | "compact";
 };
 
-export function TodoItem({ todo, onToggle, onRemove, onEdit }: Props) {
+export function TodoItem({
+  todo,
+  onToggle,
+  onRemove,
+  onEdit,
+  variant = "default",
+}: Props) {
   const [editing, setEditing] = useState(false);
   const [val, setVal] = useState(todo.title);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -30,11 +37,13 @@ export function TodoItem({ todo, onToggle, onRemove, onEdit }: Props) {
   const done = !!todo.doneAt;
 
   return (
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- The wrapper prevents parent month-cell navigation; child buttons and edit input keep keyboard controls.
     <div
-      className={`todo${done ? " done" : ""}`}
+      className={`todo${variant === "compact" ? " todo-compact" : ""}${done ? " done" : ""}`}
       data-todo-done={done ? "true" : "false"}
       draggable={!editing}
       onDragStart={onDragStart}
+      onClick={(e) => e.stopPropagation()}
     >
       <button
         type="button"
@@ -67,7 +76,11 @@ export function TodoItem({ todo, onToggle, onRemove, onEdit }: Props) {
             setVal(todo.title);
             setEditing(true);
           }}
-          title={`${todo.title}\nダブルクリックで編集`}
+          title={
+            variant === "compact"
+              ? todo.title
+              : `${todo.title}\nダブルクリックで編集`
+          }
         >
           {todo.title}
         </span>
