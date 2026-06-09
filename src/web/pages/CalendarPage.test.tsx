@@ -225,4 +225,240 @@ describe("CalendarPage", () => {
       });
     });
   });
+
+  it("月表示で表示中タスクを追加・完了・編集・削除・移動できる", async () => {
+    let task = makeTask({ id: 1, title: "月表示タスク" });
+    setMockTasks([task]);
+    const requests: Array<{ method: string; id?: string; body?: unknown }> = [];
+    server.use(
+      http.get("/api/tasks", () =>
+        HttpResponse.json(task.deletedAt ? [] : [task]),
+      ),
+      http.post("/api/tasks", async ({ request }) => {
+        const body = (await request.json()) as { title: string; date: string };
+        requests.push({ method: "POST", body });
+        return HttpResponse.json(makeTask({ id: 2, ...body }), {
+          status: 201,
+        });
+      }),
+      http.patch("/api/tasks/:id", async ({ params, request }) => {
+        const body = (await request.json()) as {
+          doneAt?: string | null;
+          title?: string;
+          date?: string;
+        };
+        requests.push({ method: "PATCH", id: String(params.id), body });
+        task = { ...task, ...body };
+        return HttpResponse.json(task);
+      }),
+      http.delete("/api/tasks/:id", ({ params }) => {
+        requests.push({ method: "DELETE", id: String(params.id) });
+        task = { ...task, deletedAt: "2026-06-01T12:00:00.000Z" };
+        return HttpResponse.json(task);
+      }),
+    );
+
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime.bind(vi),
+    });
+    renderWithQueryClient(<CalendarPage />);
+
+    await screen.findByText("月表示タスク");
+    await user.click(screen.getByRole("button", { name: "月" }));
+
+    const inputs = screen.getAllByPlaceholderText("タスクを追加");
+    await user.click(inputs[0]);
+    await user.type(inputs[0], "月表示追加{Enter}");
+
+    await waitFor(() => {
+      expect(requests).toContainEqual({
+        method: "POST",
+        body: { title: "月表示追加", date: "2026-06-01" },
+      });
+    });
+
+    await user.click(screen.getByLabelText("完了にする"));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("月表示タスク").closest("[data-todo-done]"),
+      ).toHaveAttribute("data-todo-done", "true");
+    });
+    await waitFor(() => {
+      expect(requests).toContainEqual({
+        method: "PATCH",
+        id: "1",
+        body: { doneAt: expect.any(String) },
+      });
+    });
+
+    await user.dblClick(screen.getByText("月表示タスク"));
+    const editInput = screen.getByDisplayValue("月表示タスク");
+    await user.clear(editInput);
+    await user.type(editInput, "月表示編集後{Enter}");
+
+    expect(await screen.findByText("月表示編集後")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(requests).toContainEqual({
+        method: "PATCH",
+        id: "1",
+        body: { title: "月表示編集後" },
+      });
+    });
+
+    const dataTransfer = {
+      data: new Map<string, string>(),
+      setData(type: string, value: string) {
+        this.data.set(type, value);
+      },
+      getData(type: string) {
+        return this.data.get(type) ?? "";
+      },
+      effectAllowed: "move",
+    };
+    const todo = screen.getByText("月表示編集後").closest("[draggable]");
+    const wednesdayCell = screen.getAllByText("3")[0].closest(".mcell");
+    fireEvent.dragStart(todo as Element, { dataTransfer });
+    fireEvent.drop(wednesdayCell as Element, { dataTransfer });
+
+    await waitFor(() => {
+      expect(requests).toContainEqual({
+        method: "PATCH",
+        id: "1",
+        body: { date: "2026-06-03" },
+      });
+    });
+
+    await user.click(screen.getByTitle("削除"));
+
+    expect(screen.queryByText("月表示編集後")).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(requests).toContainEqual({ method: "DELETE", id: "1" });
+    });
+  });
+
+  it("月表示で5件目以降を展開して操作できる", async () => {
+    let tasks = Array.from({ length: 5 }, (_, i) =>
+      makeTask({
+        id: i + 1,
+        title: `月表示多件タスク${i + 1}`,
+        createdAt: `2026-06-01T00:0${i}:00.000Z`,
+      }),
+    );
+    setMockTasks(tasks);
+    const requests: Array<{ method: string; id: string; body?: unknown }> = [];
+    server.use(
+      http.get("/api/tasks", () =>
+        HttpResponse.json(tasks.filter((task) => !task.deletedAt)),
+      ),
+      http.patch("/api/tasks/:id", async ({ params, request }) => {
+        const body = (await request.json()) as {
+          doneAt?: string | null;
+          title?: string;
+          date?: string;
+        };
+        requests.push({ method: "PATCH", id: String(params.id), body });
+        tasks = tasks.map((task) =>
+          task.id === Number(params.id) ? { ...task, ...body } : task,
+        );
+        return HttpResponse.json(
+          tasks.find((task) => task.id === Number(params.id)),
+        );
+      }),
+      http.delete("/api/tasks/:id", ({ params }) => {
+        requests.push({ method: "DELETE", id: String(params.id) });
+        tasks = tasks.map((task) =>
+          task.id === Number(params.id)
+            ? { ...task, deletedAt: "2026-06-01T12:00:00.000Z" }
+            : task,
+        );
+        return HttpResponse.json(
+          tasks.find((task) => task.id === Number(params.id)),
+        );
+      }),
+    );
+
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime.bind(vi),
+    });
+    renderWithQueryClient(<CalendarPage />);
+
+    await screen.findByText("月表示多件タスク1");
+    await user.click(screen.getByRole("button", { name: "月" }));
+
+    expect(screen.queryByText("月表示多件タスク5")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "＋1件" }));
+
+    expect(screen.getByText("月表示多件タスク5")).toBeInTheDocument();
+
+    const fifthItem = screen
+      .getByText("月表示多件タスク5")
+      .closest("[data-todo-done]");
+    await user.click(
+      fifthItem?.querySelector("button[aria-label='完了にする']") as Element,
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("月表示多件タスク5").closest("[data-todo-done]"),
+      ).toHaveAttribute("data-todo-done", "true");
+    });
+
+    await user.dblClick(screen.getByText("月表示多件タスク5"));
+    const editInput = screen.getByDisplayValue("月表示多件タスク5");
+    await user.clear(editInput);
+    await user.type(editInput, "月表示多件編集後{Enter}");
+
+    expect(await screen.findByText("月表示多件編集後")).toBeInTheDocument();
+
+    const dataTransfer = {
+      data: new Map<string, string>(),
+      setData(type: string, value: string) {
+        this.data.set(type, value);
+      },
+      getData(type: string) {
+        return this.data.get(type) ?? "";
+      },
+      effectAllowed: "move",
+    };
+    const todo = screen.getByText("月表示多件編集後").closest("[draggable]");
+    const wednesdayCell = screen.getAllByText("3")[0].closest(".mcell");
+    fireEvent.dragStart(todo as Element, { dataTransfer });
+    fireEvent.drop(wednesdayCell as Element, { dataTransfer });
+
+    await waitFor(() => {
+      expect(requests).toContainEqual({
+        method: "PATCH",
+        id: "5",
+        body: { date: "2026-06-03" },
+      });
+    });
+
+    await user.click(
+      screen
+        .getByText("月表示多件編集後")
+        .closest("[data-todo-done]")
+        ?.querySelector("[title='削除']") as Element,
+    );
+
+    expect(screen.queryByText("月表示多件編集後")).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(requests).toContainEqual({ method: "DELETE", id: "5" });
+    });
+  });
+
+  it("月表示の日付セルクリックで週表示へ移動できる", async () => {
+    setMockTasks([makeTask({ id: 1, title: "セルクリック確認" })]);
+
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime.bind(vi),
+    });
+    renderWithQueryClient(<CalendarPage />);
+
+    await screen.findByText("セルクリック確認");
+    await user.click(screen.getByRole("button", { name: "月" }));
+    await user.click(screen.getAllByText("3")[0]);
+
+    expect(screen.getByRole("button", { name: "週" })).toHaveClass("on");
+  });
 });
