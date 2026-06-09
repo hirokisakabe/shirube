@@ -175,6 +175,9 @@ export function createApp(db: Db) {
 				const id = Number(c.req.param("id"));
 				if (Number.isNaN(id)) return c.json({ error: "Invalid id" }, 400);
 				const body = c.req.valid("json");
+				if (!("doneAt" in body)) {
+					return c.json({ error: "No fields to update" }, 400);
+				}
 				const [goal] = await db
 					.update(goals)
 					.set({ doneAt: body.doneAt ?? null })

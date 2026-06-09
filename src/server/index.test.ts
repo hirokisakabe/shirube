@@ -412,6 +412,22 @@ describe("Server API", () => {
         });
         expect(res.status).toBe(404);
       });
+
+      it("更新項目が空の場合は 400 を返す", async () => {
+        const created = await app.request("/api/goals", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: "更新しない目標" }),
+        });
+        const goal = await created.json() as { id: number };
+
+        const res = await app.request(`/api/goals/${goal.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        });
+        expect(res.status).toBe(400);
+      });
     });
 
     describe("DELETE /api/goals/:id", () => {
