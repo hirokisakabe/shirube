@@ -75,13 +75,14 @@ function MonthCell({
   const [expanded, setExpanded] = useState(false);
   const inputFocusedRef = useRef(false);
   const blurTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const visibleItems = expanded ? items : items.slice(0, 4);
+  const isExpanded = expanded && items.length > 4;
+  const visibleItems = isExpanded ? items : items.slice(0, 4);
 
   return (
     <DropZone
       dateKey={k}
       onMove={ctx.moveTo}
-      className={`mcell${inMonth ? "" : " out"}${today ? " today" : ""}${expanded ? " expanded" : ""}`}
+      className={`mcell${inMonth ? "" : " out"}${today ? " today" : ""}${isExpanded ? " expanded" : ""}`}
       onClick={() => {
         if (!inputFocusedRef.current) onPickDay(date);
       }}
@@ -121,7 +122,7 @@ function MonthCell({
               setExpanded((current) => !current);
             }}
           >
-            {expanded ? "折りたたむ" : `＋${items.length - 4}件`}
+            {isExpanded ? "折りたたむ" : `＋${items.length - 4}件`}
           </button>
         )}
         {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- Wrapper only prevents parent cell selection; AddInput handles keyboard interaction. */}

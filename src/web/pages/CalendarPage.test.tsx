@@ -390,6 +390,8 @@ describe("CalendarPage", () => {
     await user.click(screen.getByRole("button", { name: "＋1件" }));
 
     expect(screen.getByText("月表示多件タスク5")).toBeInTheDocument();
+    const sourceCell = screen.getAllByText("1")[0].closest(".mcell");
+    expect(sourceCell).toHaveClass("expanded");
 
     const fifthItem = screen
       .getByText("月表示多件タスク5")
@@ -433,6 +435,10 @@ describe("CalendarPage", () => {
         body: { date: "2026-06-03" },
       });
     });
+    expect(sourceCell).not.toHaveClass("expanded");
+    expect(
+      screen.queryByRole("button", { name: "折りたたむ" }),
+    ).not.toBeInTheDocument();
 
     await user.click(
       screen
