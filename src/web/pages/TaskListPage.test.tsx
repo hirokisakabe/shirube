@@ -7,32 +7,32 @@ import { server } from "../test/server";
 import { TaskListPage } from "./TaskListPage";
 
 afterEach(() => {
-	cleanup();
+  cleanup();
 });
 
 describe("TaskListPage", () => {
-	it("タスク一覧を表示する", async () => {
-		setMockTasks([makeTask({ id: 1, title: "タスク A" })]);
+  it("タスク一覧を表示する", async () => {
+    setMockTasks([makeTask({ id: 1, title: "タスク A" })]);
 
-		renderWithQueryClient(<TaskListPage />);
-		expect(await screen.findByText("タスク A")).toBeInTheDocument();
-	});
+    renderWithQueryClient(<TaskListPage />);
+    expect(await screen.findByText("タスク A")).toBeInTheDocument();
+  });
 
-	it("タスクが 0 件のとき「タスクがありません」を表示する", async () => {
-		setMockTasks([]);
+  it("タスクが 0 件のとき「タスクがありません」を表示する", async () => {
+    setMockTasks([]);
 
-		renderWithQueryClient(<TaskListPage />);
-		expect(await screen.findByText("タスクがありません")).toBeInTheDocument();
-	});
+    renderWithQueryClient(<TaskListPage />);
+    expect(await screen.findByText("タスクがありません")).toBeInTheDocument();
+  });
 
-	it("API エラー時にエラーメッセージを表示する", async () => {
-		server.use(
-			http.get("/api/tasks", () =>
-				HttpResponse.json({ error: "network error" }, { status: 500 }),
-			),
-		);
+  it("API エラー時にエラーメッセージを表示する", async () => {
+    server.use(
+      http.get("/api/tasks", () =>
+        HttpResponse.json({ error: "network error" }, { status: 500 }),
+      ),
+    );
 
-		renderWithQueryClient(<TaskListPage />);
-		expect(await screen.findByText(/エラー/)).toBeInTheDocument();
-	});
+    renderWithQueryClient(<TaskListPage />);
+    expect(await screen.findByText(/エラー/)).toBeInTheDocument();
+  });
 });
