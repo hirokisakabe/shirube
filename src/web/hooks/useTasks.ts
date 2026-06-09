@@ -8,6 +8,8 @@ import {
 } from "../api/tasks";
 import { queryKeys } from "../query";
 
+type TaskUpdate = { doneAt?: string | null; title?: string; date?: string };
+
 function sortForDay(items: Task[]): Task[] {
 	return [...items].sort((a, b) => {
 		if (!!a.doneAt !== !!b.doneAt) return a.doneAt ? 1 : -1;
@@ -45,8 +47,22 @@ export function useTasks() {
 			updates,
 		}: {
 			id: number;
-			updates: { doneAt?: string | null; title?: string; date?: string };
+			updates: TaskUpdate;
+			optimistic: (task: Task) => Task;
 		}) => updateTask(id, updates),
+		onMutate: async ({ id, optimistic }) => {
+			await queryClient.cancelQueries({ queryKey: queryKeys.tasks });
+			const previous = queryClient.getQueryData<Task[]>(queryKeys.tasks);
+			setTasks((current) =>
+				current.map((task) => (task.id === id ? optimistic(task) : task)),
+			);
+			return { previous };
+		},
+		onError: (_error, _variables, context) => {
+			if (context?.previous) {
+				queryClient.setQueryData(queryKeys.tasks, context.previous);
+			}
+		},
 		onSuccess: (updated) => {
 			setTasks((previous) =>
 				previous.map((task) => (task.id === updated.id ? updated : task)),
@@ -70,6 +86,17 @@ export function useTasks() {
 
 	const deleteMutation = useMutation({
 		mutationFn: deleteTask,
+		onMutate: async (id) => {
+			await queryClient.cancelQueries({ queryKey: queryKeys.tasks });
+			const previous = queryClient.getQueryData<Task[]>(queryKeys.tasks);
+			setTasks((current) => current.filter((task) => task.id !== id));
+			return { previous };
+		},
+		onError: (_error, _variables, context) => {
+			if (context?.previous) {
+				queryClient.setQueryData(queryKeys.tasks, context.previous);
+			}
+		},
 		onSettled: () => {
 			void queryClient.invalidateQueries({ queryKey: queryKeys.tasks });
 		},
@@ -85,25 +112,15 @@ export function useTasks() {
 		const task = tasks.find((t) => t.id === id);
 		if (!task) return;
 		const doneAt = task.doneAt ? null : new Date().toISOString();
-		setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, doneAt } : t)));
-		updateMutation.mutate(
-			{ id, updates: { doneAt } },
-			{
-				onError: () => {
-					setTasks((prev) => prev.map((t) => (t.id === id ? task : t)));
-				},
-			},
-		);
+		updateMutation.mutate({
+			id,
+			updates: { doneAt },
+			optimistic: (current) => ({ ...current, doneAt }),
+		});
 	};
 
 	const remove = (id: number) => {
-		const task = tasks.find((t) => t.id === id);
-		setTasks((prev) => prev.filter((t) => t.id !== id));
-		deleteMutation.mutate(id, {
-			onError: () => {
-				if (task) setTasks((prev) => [...prev, task]);
-			},
-		});
+		deleteMutation.mutate(id);
 	};
 
 	const edit = (id: number, text: string) => {
@@ -112,33 +129,19 @@ export function useTasks() {
 			remove(id);
 			return;
 		}
-		const task = tasks.find((t) => t.id === id);
-		setTasks((prev) =>
-			prev.map((t) => (t.id === id ? { ...t, title: clean } : t)),
-		);
-		updateMutation.mutate(
-			{ id, updates: { title: clean } },
-			{
-				onError: () => {
-					if (task)
-						setTasks((prev) => prev.map((t) => (t.id === id ? task : t)));
-				},
-			},
-		);
+		updateMutation.mutate({
+			id,
+			updates: { title: clean },
+			optimistic: (current) => ({ ...current, title: clean }),
+		});
 	};
 
 	const moveTo = (id: number, date: string) => {
-		const task = tasks.find((t) => t.id === id);
-		setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, date } : t)));
-		updateMutation.mutate(
-			{ id, updates: { date } },
-			{
-				onError: () => {
-					if (task)
-						setTasks((prev) => prev.map((t) => (t.id === id ? task : t)));
-				},
-			},
-		);
+		updateMutation.mutate({
+			id,
+			updates: { date },
+			optimistic: (current) => ({ ...current, date }),
+		});
 	};
 
 	return {

@@ -78,6 +78,45 @@ describe("GoalPage", () => {
 		expect(await screen.findByText("新しい目標")).toBeInTheDocument();
 	});
 
+	it("追加した目標は達成済み表示へ切り替えても表示される", async () => {
+		setMockGoals([]);
+
+		const user = userEvent.setup({
+			advanceTimers: vi.advanceTimersByTime.bind(vi),
+		});
+		renderWithQueryClient(<GoalPage />);
+
+		await screen.findByPlaceholderText("目標を追加");
+		await user.type(
+			screen.getByPlaceholderText("目標を追加"),
+			"切替後も見える目標{Enter}",
+		);
+		expect(await screen.findByText("切替後も見える目標")).toBeInTheDocument();
+
+		await user.click(screen.getByRole("button", { name: /達成済みを表示/ }));
+
+		expect(await screen.findByText("切替後も見える目標")).toBeInTheDocument();
+	});
+
+	it("達成切替に失敗したら目標が復元される", async () => {
+		setMockGoals([makeGoal({ id: 1, title: "復元目標" })]);
+		server.use(
+			http.patch("/api/goals/:id", () =>
+				HttpResponse.json({ error: "network error" }, { status: 500 }),
+			),
+		);
+
+		const user = userEvent.setup({
+			advanceTimers: vi.advanceTimersByTime.bind(vi),
+		});
+		renderWithQueryClient(<GoalPage />);
+
+		await screen.findByText("復元目標");
+		await user.click(screen.getByRole("button", { name: "達成済みにする" }));
+
+		expect(await screen.findByText("復元目標")).toBeInTheDocument();
+	});
+
 	it("達成ボタンで showAchieved === false のとき一覧から消える", async () => {
 		setMockGoals([makeGoal({ id: 1, title: "消える目標" })]);
 

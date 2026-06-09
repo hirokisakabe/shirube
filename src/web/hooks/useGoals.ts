@@ -9,6 +9,14 @@ import {
 } from "../api/goals";
 import { queryKeys } from "../query";
 
+function sortGoals(goals: Goal[]) {
+	return [...goals].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+function upsertGoal(goals: Goal[], goal: Goal) {
+	return sortGoals([goal, ...goals.filter((item) => item.id !== goal.id)]);
+}
+
 export function useGoals() {
 	const [showAchieved, setShowAchieved] = useState(false);
 	const queryClient = useQueryClient();
@@ -16,10 +24,27 @@ export function useGoals() {
 	const query = useQuery({ queryKey, queryFn: () => fetchGoals(showAchieved) });
 	const goals = query.data ?? [];
 
+	const setGoalQuery = (
+		showDone: boolean,
+		updater: (previous: Goal[]) => Goal[],
+	) => {
+		queryClient.setQueryData<Goal[] | undefined>(
+			queryKeys.goals(showDone),
+			(previous) => (previous ? updater(previous) : previous),
+		);
+	};
+
 	const setCurrentGoals = (updater: (previous: Goal[]) => Goal[]) => {
 		queryClient.setQueryData<Goal[]>(queryKey, (previous = []) =>
 			updater(previous),
 		);
+	};
+
+	const setGoalQueries = (
+		updater: (previous: Goal[], showDone: boolean) => Goal[],
+	) => {
+		setGoalQuery(false, (previous) => updater(previous, false));
+		setGoalQuery(true, (previous) => updater(previous, true));
 	};
 
 	const invalidateGoals = () => {
@@ -29,7 +54,8 @@ export function useGoals() {
 	const createMutation = useMutation({
 		mutationFn: createGoal,
 		onSuccess: (goal) => {
-			setCurrentGoals((previous) => [goal, ...previous]);
+			setCurrentGoals((previous) => upsertGoal(previous, goal));
+			setGoalQuery(!showAchieved, (previous) => upsertGoal(previous, goal));
 		},
 		onSettled: invalidateGoals,
 	});
@@ -37,11 +63,44 @@ export function useGoals() {
 	const updateMutation = useMutation({
 		mutationFn: ({ id, doneAt }: { id: number; doneAt: string | null }) =>
 			updateGoal(id, { doneAt }),
+		onMutate: async ({ id, doneAt }) => {
+			await queryClient.cancelQueries({ queryKey: queryKeys.goalsRoot });
+			const previousOpen = queryClient.getQueryData<Goal[]>(
+				queryKeys.goals(false),
+			);
+			const previousAll = queryClient.getQueryData<Goal[]>(
+				queryKeys.goals(true),
+			);
+			const currentGoal = [
+				...(previousOpen ?? []),
+				...(previousAll ?? []),
+			].find((goal) => goal.id === id);
+			if (currentGoal) {
+				const optimistic = { ...currentGoal, doneAt };
+				setGoalQueries((previous, showDone) => {
+					if (!showDone && optimistic.doneAt) {
+						return previous.filter((goal) => goal.id !== id);
+					}
+					if (!showDone) return upsertGoal(previous, optimistic);
+					return previous.map((goal) => (goal.id === id ? optimistic : goal));
+				});
+			}
+			return { previousOpen, previousAll };
+		},
+		onError: (_error, _variables, context) => {
+			if (context?.previousOpen) {
+				queryClient.setQueryData(queryKeys.goals(false), context.previousOpen);
+			}
+			if (context?.previousAll) {
+				queryClient.setQueryData(queryKeys.goals(true), context.previousAll);
+			}
+		},
 		onSuccess: (updated, { id, doneAt }) => {
 			const becomingDone = !!doneAt;
-			setCurrentGoals((previous) => {
-				if (becomingDone && !showAchieved)
+			setGoalQueries((previous, showDone) => {
+				if (becomingDone && !showDone)
 					return previous.filter((goal) => goal.id !== id);
+				if (!showDone) return upsertGoal(previous, updated);
 				return previous.map((goal) => (goal.id === id ? updated : goal));
 			});
 		},
@@ -50,6 +109,25 @@ export function useGoals() {
 
 	const deleteMutation = useMutation({
 		mutationFn: deleteGoal,
+		onMutate: async (id) => {
+			await queryClient.cancelQueries({ queryKey: queryKeys.goalsRoot });
+			const previousOpen = queryClient.getQueryData<Goal[]>(
+				queryKeys.goals(false),
+			);
+			const previousAll = queryClient.getQueryData<Goal[]>(
+				queryKeys.goals(true),
+			);
+			setGoalQueries((previous) => previous.filter((goal) => goal.id !== id));
+			return { previousOpen, previousAll };
+		},
+		onError: (_error, _variables, context) => {
+			if (context?.previousOpen) {
+				queryClient.setQueryData(queryKeys.goals(false), context.previousOpen);
+			}
+			if (context?.previousAll) {
+				queryClient.setQueryData(queryKeys.goals(true), context.previousAll);
+			}
+		},
 		onSettled: invalidateGoals,
 	});
 
@@ -64,39 +142,12 @@ export function useGoals() {
 	const toggle = (id: number) => {
 		const goal = goals.find((item) => item.id === id);
 		if (!goal) return;
-		const becomingDone = !goal.doneAt;
-		const doneAt = becomingDone ? new Date().toISOString() : null;
-		if (becomingDone && !showAchieved) {
-			setCurrentGoals((previous) => previous.filter((item) => item.id !== id));
-		} else {
-			setCurrentGoals((previous) =>
-				previous.map((item) => (item.id === id ? { ...item, doneAt } : item)),
-			);
-		}
-		updateMutation.mutate(
-			{ id, doneAt },
-			{
-				onError: () => {
-					if (becomingDone && !showAchieved) {
-						setCurrentGoals((previous) => [goal, ...previous]);
-					} else {
-						setCurrentGoals((previous) =>
-							previous.map((item) => (item.id === id ? goal : item)),
-						);
-					}
-				},
-			},
-		);
+		const doneAt = goal.doneAt ? null : new Date().toISOString();
+		updateMutation.mutate({ id, doneAt });
 	};
 
 	const remove = (id: number) => {
-		const goal = goals.find((item) => item.id === id);
-		setCurrentGoals((previous) => previous.filter((item) => item.id !== id));
-		deleteMutation.mutate(id, {
-			onError: () => {
-				if (goal) setCurrentGoals((previous) => [goal, ...previous]);
-			},
-		});
+		deleteMutation.mutate(id);
 	};
 
 	return {
