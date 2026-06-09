@@ -4,16 +4,23 @@ import tseslint from "typescript-eslint";
 
 export default tseslint.config(
 	{
-		ignores: ["dist/", "node_modules/"],
+		ignores: ["dist/", "node_modules/", "drizzle/meta/"],
 	},
 	js.configs.recommended,
-	...tseslint.configs.recommendedTypeChecked,
+	...tseslint.configs.recommendedTypeChecked.map((config) => ({
+		...config,
+		files: ["**/*.{ts,tsx}"],
+	})),
 	prettier,
 	{
-		files: ["src/**/*.{ts,tsx}"],
+		files: ["src/**/*.{ts,tsx}", "*.config.ts", "vitest.*.ts"],
 		languageOptions: {
 			parserOptions: {
-				project: ["./tsconfig.json", "./tsconfig.web.json"],
+				project: [
+					"./tsconfig.json",
+					"./tsconfig.web.json",
+					"./tsconfig.eslint.json",
+				],
 				tsconfigRootDir: import.meta.dirname,
 			},
 		},
