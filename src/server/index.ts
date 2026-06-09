@@ -10,5 +10,5 @@ const app = createApp(db);
 app.use("/*", serveStatic({ root: resolve(__dirname, "web") }));
 
 serve({ fetch: app.fetch, port: 3000 }, (info) => {
-	console.log(`Server running on http://localhost:${info.port}`);
+  console.log(`Server running on http://localhost:${info.port}`);
 });

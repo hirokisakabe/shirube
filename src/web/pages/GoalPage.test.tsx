@@ -8,181 +8,181 @@ import { server } from "../test/server";
 import { GoalPage } from "./GoalPage";
 
 vi.mock("@tanstack/react-router", async (importOriginal) => {
-	const actual =
-		await importOriginal<typeof import("@tanstack/react-router")>();
-	return {
-		...actual,
-		Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
-			<a href={to}>{children}</a>
-		),
-	};
+  const actual =
+    await importOriginal<typeof import("@tanstack/react-router")>();
+  return {
+    ...actual,
+    Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
+      <a href={to}>{children}</a>
+    ),
+  };
 });
 
 beforeEach(() => {
-	vi.useFakeTimers({ shouldAdvanceTime: true });
-	vi.setSystemTime(new Date("2026-06-01T12:00:00.000Z"));
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+  vi.setSystemTime(new Date("2026-06-01T12:00:00.000Z"));
 });
 
 afterEach(() => {
-	cleanup();
-	vi.useRealTimers();
+  cleanup();
+  vi.useRealTimers();
 });
 
 describe("GoalPage", () => {
-	it("目標一覧が表示される", async () => {
-		setMockGoals([
-			makeGoal({ id: 1, title: "目標A" }),
-			makeGoal({ id: 2, title: "目標B" }),
-		]);
+  it("目標一覧が表示される", async () => {
+    setMockGoals([
+      makeGoal({ id: 1, title: "目標A" }),
+      makeGoal({ id: 2, title: "目標B" }),
+    ]);
 
-		renderWithQueryClient(<GoalPage />);
+    renderWithQueryClient(<GoalPage />);
 
-		expect(await screen.findByText("目標A")).toBeInTheDocument();
-		expect(screen.getByText("目標B")).toBeInTheDocument();
-	});
+    expect(await screen.findByText("目標A")).toBeInTheDocument();
+    expect(screen.getByText("目標B")).toBeInTheDocument();
+  });
 
-	it("長い目標名に全文確認用のtitleが付く", async () => {
-		const longTitle = "目標一覧で省略される可能性があるとても長い目標名";
-		setMockGoals([makeGoal({ id: 1, title: longTitle })]);
+  it("長い目標名に全文確認用のtitleが付く", async () => {
+    const longTitle = "目標一覧で省略される可能性があるとても長い目標名";
+    setMockGoals([makeGoal({ id: 1, title: longTitle })]);
 
-		renderWithQueryClient(<GoalPage />);
+    renderWithQueryClient(<GoalPage />);
 
-		expect(await screen.findByText(longTitle)).toHaveAttribute(
-			"title",
-			longTitle,
-		);
-	});
+    expect(await screen.findByText(longTitle)).toHaveAttribute(
+      "title",
+      longTitle,
+    );
+  });
 
-	it("目標がない場合にメッセージを表示する", async () => {
-		setMockGoals([]);
+  it("目標がない場合にメッセージを表示する", async () => {
+    setMockGoals([]);
 
-		renderWithQueryClient(<GoalPage />);
+    renderWithQueryClient(<GoalPage />);
 
-		expect(await screen.findByText("目標がありません")).toBeInTheDocument();
-	});
+    expect(await screen.findByText("目標がありません")).toBeInTheDocument();
+  });
 
-	it("Enter キーで目標を追加できる", async () => {
-		setMockGoals([]);
+  it("Enter キーで目標を追加できる", async () => {
+    setMockGoals([]);
 
-		const user = userEvent.setup({
-			advanceTimers: vi.advanceTimersByTime.bind(vi),
-		});
-		renderWithQueryClient(<GoalPage />);
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime.bind(vi),
+    });
+    renderWithQueryClient(<GoalPage />);
 
-		await screen.findByPlaceholderText("目標を追加");
-		await user.type(
-			screen.getByPlaceholderText("目標を追加"),
-			"新しい目標{Enter}",
-		);
+    await screen.findByPlaceholderText("目標を追加");
+    await user.type(
+      screen.getByPlaceholderText("目標を追加"),
+      "新しい目標{Enter}",
+    );
 
-		expect(await screen.findByText("新しい目標")).toBeInTheDocument();
-	});
+    expect(await screen.findByText("新しい目標")).toBeInTheDocument();
+  });
 
-	it("追加した目標は達成済み表示へ切り替えても表示される", async () => {
-		setMockGoals([]);
+  it("追加した目標は達成済み表示へ切り替えても表示される", async () => {
+    setMockGoals([]);
 
-		const user = userEvent.setup({
-			advanceTimers: vi.advanceTimersByTime.bind(vi),
-		});
-		renderWithQueryClient(<GoalPage />);
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime.bind(vi),
+    });
+    renderWithQueryClient(<GoalPage />);
 
-		await screen.findByPlaceholderText("目標を追加");
-		await user.type(
-			screen.getByPlaceholderText("目標を追加"),
-			"切替後も見える目標{Enter}",
-		);
-		expect(await screen.findByText("切替後も見える目標")).toBeInTheDocument();
+    await screen.findByPlaceholderText("目標を追加");
+    await user.type(
+      screen.getByPlaceholderText("目標を追加"),
+      "切替後も見える目標{Enter}",
+    );
+    expect(await screen.findByText("切替後も見える目標")).toBeInTheDocument();
 
-		await user.click(screen.getByRole("button", { name: /達成済みを表示/ }));
+    await user.click(screen.getByRole("button", { name: /達成済みを表示/ }));
 
-		expect(await screen.findByText("切替後も見える目標")).toBeInTheDocument();
-	});
+    expect(await screen.findByText("切替後も見える目標")).toBeInTheDocument();
+  });
 
-	it("達成切替に失敗したら目標が復元される", async () => {
-		setMockGoals([makeGoal({ id: 1, title: "復元目標" })]);
-		server.use(
-			http.patch("/api/goals/:id", () =>
-				HttpResponse.json({ error: "network error" }, { status: 500 }),
-			),
-		);
+  it("達成切替に失敗したら目標が復元される", async () => {
+    setMockGoals([makeGoal({ id: 1, title: "復元目標" })]);
+    server.use(
+      http.patch("/api/goals/:id", () =>
+        HttpResponse.json({ error: "network error" }, { status: 500 }),
+      ),
+    );
 
-		const user = userEvent.setup({
-			advanceTimers: vi.advanceTimersByTime.bind(vi),
-		});
-		renderWithQueryClient(<GoalPage />);
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime.bind(vi),
+    });
+    renderWithQueryClient(<GoalPage />);
 
-		await screen.findByText("復元目標");
-		await user.click(screen.getByRole("button", { name: "達成済みにする" }));
+    await screen.findByText("復元目標");
+    await user.click(screen.getByRole("button", { name: "達成済みにする" }));
 
-		expect(await screen.findByText("復元目標")).toBeInTheDocument();
-	});
+    expect(await screen.findByText("復元目標")).toBeInTheDocument();
+  });
 
-	it("達成ボタンで showAchieved === false のとき一覧から消える", async () => {
-		setMockGoals([makeGoal({ id: 1, title: "消える目標" })]);
+  it("達成ボタンで showAchieved === false のとき一覧から消える", async () => {
+    setMockGoals([makeGoal({ id: 1, title: "消える目標" })]);
 
-		const user = userEvent.setup({
-			advanceTimers: vi.advanceTimersByTime.bind(vi),
-		});
-		renderWithQueryClient(<GoalPage />);
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime.bind(vi),
+    });
+    renderWithQueryClient(<GoalPage />);
 
-		await screen.findByText("消える目標");
-		await user.click(screen.getByRole("button", { name: "達成済みにする" }));
+    await screen.findByText("消える目標");
+    await user.click(screen.getByRole("button", { name: "達成済みにする" }));
 
-		await waitFor(() => {
-			expect(screen.queryByText("消える目標")).not.toBeInTheDocument();
-		});
-	});
+    await waitFor(() => {
+      expect(screen.queryByText("消える目標")).not.toBeInTheDocument();
+    });
+  });
 
-	it("「達成済みを表示」フィルタ切替で達成済みの目標を表示する", async () => {
-		setMockGoals([
-			makeGoal({
-				id: 1,
-				title: "達成済み目標",
-				doneAt: "2026-06-01T12:00:00.000Z",
-			}),
-		]);
+  it("「達成済みを表示」フィルタ切替で達成済みの目標を表示する", async () => {
+    setMockGoals([
+      makeGoal({
+        id: 1,
+        title: "達成済み目標",
+        doneAt: "2026-06-01T12:00:00.000Z",
+      }),
+    ]);
 
-		const user = userEvent.setup({
-			advanceTimers: vi.advanceTimersByTime.bind(vi),
-		});
-		renderWithQueryClient(<GoalPage />);
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime.bind(vi),
+    });
+    renderWithQueryClient(<GoalPage />);
 
-		await screen.findByText("目標がありません");
-		await user.click(screen.getByRole("button", { name: /達成済みを表示/ }));
+    await screen.findByText("目標がありません");
+    await user.click(screen.getByRole("button", { name: /達成済みを表示/ }));
 
-		expect(await screen.findByText("達成済み目標")).toBeInTheDocument();
-	});
+    expect(await screen.findByText("達成済み目標")).toBeInTheDocument();
+  });
 
-	it("削除ボタンで目標が消え、失敗時に復元される", async () => {
-		setMockGoals([makeGoal({ id: 1, title: "削除目標" })]);
-		server.use(
-			http.delete("/api/goals/:id", () =>
-				HttpResponse.json({ error: "network error" }, { status: 500 }),
-			),
-		);
+  it("削除ボタンで目標が消え、失敗時に復元される", async () => {
+    setMockGoals([makeGoal({ id: 1, title: "削除目標" })]);
+    server.use(
+      http.delete("/api/goals/:id", () =>
+        HttpResponse.json({ error: "network error" }, { status: 500 }),
+      ),
+    );
 
-		const user = userEvent.setup({
-			advanceTimers: vi.advanceTimersByTime.bind(vi),
-		});
-		renderWithQueryClient(<GoalPage />);
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime.bind(vi),
+    });
+    renderWithQueryClient(<GoalPage />);
 
-		await screen.findByText("削除目標");
-		await user.click(screen.getByTitle("削除"));
+    await screen.findByText("削除目標");
+    await user.click(screen.getByTitle("削除"));
 
-		await waitFor(() => {
-			expect(screen.getByText("削除目標")).toBeInTheDocument();
-		});
-	});
+    await waitFor(() => {
+      expect(screen.getByText("削除目標")).toBeInTheDocument();
+    });
+  });
 
-	it("取得エラー時にエラーメッセージを表示する", async () => {
-		server.use(
-			http.get("/api/goals", () =>
-				HttpResponse.json({ error: "network error" }, { status: 500 }),
-			),
-		);
+  it("取得エラー時にエラーメッセージを表示する", async () => {
+    server.use(
+      http.get("/api/goals", () =>
+        HttpResponse.json({ error: "network error" }, { status: 500 }),
+      ),
+    );
 
-		renderWithQueryClient(<GoalPage />);
+    renderWithQueryClient(<GoalPage />);
 
-		expect(await screen.findByText(/エラー/)).toBeInTheDocument();
-	});
+    expect(await screen.findByText(/エラー/)).toBeInTheDocument();
+  });
 });

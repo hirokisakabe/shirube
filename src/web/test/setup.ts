@@ -4,14 +4,14 @@ import { resetMockData } from "./handlers";
 import { server } from "./server";
 
 beforeAll(() => {
-	server.listen({ onUnhandledRequest: "error" });
+  server.listen({ onUnhandledRequest: "error" });
 });
 
 afterEach(() => {
-	server.resetHandlers();
-	resetMockData();
+  server.resetHandlers();
+  resetMockData();
 });
 
 afterAll(() => {
-	server.close();
+  server.close();
 });

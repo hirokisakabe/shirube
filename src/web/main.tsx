@@ -8,9 +8,9 @@ import { router } from "./router";
 const queryClient = createWebQueryClient();
 
 createRoot(document.getElementById("root") as HTMLElement).render(
-	<StrictMode>
-		<AppQueryProvider client={queryClient}>
-			<RouterProvider router={router} />
-		</AppQueryProvider>
-	</StrictMode>,
+  <StrictMode>
+    <AppQueryProvider client={queryClient}>
+      <RouterProvider router={router} />
+    </AppQueryProvider>
+  </StrictMode>,
 );
