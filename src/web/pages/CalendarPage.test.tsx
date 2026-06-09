@@ -1,4 +1,4 @@
-import { cleanup, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -165,6 +165,64 @@ describe("CalendarPage", () => {
 		expect(screen.queryByText("操作対象タスク")).not.toBeInTheDocument();
 		await waitFor(() => {
 			expect(requests).toContainEqual({ method: "DELETE", id: "1" });
+		});
+	});
+
+	it("週表示でタスクを編集して別日に移動できる", async () => {
+		let task = makeTask({ id: 1, title: "編集前タスク" });
+		setMockTasks([task]);
+		const requests: Array<{ id: string; body?: unknown }> = [];
+		server.use(
+			http.get("/api/tasks", () => HttpResponse.json([task])),
+			http.patch("/api/tasks/:id", async ({ params, request }) => {
+				const body = (await request.json()) as {
+					title?: string;
+					date?: string;
+				};
+				requests.push({ id: String(params.id), body });
+				task = { ...task, ...body };
+				return HttpResponse.json(task);
+			}),
+		);
+
+		const user = userEvent.setup({
+			advanceTimers: vi.advanceTimersByTime.bind(vi),
+		});
+		renderWithQueryClient(<CalendarPage />);
+
+		await user.dblClick(await screen.findByText("編集前タスク"));
+		const editInput = screen.getByDisplayValue("編集前タスク");
+		await user.clear(editInput);
+		await user.type(editInput, "編集後タスク{Enter}");
+
+		expect(await screen.findByText("編集後タスク")).toBeInTheDocument();
+		await waitFor(() => {
+			expect(requests).toContainEqual({
+				id: "1",
+				body: { title: "編集後タスク" },
+			});
+		});
+
+		const dataTransfer = {
+			data: new Map<string, string>(),
+			setData(type: string, value: string) {
+				this.data.set(type, value);
+			},
+			getData(type: string) {
+				return this.data.get(type) ?? "";
+			},
+			effectAllowed: "move",
+		};
+		const todo = screen.getByText("編集後タスク").closest("[draggable]");
+		const wednesdayColumn = screen.getByText("3").closest(".col");
+		fireEvent.dragStart(todo as Element, { dataTransfer });
+		fireEvent.drop(wednesdayColumn as Element, { dataTransfer });
+
+		await waitFor(() => {
+			expect(requests).toContainEqual({
+				id: "1",
+				body: { date: "2026-06-03" },
+			});
 		});
 	});
 });
