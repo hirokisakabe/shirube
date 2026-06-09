@@ -1,14 +1,21 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { makeTask, setMockTasks } from "../test/handlers";
+import { renderWithQueryClient } from "../test/render";
 import { server } from "../test/server";
 import { CalendarPage } from "./CalendarPage";
 
 vi.mock("@tanstack/react-router", async (importOriginal) => {
-	const actual = await importOriginal<typeof import("@tanstack/react-router")>();
-	return { ...actual, Link: ({ children, to }: { children: React.ReactNode; to: string }) => <a href={to}>{children}</a> };
+	const actual =
+		await importOriginal<typeof import("@tanstack/react-router")>();
+	return {
+		...actual,
+		Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
+			<a href={to}>{children}</a>
+		),
+	};
 });
 
 // Fix Date to 2026-06-01 (Monday) — week starts on 2026-06-01 (Mon) in Monday-start convention
@@ -31,7 +38,7 @@ describe("CalendarPage", () => {
 			makeTask({ id: 2, title: "水曜タスク", date: "2026-06-03" }),
 		]);
 
-		render(<CalendarPage />);
+		renderWithQueryClient(<CalendarPage />);
 
 		expect(await screen.findByText("月曜タスク")).toBeInTheDocument();
 		expect(screen.getByText("水曜タスク")).toBeInTheDocument();
@@ -43,17 +50,22 @@ describe("CalendarPage", () => {
 		const longTitle = "週表示で省略される可能性があるとても長いタスク名";
 		setMockTasks([makeTask({ id: 1, title: longTitle })]);
 
-		render(<CalendarPage />);
+		renderWithQueryClient(<CalendarPage />);
 
-		expect(await screen.findByText(longTitle)).toHaveAttribute("title", expect.stringContaining(longTitle));
+		expect(await screen.findByText(longTitle)).toHaveAttribute(
+			"title",
+			expect.stringContaining(longTitle),
+		);
 	});
 
 	it("月表示の長いタスク名に全文確認用のtitleが付く", async () => {
 		const longTitle = "月表示で省略される可能性があるとても長いタスク名";
 		setMockTasks([makeTask({ id: 1, title: longTitle })]);
 
-		const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime.bind(vi) });
-		render(<CalendarPage />);
+		const user = userEvent.setup({
+			advanceTimers: vi.advanceTimersByTime.bind(vi),
+		});
+		renderWithQueryClient(<CalendarPage />);
 
 		await screen.findByText(longTitle);
 		await user.click(screen.getByRole("button", { name: "月" }));
@@ -64,23 +76,35 @@ describe("CalendarPage", () => {
 	it("完了タスクと未完了タスクが視覚的に区別できる", async () => {
 		setMockTasks([
 			makeTask({ id: 1, title: "未完了タスク" }),
-			makeTask({ id: 2, title: "完了タスク", doneAt: "2026-06-01T10:00:00.000Z" }),
+			makeTask({
+				id: 2,
+				title: "完了タスク",
+				doneAt: "2026-06-01T10:00:00.000Z",
+			}),
 		]);
 
-		render(<CalendarPage />);
+		renderWithQueryClient(<CalendarPage />);
 
 		const undoneEl = await screen.findByText("未完了タスク");
 		const doneEl = screen.getByText("完了タスク");
 
-		expect(undoneEl.closest("[data-todo-done]")).toHaveAttribute("data-todo-done", "false");
-		expect(doneEl.closest("[data-todo-done]")).toHaveAttribute("data-todo-done", "true");
+		expect(undoneEl.closest("[data-todo-done]")).toHaveAttribute(
+			"data-todo-done",
+			"false",
+		);
+		expect(doneEl.closest("[data-todo-done]")).toHaveAttribute(
+			"data-todo-done",
+			"true",
+		);
 	});
 
 	it("add inputにタスクを入力してEnterで追加できる", async () => {
 		setMockTasks([]);
 
-		const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime.bind(vi) });
-		render(<CalendarPage />);
+		const user = userEvent.setup({
+			advanceTimers: vi.advanceTimersByTime.bind(vi),
+		});
+		renderWithQueryClient(<CalendarPage />);
 
 		const inputs = await screen.findAllByPlaceholderText("タスクを追加");
 		await user.click(inputs[0]);
@@ -91,29 +115,43 @@ describe("CalendarPage", () => {
 	});
 
 	it("週表示でタスクを完了・削除できる", async () => {
-		setMockTasks([makeTask({ id: 1, title: "操作対象タスク" })]);
+		let task = makeTask({ id: 1, title: "操作対象タスク" });
+		setMockTasks([task]);
 		const requests: Array<{ method: string; id: string; body?: unknown }> = [];
 		server.use(
+			http.get("/api/tasks", () =>
+				HttpResponse.json(task.deletedAt ? [] : [task]),
+			),
 			http.patch("/api/tasks/:id", async ({ params, request }) => {
-				const body = await request.json() as { doneAt?: string | null };
+				const body = (await request.json()) as { doneAt?: string | null };
 				requests.push({ method: "PATCH", id: String(params.id), body });
-				return HttpResponse.json(makeTask({ id: 1, title: "操作対象タスク", ...body }));
+				task = { ...task, ...body };
+				return HttpResponse.json(task);
 			}),
 			http.delete("/api/tasks/:id", ({ params }) => {
 				requests.push({ method: "DELETE", id: String(params.id) });
-				return HttpResponse.json(makeTask({ id: 1, title: "操作対象タスク", deletedAt: "2026-06-01T12:00:00.000Z" }));
+				task = { ...task, deletedAt: "2026-06-01T12:00:00.000Z" };
+				return HttpResponse.json(task);
 			}),
 		);
 
-		const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime.bind(vi) });
-		render(<CalendarPage />);
+		const user = userEvent.setup({
+			advanceTimers: vi.advanceTimersByTime.bind(vi),
+		});
+		renderWithQueryClient(<CalendarPage />);
 
-		const item = (await screen.findByText("操作対象タスク")).closest("[data-todo-done]");
+		const item = (await screen.findByText("操作対象タスク")).closest(
+			"[data-todo-done]",
+		);
 		expect(item).toHaveAttribute("data-todo-done", "false");
 
 		await user.click(screen.getByLabelText("完了にする"));
 
-		expect(item).toHaveAttribute("data-todo-done", "true");
+		await waitFor(() => {
+			expect(
+				screen.getByText("操作対象タスク").closest("[data-todo-done]"),
+			).toHaveAttribute("data-todo-done", "true");
+		});
 		await waitFor(() => {
 			expect(requests).toContainEqual({
 				method: "PATCH",

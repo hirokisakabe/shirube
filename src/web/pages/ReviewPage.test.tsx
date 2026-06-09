@@ -1,14 +1,21 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { http, HttpResponse } from "msw";
 import { makeReview, setMockReviews } from "../test/handlers";
+import { renderWithQueryClient } from "../test/render";
 import { server } from "../test/server";
 import { ReviewPage } from "./ReviewPage";
 
 vi.mock("@tanstack/react-router", async (importOriginal) => {
-	const actual = await importOriginal<typeof import("@tanstack/react-router")>();
-	return { ...actual, Link: ({ children, to }: { children: React.ReactNode; to: string }) => <a href={to}>{children}</a> };
+	const actual =
+		await importOriginal<typeof import("@tanstack/react-router")>();
+	return {
+		...actual,
+		Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
+			<a href={to}>{children}</a>
+		),
+	};
 });
 
 const FIXED_NOW = new Date("2026-06-01T12:00:00.000Z"); // 2026-W23 (月曜 6/1)
@@ -25,16 +32,22 @@ afterEach(() => {
 
 describe("ReviewPage", () => {
 	it("今週の振り返りが表示される", async () => {
-		setMockReviews([makeReview({ id: 1, week: "2026-W23", content: "今週の振り返り内容" })]);
+		setMockReviews([
+			makeReview({ id: 1, week: "2026-W23", content: "今週の振り返り内容" }),
+		]);
 
-		render(<ReviewPage />);
+		renderWithQueryClient(<ReviewPage />);
 
-		expect(await screen.findByDisplayValue("今週の振り返り内容")).toBeInTheDocument();
+		expect(
+			await screen.findByDisplayValue("今週の振り返り内容"),
+		).toBeInTheDocument();
 	});
 
 	it("週ナビゲーション: 前週ボタンで週が変わる", async () => {
-		const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime.bind(vi) });
-		render(<ReviewPage />);
+		const user = userEvent.setup({
+			advanceTimers: vi.advanceTimersByTime.bind(vi),
+		});
+		renderWithQueryClient(<ReviewPage />);
 
 		await screen.findByText(/6\/1週/);
 
@@ -43,8 +56,10 @@ describe("ReviewPage", () => {
 	});
 
 	it("週ナビゲーション: 次週ボタンで週が変わる", async () => {
-		const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime.bind(vi) });
-		render(<ReviewPage />);
+		const user = userEvent.setup({
+			advanceTimers: vi.advanceTimersByTime.bind(vi),
+		});
+		renderWithQueryClient(<ReviewPage />);
 
 		await screen.findByText(/6\/1週/);
 
@@ -53,8 +68,10 @@ describe("ReviewPage", () => {
 	});
 
 	it("今週ボタン: 別の週から今週に戻れる", async () => {
-		const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime.bind(vi) });
-		render(<ReviewPage />);
+		const user = userEvent.setup({
+			advanceTimers: vi.advanceTimersByTime.bind(vi),
+		});
+		renderWithQueryClient(<ReviewPage />);
 
 		await screen.findByText(/6\/1週/);
 
@@ -72,12 +89,20 @@ describe("ReviewPage", () => {
 			http.put("/api/reviews/:week", async ({ params, request }) => {
 				const body = await request.json();
 				requests.push({ week: String(params.week), body });
-				return HttpResponse.json(makeReview({ id: 1, week: String(params.week), content: (body as { content: string }).content }));
+				return HttpResponse.json(
+					makeReview({
+						id: 1,
+						week: String(params.week),
+						content: (body as { content: string }).content,
+					}),
+				);
 			}),
 		);
 
-		const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime.bind(vi) });
-		render(<ReviewPage />);
+		const user = userEvent.setup({
+			advanceTimers: vi.advanceTimersByTime.bind(vi),
+		});
+		renderWithQueryClient(<ReviewPage />);
 
 		const textarea = await screen.findByRole("textbox");
 		await user.type(textarea, "新しい振り返り");
@@ -91,9 +116,13 @@ describe("ReviewPage", () => {
 	});
 
 	it("取得エラー時にエラーメッセージを表示する", async () => {
-		server.use(http.get("/api/reviews/:week", () => HttpResponse.json({ error: "network error" }, { status: 500 })));
+		server.use(
+			http.get("/api/reviews/:week", () =>
+				HttpResponse.json({ error: "network error" }, { status: 500 }),
+			),
+		);
 
-		render(<ReviewPage />);
+		renderWithQueryClient(<ReviewPage />);
 
 		expect(await screen.findByText(/エラー/)).toBeInTheDocument();
 	});
@@ -109,7 +138,7 @@ describe("ReviewPage", () => {
 			}),
 		]);
 
-		render(<ReviewPage />);
+		renderWithQueryClient(<ReviewPage />);
 
 		expect(await screen.findByText(/5\/25週/)).toBeInTheDocument();
 	});
