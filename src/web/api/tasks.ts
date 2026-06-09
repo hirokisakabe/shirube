@@ -3,7 +3,7 @@ import { apiClient } from "./client";
 
 type TasksGet = typeof apiClient.api.tasks.$get;
 type TasksPost = typeof apiClient.api.tasks.$post;
-type TaskById = typeof apiClient.api.tasks[":id"];
+type TaskById = (typeof apiClient.api.tasks)[":id"];
 type TaskPatch = TaskById["$patch"];
 type TaskDelete = TaskById["$delete"];
 
@@ -16,12 +16,18 @@ async function parseOrThrow<T>(res: Response, message: string): Promise<T> {
 
 export async function fetchTasks(date?: string): Promise<Task[]> {
 	const res = await apiClient.api.tasks.$get({ query: { date } });
-	return parseOrThrow<InferResponseType<TasksGet, 200>>(res, "Failed to fetch tasks");
+	return parseOrThrow<InferResponseType<TasksGet, 200>>(
+		res,
+		"Failed to fetch tasks",
+	);
 }
 
 export async function createTask(title: string, date: string): Promise<Task> {
 	const res = await apiClient.api.tasks.$post({ json: { title, date } });
-	return parseOrThrow<InferResponseType<TasksPost, 201>>(res, "Failed to create task");
+	return parseOrThrow<InferResponseType<TasksPost, 201>>(
+		res,
+		"Failed to create task",
+	);
 }
 
 export async function updateTask(
@@ -32,10 +38,18 @@ export async function updateTask(
 		param: { id: String(id) },
 		json: updates,
 	});
-	return parseOrThrow<InferResponseType<TaskPatch, 200>>(res, "Failed to update task");
+	return parseOrThrow<InferResponseType<TaskPatch, 200>>(
+		res,
+		"Failed to update task",
+	);
 }
 
 export async function deleteTask(id: number): Promise<Task> {
-	const res = await apiClient.api.tasks[":id"].$delete({ param: { id: String(id) } });
-	return parseOrThrow<InferResponseType<TaskDelete, 200>>(res, "Failed to delete task");
+	const res = await apiClient.api.tasks[":id"].$delete({
+		param: { id: String(id) },
+	});
+	return parseOrThrow<InferResponseType<TaskDelete, 200>>(
+		res,
+		"Failed to delete task",
+	);
 }
