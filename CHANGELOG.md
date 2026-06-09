@@ -1,5 +1,11 @@
 # shirube
 
+## 0.4.0
+
+### Minor Changes
+
+- db75f5f: 月ビューでタスクの編集・削除・5件目以降を含む全件操作に対応しました。
+
 ## 0.3.2
 
 ### Patch Changes
