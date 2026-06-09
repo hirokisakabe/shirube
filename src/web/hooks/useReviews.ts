@@ -1,58 +1,78 @@
-import { useCallback, useEffect, useState } from "react";
-import { type Review, fetchReview, fetchReviews, upsertReview } from "../api/reviews";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback } from "react";
+import {
+	type Review,
+	fetchReview,
+	fetchReviews,
+	upsertReview,
+} from "../api/reviews";
+import { queryKeys } from "../query";
 
 export function useReviews() {
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+	const queryClient = useQueryClient();
+	const query = useQuery({
+		queryKey: queryKeys.reviews,
+		queryFn: fetchReviews,
+	});
 
-  const load = useCallback(async () => {
-    try {
-      const data = await fetchReviews();
-      setReviews(data);
-    } catch (e) {
-      setError(String(e));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+	const reload = useCallback(async () => {
+		await queryClient.invalidateQueries({ queryKey: queryKeys.reviews });
+	}, [queryClient]);
 
-  useEffect(() => { void load(); }, [load]);
-
-  return { reviews, loading, error, reload: load };
+	return {
+		reviews: query.data ?? [],
+		loading: query.isLoading,
+		error: query.error ? String(query.error) : null,
+		reload,
+	};
 }
 
 export function useWeekReview(week: string) {
-  const [review, setReview] = useState<Review | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+	const queryClient = useQueryClient();
+	const query = useQuery({
+		queryKey: queryKeys.review(week),
+		queryFn: () => fetchReview(week),
+	});
 
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-    fetchReview(week)
-      .then((data) => { if (!cancelled) setReview(data); })
-      .catch((e: unknown) => { if (!cancelled) setError(String(e)); })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
-  }, [week]);
+	const saveMutation = useMutation({
+		mutationFn: (content: string) => upsertReview(week, content),
+		onSuccess: (updated) => {
+			queryClient.setQueryData(queryKeys.review(week), updated);
+			queryClient.setQueryData<Review[]>(queryKeys.reviews, (previous = []) => {
+				const withoutCurrent = previous.filter(
+					(review) => review.week !== updated.week,
+				);
+				return [updated, ...withoutCurrent].sort((a, b) =>
+					b.week.localeCompare(a.week),
+				);
+			});
+		},
+		onSettled: () => {
+			void queryClient.invalidateQueries({ queryKey: queryKeys.review(week) });
+			void queryClient.invalidateQueries({ queryKey: queryKeys.reviews });
+		},
+	});
 
-  const save = useCallback(async (content: string) => {
-    setSaving(true);
-    setError(null);
-    try {
-      const updated = await upsertReview(week, content);
-      setReview(updated);
-      return updated;
-    } catch (e) {
-      setError(String(e));
-      return null;
-    } finally {
-      setSaving(false);
-    }
-  }, [week]);
+	const save = useCallback(
+		async (content: string) => {
+			try {
+				return await saveMutation.mutateAsync(content);
+			} catch {
+				return null;
+			}
+		},
+		[saveMutation],
+	);
 
-  return { review, loading, saving, error, save };
+	return {
+		review: query.data ?? null,
+		loading: query.isLoading,
+		saving: saveMutation.isPending,
+		error: query.error
+			? String(query.error)
+			: saveMutation.error
+				? String(saveMutation.error)
+				: null,
+		save,
+	};
 }
