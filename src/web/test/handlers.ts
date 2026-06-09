@@ -62,12 +62,15 @@ function nextId(items: Array<{ id: number }>) {
 export const handlers = [
 	http.get("/api/tasks", ({ request }) => {
 		const date = new URL(request.url).searchParams.get("date");
-		const result = tasks.filter((task) => !task.deletedAt && (!date || task.date === date));
+		const result = tasks.filter(
+			(task) => !task.deletedAt && (!date || task.date === date),
+		);
 		return HttpResponse.json(result);
 	}),
 	http.post("/api/tasks", async ({ request }) => {
-		const body = await request.json() as { title?: string; date?: string };
-		if (!body.title) return HttpResponse.json({ error: "title is required" }, { status: 400 });
+		const body = (await request.json()) as { title?: string; date?: string };
+		if (!body.title)
+			return HttpResponse.json({ error: "title is required" }, { status: 400 });
 		const task = makeTask({
 			id: nextId(tasks),
 			title: body.title,
@@ -79,28 +82,40 @@ export const handlers = [
 	}),
 	http.patch("/api/tasks/:id", async ({ params, request }) => {
 		const id = Number(params.id);
-		if (Number.isNaN(id)) return HttpResponse.json({ error: "Invalid id" }, { status: 400 });
-		const body = await request.json() as { doneAt?: string | null; title?: string; date?: string };
-		const updates: { doneAt?: string | null; title?: string; date?: string } = {};
+		if (Number.isNaN(id))
+			return HttpResponse.json({ error: "Invalid id" }, { status: 400 });
+		const body = (await request.json()) as {
+			doneAt?: string | null;
+			title?: string;
+			date?: string;
+		};
+		const updates: { doneAt?: string | null; title?: string; date?: string } =
+			{};
 		if ("doneAt" in body) updates.doneAt = body.doneAt ?? null;
 		if (body.title !== undefined) updates.title = body.title;
 		if (body.date !== undefined) updates.date = body.date;
 		if (Object.keys(updates).length === 0) {
-			return HttpResponse.json({ error: "No fields to update" }, { status: 400 });
+			return HttpResponse.json(
+				{ error: "No fields to update" },
+				{ status: 400 },
+			);
 		}
 		const task = tasks.find((item) => item.id === id && !item.deletedAt);
-		if (!task) return HttpResponse.json({ error: "Not found" }, { status: 404 });
+		if (!task)
+			return HttpResponse.json({ error: "Not found" }, { status: 404 });
 		const updated = { ...task, ...updates };
-		tasks = tasks.map((item) => item.id === id ? updated : item);
+		tasks = tasks.map((item) => (item.id === id ? updated : item));
 		return HttpResponse.json(updated);
 	}),
 	http.delete("/api/tasks/:id", ({ params }) => {
 		const id = Number(params.id);
-		if (Number.isNaN(id)) return HttpResponse.json({ error: "Invalid id" }, { status: 400 });
+		if (Number.isNaN(id))
+			return HttpResponse.json({ error: "Invalid id" }, { status: 400 });
 		const task = tasks.find((item) => item.id === id && !item.deletedAt);
-		if (!task) return HttpResponse.json({ error: "Not found" }, { status: 404 });
+		if (!task)
+			return HttpResponse.json({ error: "Not found" }, { status: 404 });
 		const deleted = { ...task, deletedAt: now() };
-		tasks = tasks.map((item) => item.id === id ? deleted : item);
+		tasks = tasks.map((item) => (item.id === id ? deleted : item));
 		return HttpResponse.json(deleted);
 	}),
 
@@ -112,29 +127,38 @@ export const handlers = [
 		return HttpResponse.json(result);
 	}),
 	http.post("/api/goals", async ({ request }) => {
-		const body = await request.json() as { title?: string };
-		if (!body.title) return HttpResponse.json({ error: "title is required" }, { status: 400 });
-		const goal = makeGoal({ id: nextId(goals), title: body.title, createdAt: now() });
+		const body = (await request.json()) as { title?: string };
+		if (!body.title)
+			return HttpResponse.json({ error: "title is required" }, { status: 400 });
+		const goal = makeGoal({
+			id: nextId(goals),
+			title: body.title,
+			createdAt: now(),
+		});
 		goals = [goal, ...goals];
 		return HttpResponse.json(goal, { status: 201 });
 	}),
 	http.patch("/api/goals/:id", async ({ params, request }) => {
 		const id = Number(params.id);
-		if (Number.isNaN(id)) return HttpResponse.json({ error: "Invalid id" }, { status: 400 });
-		const body = await request.json() as { doneAt?: string | null };
+		if (Number.isNaN(id))
+			return HttpResponse.json({ error: "Invalid id" }, { status: 400 });
+		const body = (await request.json()) as { doneAt?: string | null };
 		const goal = goals.find((item) => item.id === id && !item.deletedAt);
-		if (!goal) return HttpResponse.json({ error: "Not found" }, { status: 404 });
+		if (!goal)
+			return HttpResponse.json({ error: "Not found" }, { status: 404 });
 		const updated = { ...goal, doneAt: body.doneAt ?? null };
-		goals = goals.map((item) => item.id === id ? updated : item);
+		goals = goals.map((item) => (item.id === id ? updated : item));
 		return HttpResponse.json(updated);
 	}),
 	http.delete("/api/goals/:id", ({ params }) => {
 		const id = Number(params.id);
-		if (Number.isNaN(id)) return HttpResponse.json({ error: "Invalid id" }, { status: 400 });
+		if (Number.isNaN(id))
+			return HttpResponse.json({ error: "Invalid id" }, { status: 400 });
 		const goal = goals.find((item) => item.id === id && !item.deletedAt);
-		if (!goal) return HttpResponse.json({ error: "Not found" }, { status: 404 });
+		if (!goal)
+			return HttpResponse.json({ error: "Not found" }, { status: 404 });
 		const deleted = { ...goal, deletedAt: now() };
-		goals = goals.map((item) => item.id === id ? deleted : item);
+		goals = goals.map((item) => (item.id === id ? deleted : item));
 		return HttpResponse.json(deleted);
 	}),
 
@@ -144,19 +168,30 @@ export const handlers = [
 	}),
 	http.get("/api/reviews/:week", ({ params }) => {
 		const review = reviews.find((item) => item.week === params.week);
-		if (!review) return HttpResponse.json({ error: "Not found" }, { status: 404 });
+		if (!review)
+			return HttpResponse.json({ error: "Not found" }, { status: 404 });
 		return HttpResponse.json(review);
 	}),
 	http.put("/api/reviews/:week", async ({ params, request }) => {
 		const week = String(params.week);
-		const body = await request.json() as { content?: string };
-		if (!body.content) return HttpResponse.json({ error: "content is required" }, { status: 400 });
+		const body = (await request.json()) as { content?: string };
+		if (!body.content)
+			return HttpResponse.json(
+				{ error: "content is required" },
+				{ status: 400 },
+			);
 		const existing = reviews.find((item) => item.week === week);
 		const review = existing
 			? { ...existing, content: body.content, updatedAt: now() }
-			: makeReview({ id: nextId(reviews), week, content: body.content, createdAt: now(), updatedAt: now() });
+			: makeReview({
+					id: nextId(reviews),
+					week,
+					content: body.content,
+					createdAt: now(),
+					updatedAt: now(),
+				});
 		reviews = existing
-			? reviews.map((item) => item.week === week ? review : item)
+			? reviews.map((item) => (item.week === week ? review : item))
 			: [...reviews, review];
 		return HttpResponse.json(review);
 	}),

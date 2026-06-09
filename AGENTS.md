@@ -23,7 +23,9 @@ Use pnpm with Node.js `>=22.12.0`.
 - `pnpm dev:web` starts the Vite dev server on port 5173 and proxies `/api`.
 - `pnpm build` builds the web app, CLI, server bundle, and copies migrations into `dist/`.
 - `pnpm typecheck` runs TypeScript checks for Node and web configs.
-- `pnpm lint` runs Biome linting over `src/`.
+- `pnpm lint` runs ESLint over `src/`.
+- `pnpm format` formats files with Prettier.
+- `pnpm format:check` checks Prettier formatting.
 - `pnpm knip` checks unused files, exports, and dependencies.
 - `pnpm test` runs DB/server, web, and CLI Vitest suites.
 - `pnpm generate` and `pnpm migrate` manage Drizzle migrations.
@@ -56,7 +58,7 @@ Use pnpm with Node.js `>=22.12.0`.
 
 ## Coding Style & Naming Conventions
 
-Code is TypeScript. Follow Biome: tabs, double quotes, recommended lint rules, and organized imports. React components use PascalCase file names such as `GoalPage.tsx`; hooks use `useX.ts`; tests live beside code as `*.test.ts` or `*.test.tsx`. Prefer small functions and existing dependency injection patterns such as `createApp(db)` and `createTestDb()`.
+Code is TypeScript. Follow ESLint and Prettier: tabs, double quotes, and type-aware lint rules. React components use PascalCase file names such as `GoalPage.tsx`; hooks use `useX.ts`; tests live beside code as `*.test.ts` or `*.test.tsx`. Prefer small functions and existing dependency injection patterns such as `createApp(db)` and `createTestDb()`.
 
 ## Testing Guidelines
 

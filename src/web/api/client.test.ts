@@ -1,21 +1,7 @@
 import { describe, expect, it } from "vitest";
-import {
-	createGoal,
-	deleteGoal,
-	fetchGoals,
-	updateGoal,
-} from "./goals";
-import {
-	fetchReview,
-	fetchReviews,
-	upsertReview,
-} from "./reviews";
-import {
-	createTask,
-	deleteTask,
-	fetchTasks,
-	updateTask,
-} from "./tasks";
+import { createGoal, deleteGoal, fetchGoals, updateGoal } from "./goals";
+import { fetchReview, fetchReviews, upsertReview } from "./reviews";
+import { createTask, deleteTask, fetchTasks, updateTask } from "./tasks";
 
 describe("Hono RPC API client", () => {
 	it("tasks wrapperがRPC client経由で主要操作を実行できる", async () => {
@@ -25,7 +11,9 @@ describe("Hono RPC API client", () => {
 		await createTask("Other day", "2026-06-10");
 		expect(await fetchTasks("2026-06-09")).toHaveLength(1);
 
-		const updated = await updateTask(created.id, { doneAt: "2026-06-09T00:00:00.000Z" });
+		const updated = await updateTask(created.id, {
+			doneAt: "2026-06-09T00:00:00.000Z",
+		});
 		expect(updated.doneAt).toBe("2026-06-09T00:00:00.000Z");
 
 		const deleted = await deleteTask(created.id);
@@ -37,7 +25,9 @@ describe("Hono RPC API client", () => {
 		expect(created.title).toBe("RPC goal");
 		expect(await fetchGoals()).toHaveLength(1);
 
-		const updated = await updateGoal(created.id, { doneAt: "2026-06-09T00:00:00.000Z" });
+		const updated = await updateGoal(created.id, {
+			doneAt: "2026-06-09T00:00:00.000Z",
+		});
 		expect(updated.doneAt).toBe("2026-06-09T00:00:00.000Z");
 		expect(await fetchGoals()).toHaveLength(0);
 		expect(await fetchGoals(true)).toHaveLength(1);
