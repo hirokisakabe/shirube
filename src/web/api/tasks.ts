@@ -1,45 +1,41 @@
-export type Task = {
-  id: number;
-  title: string;
-  date: string;
-  doneAt: string | null;
-  deletedAt: string | null;
-  createdAt: string;
-};
+import type { InferResponseType } from "hono/client";
+import { apiClient } from "./client";
+
+type TasksGet = typeof apiClient.api.tasks.$get;
+type TasksPost = typeof apiClient.api.tasks.$post;
+type TaskById = typeof apiClient.api.tasks[":id"];
+type TaskPatch = TaskById["$patch"];
+type TaskDelete = TaskById["$delete"];
+
+export type Task = InferResponseType<TasksGet, 200>[number];
+
+async function parseOrThrow<T>(res: Response, message: string): Promise<T> {
+	if (!res.ok) throw new Error(`${message}: ${res.status}`);
+	return res.json() as Promise<T>;
+}
 
 export async function fetchTasks(date?: string): Promise<Task[]> {
-  const url = new URL("/api/tasks", location.origin);
-  if (date) url.searchParams.set("date", date);
-  const res = await fetch(url.toString());
-  if (!res.ok) throw new Error(`Failed to fetch tasks: ${res.status}`);
-  return res.json() as Promise<Task[]>;
+	const res = await apiClient.api.tasks.$get({ query: { date } });
+	return parseOrThrow<InferResponseType<TasksGet, 200>>(res, "Failed to fetch tasks");
 }
 
 export async function createTask(title: string, date: string): Promise<Task> {
-  const res = await fetch("/api/tasks", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title, date }),
-  });
-  if (!res.ok) throw new Error(`Failed to create task: ${res.status}`);
-  return res.json() as Promise<Task>;
+	const res = await apiClient.api.tasks.$post({ json: { title, date } });
+	return parseOrThrow<InferResponseType<TasksPost, 201>>(res, "Failed to create task");
 }
 
 export async function updateTask(
-  id: number,
-  updates: { doneAt?: string | null; title?: string; date?: string },
+	id: number,
+	updates: { doneAt?: string | null; title?: string; date?: string },
 ): Promise<Task> {
-  const res = await fetch(`/api/tasks/${id}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(updates),
-  });
-  if (!res.ok) throw new Error(`Failed to update task: ${res.status}`);
-  return res.json() as Promise<Task>;
+	const res = await apiClient.api.tasks[":id"].$patch({
+		param: { id: String(id) },
+		json: updates,
+	});
+	return parseOrThrow<InferResponseType<TaskPatch, 200>>(res, "Failed to update task");
 }
 
 export async function deleteTask(id: number): Promise<Task> {
-  const res = await fetch(`/api/tasks/${id}`, { method: "DELETE" });
-  if (!res.ok) throw new Error(`Failed to delete task: ${res.status}`);
-  return res.json() as Promise<Task>;
+	const res = await apiClient.api.tasks[":id"].$delete({ param: { id: String(id) } });
+	return parseOrThrow<InferResponseType<TaskDelete, 200>>(res, "Failed to delete task");
 }
