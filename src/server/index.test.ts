@@ -16,6 +16,13 @@ describe("Server API", () => {
 		close();
 	});
 
+	async function expectJsonError(
+		res: { json: () => Promise<unknown> },
+		error: string,
+	) {
+		await expect(res.json()).resolves.toEqual({ error });
+	}
+
 	describe("Tasks", () => {
 		describe("GET /api/tasks", () => {
 			it("空の一覧を返す", async () => {
@@ -61,6 +68,7 @@ describe("Server API", () => {
 			it("date query が不正な場合は 400 を返す", async () => {
 				const res = await app.request("/api/tasks?date=2026-99-99");
 				expect(res.status).toBe(400);
+				await expectJsonError(res, "Invalid query");
 			});
 		});
 
@@ -88,6 +96,7 @@ describe("Server API", () => {
 			it("不正な ID は 400 を返す", async () => {
 				const res = await app.request("/api/tasks/not-a-number");
 				expect(res.status).toBe(400);
+				await expectJsonError(res, "Invalid id");
 			});
 		});
 
@@ -178,9 +187,10 @@ describe("Server API", () => {
 				const res = await app.request(`/api/tasks/${task.id}`, {
 					method: "PATCH",
 					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ date: "invalid" }),
+					body: JSON.stringify({ doneAt: 123 }),
 				});
 				expect(res.status).toBe(400);
+				await expectJsonError(res, "Invalid request body");
 			});
 
 			it("更新項目が空の場合は 400 を返す", async () => {
@@ -302,6 +312,7 @@ describe("Server API", () => {
 			it("不正な週は 400 を返す", async () => {
 				const res = await app.request("/api/reviews/2026-W00");
 				expect(res.status).toBe(400);
+				await expectJsonError(res, "Invalid week");
 			});
 		});
 
@@ -447,6 +458,7 @@ describe("Server API", () => {
 			it("all query が不正な場合は 400 を返す", async () => {
 				const res = await app.request("/api/goals?all=yes");
 				expect(res.status).toBe(400);
+				await expectJsonError(res, "Invalid query");
 			});
 		});
 
