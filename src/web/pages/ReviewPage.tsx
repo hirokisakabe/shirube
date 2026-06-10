@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
+import { StorageNotice } from "../components/StorageNotice";
 import { useReviews, useWeekReview } from "../hooks/useReviews";
 import { DateU } from "../utils/date";
 
@@ -50,6 +51,7 @@ export function ReviewPage() {
           <span className="brand-mark" />
           <span className="brand-name">shirube</span>
           <span className="brand-sub">振り返り</span>
+          <StorageNotice />
         </div>
 
         <div className="nav">

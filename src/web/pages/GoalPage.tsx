@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { AddInput } from "../components/AddInput";
+import { StorageNotice } from "../components/StorageNotice";
 import { useGoals } from "../hooks/useGoals";
 
 export function GoalPage() {
@@ -21,6 +22,7 @@ export function GoalPage() {
           <span className="brand-mark" />
           <span className="brand-name">shirube</span>
           <span className="brand-sub">目標</span>
+          <StorageNotice />
         </div>
 
         <div className="nav">

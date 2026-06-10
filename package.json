@@ -14,6 +14,8 @@
   ],
   "scripts": {
     "build": "rm -rf dist && vite build --outDir dist/web && esbuild src/cli/index.ts --bundle --platform=node --format=cjs --outfile=dist/cli.js --external:better-sqlite3 && esbuild src/server/index.ts --bundle --platform=node --format=cjs --outfile=dist/server.js --external:better-sqlite3 && cp -r drizzle dist/drizzle && chmod +x dist/cli.js",
+    "build:web": "vite build --outDir dist/web",
+    "build:web:preview": "VITE_STORAGE_DRIVER=indexeddb pnpm build:web",
     "dev:server": "tsx watch src/server/index.ts",
     "dev:web": "vite",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.web.json --noEmit",
@@ -52,6 +54,7 @@
     "eslint": "^9.39.4",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-jsx-a11y": "^6.10.2",
+    "fake-indexeddb": "^6.2.5",
     "globals": "^17.6.0",
     "hono": "^4.7.0",
     "jsdom": "^26.1.0",

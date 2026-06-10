@@ -8,6 +8,7 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
+    "types": ["vite/client"],
     "noEmit": true
   },
   "include": ["src/web", "vite.config.ts"]
