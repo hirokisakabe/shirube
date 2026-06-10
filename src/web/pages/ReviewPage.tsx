@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { StorageNotice } from "../components/StorageNotice";
-import { useWeeklyCycle, useWeeklyCycles } from "../hooks/useReviews";
+import { useWeeklyCycle, useWeeklyCycles } from "../hooks/useWeeklyCycles";
 import { DateU } from "../utils/date";
 
 export function ReviewPage() {

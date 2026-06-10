@@ -1,5 +1,5 @@
 import { http, HttpResponse } from "msw";
-import type { WeeklyCycle } from "../api/reviews";
+import type { WeeklyCycle } from "../api/weeklyCycles";
 import type { Task } from "../api/tasks";
 
 const now = () => new Date().toISOString();

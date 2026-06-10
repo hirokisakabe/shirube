@@ -3,7 +3,7 @@ import {
   fetchWeeklyCycle,
   fetchWeeklyCycles,
   upsertWeeklyCycle,
-} from "./reviews";
+} from "./weeklyCycles";
 import { createTask, deleteTask, fetchTasks, updateTask } from "./tasks";
 
 describe("Hono RPC API client", () => {

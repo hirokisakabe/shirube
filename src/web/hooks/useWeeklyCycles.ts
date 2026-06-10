@@ -5,7 +5,7 @@ import {
   fetchWeeklyCycle,
   fetchWeeklyCycles,
   upsertWeeklyCycle,
-} from "../api/reviews";
+} from "../api/weeklyCycles";
 import { queryKeys } from "../query";
 
 export function useWeeklyCycles() {

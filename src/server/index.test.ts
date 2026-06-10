@@ -417,6 +417,15 @@ describe("Server API", () => {
         const list = (await listRes.json()) as Array<unknown>;
         expect(list).toHaveLength(1);
       });
+
+      it("PUT で片方の本文を省略すると 400 を返す", async () => {
+        const res = await app.request("/api/weekly-cycles/2026-W22", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ goalContent: "目標だけ" }),
+        });
+        expect(res.status).toBe(400);
+      });
     });
 
     describe("PATCH /api/weekly-cycles/:week", () => {

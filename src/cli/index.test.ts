@@ -472,6 +472,28 @@ describe("shirube CLI", () => {
         reviewContent: "",
       });
     });
+
+    it("同じ週の目標保存時に既存の振り返り本文を保持する", () => {
+      const reviewEditor = makeMockEditor("残したい振り返り");
+      runCli(["review", "--week", "2024-W05"], dbPath, {
+        EDITOR: `node ${reviewEditor}`,
+      });
+
+      const goalEditor = makeMockEditor("追加した目標");
+      runCli(["goal", "--week", "2024-W05"], dbPath, {
+        EDITOR: `node ${goalEditor}`,
+      });
+
+      const result = runCli(["goal", "list", "--format", "json"], dbPath);
+      expect(result.status).toBe(0);
+      const list = JSON.parse(result.stdout);
+      expect(list).toHaveLength(1);
+      expect(list[0]).toMatchObject({
+        week: "2024-W05",
+        goalContent: "追加した目標",
+        reviewContent: "残したい振り返り",
+      });
+    });
   });
 
   describe("serve", () => {

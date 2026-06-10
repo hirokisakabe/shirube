@@ -41,6 +41,10 @@ const weeklyCycleUpdateSchema = z.object({
   goalContent: z.string().optional(),
   reviewContent: z.string().optional(),
 });
+const weeklyCyclePutSchema = z.object({
+  goalContent: z.string(),
+  reviewContent: z.string(),
+});
 
 type TaskUpdateInput = z.infer<typeof taskUpdateSchema>;
 
@@ -210,7 +214,7 @@ export function createApp(db: Db) {
       zValidator("param", weekParamSchema, validationError("Invalid week")),
       zValidator(
         "json",
-        weeklyCycleUpdateSchema,
+        weeklyCyclePutSchema,
         validationError("Invalid request body"),
       ),
       async (c) => {

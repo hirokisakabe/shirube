@@ -34,7 +34,8 @@ describe("storage driver selection", () => {
       .mockRejectedValue(new Error("network disabled"));
 
     const { createTask, fetchTasks } = await import("./tasks");
-    const { fetchWeeklyCycle, upsertWeeklyCycle } = await import("./reviews");
+    const { fetchWeeklyCycle, upsertWeeklyCycle } =
+      await import("./weeklyCycles");
 
     const task = await createTask("Preview task", "2026-06-09");
     expect(await fetchTasks("2026-06-09")).toMatchObject([{ id: task.id }]);

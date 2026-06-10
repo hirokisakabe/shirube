@@ -74,10 +74,10 @@ function assertWeek(week: string) {
 }
 
 async function upsertWeeklyCycle(
+  db: ReturnType<typeof createDb>,
   week: string,
   values: { goalContent?: string; reviewContent?: string },
 ) {
-  const db = getDb();
   const existing = await db.query.weeklyCycles.findFirst({
     where: eq(weeklyCycles.week, week),
   });
@@ -297,7 +297,7 @@ const reviewCmd = program
       where: eq(weeklyCycles.week, week),
     });
     const content = openEditor(existing?.reviewContent ?? "");
-    await upsertWeeklyCycle(week, { reviewContent: content });
+    await upsertWeeklyCycle(db, week, { reviewContent: content });
     writeLog(`Saved review for ${week}`);
   });
 
@@ -326,7 +326,7 @@ const goalCmd = program
       where: eq(weeklyCycles.week, week),
     });
     const content = openEditor(existing?.goalContent ?? "");
-    await upsertWeeklyCycle(week, { goalContent: content });
+    await upsertWeeklyCycle(db, week, { goalContent: content });
     writeLog(`Saved goal for ${week}`);
   });
 

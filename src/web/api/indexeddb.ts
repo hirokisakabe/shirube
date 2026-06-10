@@ -1,4 +1,4 @@
-import type { WeeklyCycle } from "./reviews";
+import type { WeeklyCycle } from "./weeklyCycles";
 import type { Task } from "./tasks";
 
 const dbName = "shirube-preview";

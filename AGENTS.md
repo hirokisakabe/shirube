@@ -40,14 +40,14 @@ Use pnpm with Node.js `>=22.12.0`.
 - `createDb(dbPath?)` returns a database connection and applies migrations from `drizzle/` at startup.
 - `SHIRUBE_MIGRATIONS_PATH` can point at alternate migrations, mainly for tests.
 - Migration lookup automatically handles bundled execution from `dist/drizzle/` and source execution from the project `drizzle/`.
-- Main tables are `tasks` (`date`, `doneAt`, `deletedAt`), `reviews` (`week` is unique), and `goals` (`doneAt`, `deletedAt`).
+- Main tables are `tasks` (`date`, `doneAt`, `deletedAt`) and `weekly_cycles` (`week` is unique, `goalContent`, `reviewContent`).
 - Deletes are soft deletes using an ISO string in `deletedAt`.
 - Use `createTestDb()` in tests; it returns an in-memory SQLite database and does not touch the user database.
 
 ### Server (`src/server`)
 
 - `createApp(db)` returns a Hono app and supports injecting a `createTestDb()` database in tests.
-- API routes live under `/api/tasks`, `/api/reviews`, and `/api/goals`.
+- API routes live under `/api/tasks` and `/api/weekly-cycles`.
 - Production serving uses `dist/web/` for static web assets.
 
 ### CLI (`src/cli`)
@@ -58,7 +58,7 @@ Use pnpm with Node.js `>=22.12.0`.
 
 ## Coding Style & Naming Conventions
 
-Code is TypeScript. Follow ESLint and Prettier: tabs, double quotes, and type-aware lint rules. React components use PascalCase file names such as `GoalPage.tsx`; hooks use `useX.ts`; tests live beside code as `*.test.ts` or `*.test.tsx`. Prefer small functions and existing dependency injection patterns such as `createApp(db)` and `createTestDb()`.
+Code is TypeScript. Follow ESLint and Prettier: tabs, double quotes, and type-aware lint rules. React components use PascalCase file names such as `ReviewPage.tsx`; hooks use `useX.ts`; tests live beside code as `*.test.ts` or `*.test.tsx`. Prefer small functions and existing dependency injection patterns such as `createApp(db)` and `createTestDb()`.
 
 ## Testing Guidelines
 
