@@ -1,14 +1,13 @@
 # shirube
 
-毎日のタスク・週次レビュー・長期目標を束ねて、進む方向を示すツール。
+毎日のタスクと週ごとの目標・振り返りを束ねて、進む方向を示すツール。
 
 ## コンセプト
 
-タスクをこなすだけでなく、週の終わりに振り返り（review）、長期目標（goal）と照らし合わせる — この 3 つのサイクルを続けることで、日々の行動が自分の向かいたい方向へと積み重なっていきます。shirube はその羅針盤となるツールです。
+タスクをこなすだけでなく、週ごとの目標（goal）と振り返り（review）を同じまとまりで記録することで、日々の行動が自分の向かいたい方向へと積み重なっていきます。shirube はその羅針盤となるツールです。
 
 - **タスク（task）**: 今日・今週やること
-- **レビュー（review）**: 週次の振り返りメモ
-- **目標（goal）**: 中長期的に達成したいこと
+- **週次サイクル（weekly cycle）**: 1 週分の目標本文と振り返り本文
 
 ## インストール
 
@@ -25,7 +24,7 @@ npm install -g shirube
 
 Vercel では静的 Web preview としてデプロイします。main branch の Production Deployment は正式な production-ready Web 版ではなく、latest preview という位置づけです。PR branch では Vercel の Preview Deployment を使い、UI 変更を URL で確認します。
 
-Web preview は Hono API server や SQLite を使わず、ブラウザ内 IndexedDB に tasks / goals / reviews を保存します。データはそのブラウザ内に残り、サーバ同期、マルチデバイス同期、バックアップはありません。
+Web preview は Hono API server や SQLite を使わず、ブラウザ内 IndexedDB に tasks / weekly cycles を保存します。データはそのブラウザ内に残り、サーバ同期、マルチデバイス同期、バックアップはありません。
 
 ```bash
 # CLI / server bundle を作らず Web static assets だけ生成
@@ -65,25 +64,16 @@ shirube edit <id> --title "新しいタイトル"
 # タスクの詳細を表示
 shirube show <id>
 
-# 目標を追加する
-shirube goal add "目標のタイトル"
-
-# 目標一覧を表示（デフォルトは未達成のみ）
-shirube goal list
-shirube goal list --all      # 達成済みも含めて表示
-
-# 目標を達成にする
-shirube goal done <id>
-
-# 目標を削除（ソフトデリート）
-shirube goal rm <id>         # 確認プロンプトあり
-shirube goal rm <id> --yes   # 確認なし（AI エージェント向け）
+# 週次目標本文をエディタで開く（省略時は今週）
+shirube goal
+shirube goal --week 2026-W22
 
 # 週次振り返りをエディタで開く（省略時は今週）
 shirube review
 shirube review --week 2026-W22
 
-# 過去の振り返り一覧を表示する
+# 週次サイクル一覧を表示する
+shirube goal list
 shirube review list
 
 # サーバを起動してブラウザで開く（事前に pnpm build が必要）

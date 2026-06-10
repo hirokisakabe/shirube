@@ -1,36 +1,41 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { StorageNotice } from "../components/StorageNotice";
-import { useReviews, useWeekReview } from "../hooks/useReviews";
+import { useWeeklyCycle, useWeeklyCycles } from "../hooks/useWeeklyCycles";
 import { DateU } from "../utils/date";
 
 export function ReviewPage() {
   const [currentWeek, setCurrentWeek] = useState(() => DateU.isoWeek());
-  const [draft, setDraft] = useState("");
+  const [goalDraft, setGoalDraft] = useState("");
+  const [reviewDraft, setReviewDraft] = useState("");
   const [saved, setSaved] = useState(false);
   const [expandedWeek, setExpandedWeek] = useState<string | null>(null);
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const {
-    review,
+    cycle,
     loading: loadingWeek,
     saving,
     error: weekError,
     save,
-  } = useWeekReview(currentWeek);
+  } = useWeeklyCycle(currentWeek);
   const {
-    reviews,
+    cycles,
     loading: loadingList,
     error: listError,
     reload,
-  } = useReviews();
+  } = useWeeklyCycles();
 
   useEffect(() => {
-    setDraft(review?.content ?? "");
-  }, [review]);
+    setGoalDraft(cycle?.goalContent ?? "");
+    setReviewDraft(cycle?.reviewContent ?? "");
+  }, [cycle]);
 
   const handleSave = async () => {
-    const result = await save(draft);
+    const result = await save({
+      goalContent: goalDraft,
+      reviewContent: reviewDraft,
+    });
     if (result) {
       setSaved(true);
       void reload();
@@ -40,9 +45,11 @@ export function ReviewPage() {
   };
 
   const isCurrentWeek = currentWeek === DateU.isoWeek();
-  const isDirty = draft !== (review?.content ?? "");
+  const isDirty =
+    goalDraft !== (cycle?.goalContent ?? "") ||
+    reviewDraft !== (cycle?.reviewContent ?? "");
 
-  const pastReviews = reviews.filter((r) => r.week !== currentWeek);
+  const pastCycles = cycles.filter((item) => item.week !== currentWeek);
 
   return (
     <div className="app">
@@ -50,7 +57,7 @@ export function ReviewPage() {
         <div className="brand">
           <span className="brand-mark" />
           <span className="brand-name">shirube</span>
-          <span className="brand-sub">振り返り</span>
+          <span className="brand-sub">週次サイクル</span>
           <StorageNotice />
         </div>
 
@@ -87,9 +94,6 @@ export function ReviewPage() {
           <Link to="/" className="review-nav-link">
             カレンダー
           </Link>
-          <Link to="/goals" className="review-nav-link">
-            目標
-          </Link>
         </div>
       </header>
 
@@ -100,17 +104,31 @@ export function ReviewPage() {
             <div className="review-loading">読み込み中…</div>
           ) : (
             <>
-              <textarea
-                className="review-textarea"
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                placeholder={`${DateU.fmtIsoWeek(currentWeek)}の振り返りを記録しましょう…`}
-              />
+              <div className="cycle-editor-grid">
+                <label className="cycle-editor-field">
+                  <span className="cycle-editor-label">目標</span>
+                  <textarea
+                    className="review-textarea cycle-textarea"
+                    value={goalDraft}
+                    onChange={(e) => setGoalDraft(e.target.value)}
+                    placeholder={`${DateU.fmtIsoWeek(currentWeek)}の目標を記録`}
+                  />
+                </label>
+                <label className="cycle-editor-field">
+                  <span className="cycle-editor-label">振り返り</span>
+                  <textarea
+                    className="review-textarea cycle-textarea"
+                    value={reviewDraft}
+                    onChange={(e) => setReviewDraft(e.target.value)}
+                    placeholder={`${DateU.fmtIsoWeek(currentWeek)}の振り返りを記録`}
+                  />
+                </label>
+              </div>
               <div className="review-footer">
-                {review?.updatedAt && (
+                {cycle?.updatedAt && (
                   <span className="review-updated">
                     最終更新:{" "}
-                    {new Date(review.updatedAt).toLocaleString("ja-JP")}
+                    {new Date(cycle.updatedAt).toLocaleString("ja-JP")}
                   </span>
                 )}
                 <div className="review-actions">
@@ -130,37 +148,50 @@ export function ReviewPage() {
         </section>
 
         <section className="review-history-section">
-          <h2 className="review-history-title">過去の振り返り</h2>
+          <h2 className="review-history-title">過去の週次サイクル</h2>
           {listError && <div className="review-error">エラー: {listError}</div>}
           {loadingList ? (
             <div className="review-loading">読み込み中…</div>
-          ) : pastReviews.length === 0 ? (
-            <p className="review-empty">過去の振り返りはありません</p>
+          ) : pastCycles.length === 0 ? (
+            <p className="review-empty">過去の週次サイクルはありません</p>
           ) : (
             <ul className="review-list">
-              {pastReviews.map((r) => (
-                <li key={r.week} className="review-item">
+              {pastCycles.map((item) => (
+                <li key={item.week} className="review-item">
                   <button
                     type="button"
                     className="review-item-header"
                     onClick={() =>
-                      setExpandedWeek(expandedWeek === r.week ? null : r.week)
+                      setExpandedWeek(
+                        expandedWeek === item.week ? null : item.week,
+                      )
                     }
                   >
                     <span className="review-item-week">
-                      {DateU.fmtIsoWeek(r.week)}
+                      {DateU.fmtIsoWeek(item.week)}
                     </span>
                     <span className="review-item-preview">
-                      {expandedWeek === r.week
+                      {expandedWeek === item.week
                         ? ""
-                        : r.content.split("\n")[0]?.slice(0, 60)}
+                        : (item.goalContent || item.reviewContent)
+                            .split("\n")[0]
+                            ?.slice(0, 60)}
                     </span>
                     <span className="review-item-toggle">
-                      {expandedWeek === r.week ? "▲" : "▼"}
+                      {expandedWeek === item.week ? "▲" : "▼"}
                     </span>
                   </button>
-                  {expandedWeek === r.week && (
-                    <pre className="review-item-content">{r.content}</pre>
+                  {expandedWeek === item.week && (
+                    <div className="cycle-history-content">
+                      <span className="cycle-editor-label">目標</span>
+                      <pre className="review-item-content">
+                        {item.goalContent}
+                      </pre>
+                      <span className="cycle-editor-label">振り返り</span>
+                      <pre className="review-item-content">
+                        {item.reviewContent}
+                      </pre>
+                    </div>
                   )}
                 </li>
               ))}

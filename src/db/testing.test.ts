@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createTestDb } from "./testing";
-import { tasks, goals, reviews } from "./schema";
+import { tasks, weeklyCycles } from "./schema";
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import type * as schema from "./schema";
 
@@ -38,21 +38,19 @@ describe("createTestDb", () => {
     expect(rows[0].date).toBe("2026-06-01");
   });
 
-  it("goals テーブルに対して CRUD 操作ができる", () => {
-    db.insert(goals).values({ title: "テスト目標" }).run();
-    const rows = db.select().from(goals).all();
-
-    expect(rows).toHaveLength(1);
-    expect(rows[0].title).toBe("テスト目標");
-  });
-
-  it("reviews テーブルに対して CRUD 操作ができる", () => {
-    db.insert(reviews)
-      .values({ week: "2026-W22", content: "振り返り内容" })
+  it("weekly_cycles テーブルに対して CRUD 操作ができる", () => {
+    db.insert(weeklyCycles)
+      .values({
+        week: "2026-W22",
+        goalContent: "目標内容",
+        reviewContent: "振り返り内容",
+      })
       .run();
-    const rows = db.select().from(reviews).all();
+    const rows = db.select().from(weeklyCycles).all();
 
     expect(rows).toHaveLength(1);
     expect(rows[0].week).toBe("2026-W22");
+    expect(rows[0].goalContent).toBe("目標内容");
+    expect(rows[0].reviewContent).toBe("振り返り内容");
   });
 });

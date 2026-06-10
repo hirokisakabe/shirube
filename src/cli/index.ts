@@ -7,7 +7,7 @@ import { writeFileSync, readFileSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import packageJson from "../../package.json";
-import { createDb, tasks, reviews, goals } from "../db/index";
+import { createDb, tasks, weeklyCycles } from "../db/index";
 import { writeData, writeError, writeLog, type Format } from "./output";
 
 const program = new Command();
@@ -45,8 +45,8 @@ function isoWeek(date: Date = new Date()): string {
 function openEditor(content: string): string {
   const editorCmd = process.env.EDITOR ?? process.env.VISUAL ?? "vi";
   const shell = process.env.SHELL ?? "sh";
-  const dir = mkdtempSync(join(tmpdir(), "shirube-review-"));
-  const file = join(dir, "review.md");
+  const dir = mkdtempSync(join(tmpdir(), "shirube-edit-"));
+  const file = join(dir, "content.md");
   try {
     writeFileSync(file, content, "utf8");
     // Use the shell to interpret EDITOR (handles paths with spaces and embedded flags like "vim -n")
@@ -64,6 +64,35 @@ function openEditor(content: string): string {
   } finally {
     rmSync(dir, { recursive: true });
   }
+}
+
+function assertWeek(week: string) {
+  if (!/^\d{4}-W(?:0[1-9]|[1-4]\d|5[0-3])$/.test(week)) {
+    writeError(`Invalid week format: ${week} (expected YYYY-Www, weeks 01-53)`);
+    process.exit(1);
+  }
+}
+
+async function upsertWeeklyCycle(
+  db: ReturnType<typeof createDb>,
+  week: string,
+  values: { goalContent?: string; reviewContent?: string },
+) {
+  const existing = await db.query.weeklyCycles.findFirst({
+    where: eq(weeklyCycles.week, week),
+  });
+  const now = new Date().toISOString();
+  const goalContent = values.goalContent ?? existing?.goalContent ?? "";
+  const reviewContent = values.reviewContent ?? existing?.reviewContent ?? "";
+  const [cycle] = await db
+    .insert(weeklyCycles)
+    .values({ week, goalContent, reviewContent })
+    .onConflictDoUpdate({
+      target: weeklyCycles.week,
+      set: { goalContent, reviewContent, updatedAt: now },
+    })
+    .returning();
+  return cycle;
 }
 
 program
@@ -258,143 +287,60 @@ program
 
 const reviewCmd = program
   .command("review")
-  .description("週次振り返りを開く/編集する")
+  .description("週次サイクルの振り返り本文を開く/編集する")
   .option("--week <week>", "週の指定 (YYYY-Www形式、省略時は今週)")
   .action(async (options: { week?: string }) => {
-    const db = getDb();
     const week = options.week ?? isoWeek();
-    if (
-      options.week &&
-      !/^\d{4}-W(?:0[1-9]|[1-4]\d|5[0-3])$/.test(options.week)
-    ) {
-      writeError(
-        `Invalid week format: ${options.week} (expected YYYY-Www, weeks 01-53)`,
-      );
-      process.exit(1);
-    }
-    const existing = await db.query.reviews.findFirst({
-      where: eq(reviews.week, week),
+    assertWeek(week);
+    const db = getDb();
+    const existing = await db.query.weeklyCycles.findFirst({
+      where: eq(weeklyCycles.week, week),
     });
-    const content = openEditor(existing?.content ?? "");
-    await db
-      .insert(reviews)
-      .values({ week, content })
-      .onConflictDoUpdate({
-        target: reviews.week,
-        set: { content, updatedAt: new Date().toISOString() },
-      });
+    const content = openEditor(existing?.reviewContent ?? "");
+    await upsertWeeklyCycle(db, week, { reviewContent: content });
     writeLog(`Saved review for ${week}`);
   });
 
 reviewCmd
   .command("list")
-  .description("過去の振り返り一覧を表示する")
+  .description("週次サイクル一覧を表示する")
   .addOption(formatOption())
   .action(async (options: { format: Format }) => {
     const db = getDb();
-    const results = await db.select().from(reviews).orderBy(desc(reviews.week));
+    const results = await db
+      .select()
+      .from(weeklyCycles)
+      .orderBy(desc(weeklyCycles.week));
     writeData(results, options.format);
   });
 
-const goalCmd = program.command("goal").description("目標を管理する");
-
-goalCmd
-  .command("add")
-  .description("目標を追加する")
-  .argument("<title>", "目標のタイトル")
-  .addOption(formatOption())
-  .action(async (title: string, options: { format: Format }) => {
+const goalCmd = program
+  .command("goal")
+  .description("週次サイクルの目標本文を開く/編集する")
+  .option("--week <week>", "週の指定 (YYYY-Www形式、省略時は今週)")
+  .action(async (options: { week?: string }) => {
+    const week = options.week ?? isoWeek();
+    assertWeek(week);
     const db = getDb();
-    const [goal] = await db.insert(goals).values({ title }).returning();
-    writeData(goal, options.format);
+    const existing = await db.query.weeklyCycles.findFirst({
+      where: eq(weeklyCycles.week, week),
+    });
+    const content = openEditor(existing?.goalContent ?? "");
+    await upsertWeeklyCycle(db, week, { goalContent: content });
+    writeLog(`Saved goal for ${week}`);
   });
 
 goalCmd
   .command("list")
-  .description("目標一覧を表示する")
-  .option("--all", "達成済みの目標も含めて表示する")
+  .description("週次サイクル一覧を表示する")
   .addOption(formatOption())
-  .action(async (options: { all?: boolean; format: Format }) => {
+  .action(async (options: { format: Format }) => {
     const db = getDb();
     const results = await db
       .select()
-      .from(goals)
-      .where(
-        options.all
-          ? isNull(goals.deletedAt)
-          : and(isNull(goals.deletedAt), isNull(goals.doneAt)),
-      )
-      .orderBy(desc(goals.createdAt));
+      .from(weeklyCycles)
+      .orderBy(desc(weeklyCycles.week));
     writeData(results, options.format);
-  });
-
-goalCmd
-  .command("done")
-  .description("目標を達成にする")
-  .argument("<id>", "目標ID")
-  .addOption(formatOption())
-  .action(async (id: string, options: { format: Format }) => {
-    const db = getDb();
-    if (!/^\d+$/.test(id)) {
-      writeError(`Invalid id: ${id}`);
-      process.exit(1);
-    }
-    const goalId = Number(id);
-    const [goal] = await db
-      .update(goals)
-      .set({ doneAt: new Date().toISOString() })
-      .where(and(eq(goals.id, goalId), isNull(goals.deletedAt)))
-      .returning();
-    if (!goal) {
-      writeError(`Goal not found: ${id}`);
-      process.exit(1);
-    }
-    writeData(goal, options.format);
-  });
-
-goalCmd
-  .command("rm")
-  .description("目標を削除する（ソフトデリート）")
-  .argument("<id>", "目標ID")
-  .option("--yes", "確認なしで削除する（エージェント向け）")
-  .addOption(formatOption())
-  .action(async (id: string, options: { yes?: boolean; format: Format }) => {
-    const db = getDb();
-    if (!/^\d+$/.test(id)) {
-      writeError(`Invalid id: ${id}`);
-      process.exit(1);
-    }
-    const goalId = Number(id);
-
-    if (!options.yes) {
-      const rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stderr,
-      });
-      const confirmed = await new Promise<boolean>((resolve) => {
-        rl.question(`Delete goal ${goalId}? [y/N] `, (answer) => {
-          rl.close();
-          resolve(
-            answer.toLowerCase() === "y" || answer.toLowerCase() === "yes",
-          );
-        });
-      });
-      if (!confirmed) {
-        writeLog("Cancelled.");
-        process.exit(0);
-      }
-    }
-
-    const [goal] = await db
-      .update(goals)
-      .set({ deletedAt: new Date().toISOString() })
-      .where(and(eq(goals.id, goalId), isNull(goals.deletedAt)))
-      .returning();
-    if (!goal) {
-      writeError(`Goal not found: ${id}`);
-      process.exit(1);
-    }
-    writeData(goal, options.format);
   });
 
 program

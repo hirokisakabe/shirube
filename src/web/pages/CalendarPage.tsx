@@ -104,11 +104,8 @@ export function CalendarPage() {
               月
             </button>
           </div>
-          <Link to="/goals" className="review-nav-link">
-            目標
-          </Link>
           <Link to="/review" className="review-nav-link">
-            振り返り
+            週次サイクル
           </Link>
         </div>
       </header>

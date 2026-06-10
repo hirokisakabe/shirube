@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { createGoal, deleteGoal, fetchGoals, updateGoal } from "./goals";
-import { fetchReview, fetchReviews, upsertReview } from "./reviews";
+import {
+  fetchWeeklyCycle,
+  fetchWeeklyCycles,
+  upsertWeeklyCycle,
+} from "./weeklyCycles";
 import { createTask, deleteTask, fetchTasks, updateTask } from "./tasks";
 
 describe("Hono RPC API client", () => {
@@ -20,30 +23,19 @@ describe("Hono RPC API client", () => {
     expect(deleted.deletedAt).not.toBeNull();
   });
 
-  it("goals wrapperがRPC client経由で主要操作を実行できる", async () => {
-    const created = await createGoal("RPC goal");
-    expect(created.title).toBe("RPC goal");
-    expect(await fetchGoals()).toHaveLength(1);
+  it("weekly cycle wrapperがRPC client経由で主要操作を実行できる", async () => {
+    expect(await fetchWeeklyCycle("2026-W23")).toBeNull();
 
-    const updated = await updateGoal(created.id, {
-      doneAt: "2026-06-09T00:00:00.000Z",
+    const saved = await upsertWeeklyCycle("2026-W23", {
+      goalContent: "RPC goal",
+      reviewContent: "RPC review",
     });
-    expect(updated.doneAt).toBe("2026-06-09T00:00:00.000Z");
-    expect(await fetchGoals()).toHaveLength(0);
-    expect(await fetchGoals(true)).toHaveLength(1);
+    expect(saved.goalContent).toBe("RPC goal");
+    expect(saved.reviewContent).toBe("RPC review");
 
-    const deleted = await deleteGoal(created.id);
-    expect(deleted.deletedAt).not.toBeNull();
-  });
-
-  it("reviews wrapperがRPC client経由で主要操作を実行できる", async () => {
-    expect(await fetchReview("2026-W23")).toBeNull();
-
-    const saved = await upsertReview("2026-W23", "RPC review");
-    expect(saved.content).toBe("RPC review");
-
-    const fetched = await fetchReview("2026-W23");
-    expect(fetched?.content).toBe("RPC review");
-    expect(await fetchReviews()).toHaveLength(1);
+    const fetched = await fetchWeeklyCycle("2026-W23");
+    expect(fetched?.goalContent).toBe("RPC goal");
+    expect(fetched?.reviewContent).toBe("RPC review");
+    expect(await fetchWeeklyCycles()).toHaveLength(1);
   });
 });
