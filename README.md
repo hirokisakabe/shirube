@@ -21,6 +21,19 @@ npm install -g shirube
 - Node.js >= 22.12.0
 - macOS
 
+## Web preview
+
+Vercel では静的 Web preview としてデプロイします。main branch の Production Deployment は正式な production-ready Web 版ではなく、latest preview という位置づけです。PR branch では Vercel の Preview Deployment を使い、UI 変更を URL で確認します。
+
+Web preview は Hono API server や SQLite を使わず、ブラウザ内 IndexedDB に tasks / goals / reviews を保存します。データはそのブラウザ内に残り、サーバ同期、マルチデバイス同期、バックアップはありません。
+
+```bash
+# CLI / server bundle を作らず Web static assets だけ生成
+pnpm build:web:preview
+```
+
+Vercel の build command は `pnpm build:web:preview`、output directory は `dist/web` です。`pnpm build:web:preview` が build-time に `VITE_STORAGE_DRIVER=indexeddb` を設定します。未指定の通常 Web build では、ローカル server 版と同じ Hono API client 経由で動作します。
+
 ## 使い方
 
 ```bash

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { MonthView } from "../components/MonthView";
+import { StorageNotice } from "../components/StorageNotice";
 import { WeekView } from "../components/WeekView";
 import { useTasks } from "../hooks/useTasks";
 import { DateU } from "../utils/date";
@@ -48,6 +49,7 @@ export function CalendarPage() {
         <div className="brand">
           <span className="brand-mark" />
           <span className="brand-name">shirube</span>
+          <StorageNotice />
         </div>
 
         <div className="nav">
