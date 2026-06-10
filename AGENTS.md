@@ -68,7 +68,17 @@ Vitest is split by environment: `vitest.node.config.ts` for DB/server tests, `vi
 
 ## Commit & Pull Request Guidelines
 
-Git history uses concise Conventional Commit-style messages, for example `fix: compact month add input` and `test: cover weekly task actions`. Keep commits focused and include tests for behavior changes. PR descriptions should be written in Japanese. Only put `close #<issue-number>` at the top when the user explicitly specified that issue. Include screenshots for visible UI changes and mention migration or release impact; add a Changeset when publishing behavior changes require a version bump.
+Git history uses concise Conventional Commit-style messages, for example `fix: compact month add input` and `test: cover weekly task actions`. Keep commits focused and include tests for behavior changes. PR descriptions should be written in Japanese. Only put `close #<issue-number>` at the top when the user explicitly specified that issue. Include screenshots for visible UI changes and mention migration or release impact.
+
+Before creating a PR, check whether the change affects users and needs a Changeset. If a user-facing change was made and the PR does not already include a changeset, run `pnpm changeset` and commit the generated file. Do not add a duplicate changeset when one already exists in the PR.
+
+Use these Changeset version types:
+
+- **patch**: bug fixes and small internal improvements that preserve backward compatibility.
+- **minor**: new backward-compatible features.
+- **major**: breaking changes that are not backward-compatible.
+
+A changeset is not needed when the change does not require release notes or a version bump. Examples include refactoring with no user-facing behavior change, tests, documentation-only changes, CI configuration, development tooling configuration, and internal operations changes that do not affect release artifacts.
 
 ## Security & Configuration Tips
 
