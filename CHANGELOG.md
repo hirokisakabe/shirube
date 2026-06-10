@@ -1,5 +1,17 @@
 # shirube
 
+## 1.0.0
+
+### Major Changes
+
+- 174c5ba: Replace separate goals and reviews with weekly cycles that store goal and review content together per ISO week.
+
+  Existing `goals` and `reviews` tables are dropped by the migration instead of being migrated into the new schema.
+
+### Patch Changes
+
+- 1e012fe: Add an IndexedDB-backed static web preview build for Vercel.
+
 ## 0.4.0
 
 ### Minor Changes
