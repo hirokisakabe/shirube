@@ -322,201 +322,11 @@ describe("shirube CLI", () => {
     });
   });
 
-  describe("goal", () => {
-    describe("add", () => {
-      it("目標を追加して JSON で返す", () => {
-        const result = runCli(
-          ["goal", "add", "テスト目標", "--format", "json"],
-          dbPath,
-        );
-        expect(result.status).toBe(0);
-        const goal = JSON.parse(result.stdout);
-        expect(goal).toMatchObject({
-          title: "テスト目標",
-          deletedAt: null,
-          doneAt: null,
-        });
-        expect(typeof goal.id).toBe("number");
-      });
-    });
-
-    describe("list", () => {
-      it("未達成の目標のみ表示する（デフォルト）", () => {
-        const g1 = JSON.parse(
-          runCli(["goal", "add", "目標1", "--format", "json"], dbPath).stdout,
-        );
-        const g2 = JSON.parse(
-          runCli(["goal", "add", "目標2", "--format", "json"], dbPath).stdout,
-        );
-        runCli(["goal", "done", String(g1.id), "--format", "json"], dbPath);
-
-        const result = runCli(["goal", "list", "--format", "json"], dbPath);
-        expect(result.status).toBe(0);
-        const list = JSON.parse(result.stdout) as Array<{ id: number }>;
-        expect(list.find((g) => g.id === g1.id)).toBeUndefined();
-        expect(list.find((g) => g.id === g2.id)).toBeDefined();
-      });
-
-      it("--all で達成済みも含めて表示する", () => {
-        const g1 = JSON.parse(
-          runCli(["goal", "add", "目標1", "--format", "json"], dbPath).stdout,
-        );
-        runCli(["goal", "done", String(g1.id)], dbPath);
-
-        const result = runCli(
-          ["goal", "list", "--all", "--format", "json"],
-          dbPath,
-        );
-        expect(result.status).toBe(0);
-        const list = JSON.parse(result.stdout) as Array<{ id: number }>;
-        expect(list.find((g) => g.id === g1.id)).toBeDefined();
-      });
-
-      it("削除済み目標は一覧に含まれない", () => {
-        const g1 = JSON.parse(
-          runCli(["goal", "add", "削除する目標", "--format", "json"], dbPath)
-            .stdout,
-        );
-        runCli(["goal", "rm", String(g1.id), "--yes"], dbPath);
-
-        const result = runCli(
-          ["goal", "list", "--all", "--format", "json"],
-          dbPath,
-        );
-        expect(result.status).toBe(0);
-        const list = JSON.parse(result.stdout) as Array<{ id: number }>;
-        expect(list.find((g) => g.id === g1.id)).toBeUndefined();
-      });
-    });
-
-    describe("done", () => {
-      it("目標を達成にして doneAt をセットする", () => {
-        const goal = JSON.parse(
-          runCli(["goal", "add", "達成目標", "--format", "json"], dbPath)
-            .stdout,
-        );
-
-        const result = runCli(
-          ["goal", "done", String(goal.id), "--format", "json"],
-          dbPath,
-        );
-        expect(result.status).toBe(0);
-        const updated = JSON.parse(result.stdout);
-        expect(updated.doneAt).not.toBeNull();
-        expect(updated.id).toBe(goal.id);
-      });
-
-      it("存在しない ID は 1 で終了する", () => {
-        const result = runCli(["goal", "done", "99999"], dbPath);
-        expect(result.status).toBe(1);
-        expect(result.stderr).toContain("Goal not found");
-      });
-
-      it("数字以外の ID は Invalid id エラーになる", () => {
-        const result = runCli(["goal", "done", "1abc"], dbPath);
-        expect(result.status).toBe(1);
-        expect(result.stderr).toContain("Invalid id");
-      });
-    });
-
-    describe("rm", () => {
-      it("--yes で確認なしにソフトデリートできる", () => {
-        const goal = JSON.parse(
-          runCli(["goal", "add", "削除目標", "--format", "json"], dbPath)
-            .stdout,
-        );
-
-        const result = runCli(
-          ["goal", "rm", String(goal.id), "--yes", "--format", "json"],
-          dbPath,
-        );
-        expect(result.status).toBe(0);
-        const deleted = JSON.parse(result.stdout);
-        expect(deleted.deletedAt).not.toBeNull();
-        expect(deleted.id).toBe(goal.id);
-      });
-
-      it("削除は deleted_at をセットするソフトデリートになっている", () => {
-        const goal = JSON.parse(
-          runCli(
-            ["goal", "add", "ソフトデリートテスト", "--format", "json"],
-            dbPath,
-          ).stdout,
-        );
-        const deleted = JSON.parse(
-          runCli(
-            ["goal", "rm", String(goal.id), "--yes", "--format", "json"],
-            dbPath,
-          ).stdout,
-        );
-        expect(deleted.deletedAt).not.toBeNull();
-        expect(deleted.id).toBe(goal.id);
-      });
-
-      it("--yes なしでキャンセルすると削除されない", () => {
-        const goal = JSON.parse(
-          runCli(
-            ["goal", "add", "キャンセルテスト", "--format", "json"],
-            dbPath,
-          ).stdout,
-        );
-
-        const result = spawnSync(
-          "node",
-          [join(__dirname, "../../dist/cli.js"), "goal", "rm", String(goal.id)],
-          {
-            input: "n\n",
-            encoding: "utf8",
-            env: { ...process.env, SHIRUBE_DB_PATH: dbPath },
-          },
-        );
-
-        expect(result.status).toBe(0);
-        expect(result.stderr).toContain("Cancelled");
-
-        const listResult = runCli(
-          ["goal", "list", "--all", "--format", "json"],
-          dbPath,
-        );
-        const list = JSON.parse(listResult.stdout) as Array<{ id: number }>;
-        expect(list.find((g) => g.id === goal.id)).toBeDefined();
-      });
-
-      it("--yes なしで確認プロンプトが出る", () => {
-        const goal = JSON.parse(
-          runCli(
-            ["goal", "add", "プロンプトテスト", "--format", "json"],
-            dbPath,
-          ).stdout,
-        );
-
-        const result = spawnSync(
-          "node",
-          [join(__dirname, "../../dist/cli.js"), "goal", "rm", String(goal.id)],
-          {
-            input: "y\n",
-            encoding: "utf8",
-            env: { ...process.env, SHIRUBE_DB_PATH: dbPath },
-          },
-        );
-
-        expect(result.status).toBe(0);
-        expect(result.stderr).toContain(`Delete goal ${goal.id}?`);
-      });
-
-      it("数字以外の ID は Invalid id エラーになる", () => {
-        const result = runCli(["goal", "rm", "1abc", "--yes"], dbPath);
-        expect(result.status).toBe(1);
-        expect(result.stderr).toContain("Invalid id");
-      });
-    });
-  });
-
   describe("review", () => {
     function makeMockEditor(content: string): string {
       const { writeFileSync, chmodSync } =
         require("node:fs") as typeof import("fs");
-      const scriptPath = join(tmpDir, `mock-editor-${Date.now()}.js`);
+      const scriptPath = join(tmpDir, `mock-review-editor-${Date.now()}.js`);
       const escaped = JSON.stringify(content);
       writeFileSync(
         scriptPath,
@@ -527,14 +337,14 @@ describe("shirube CLI", () => {
       return scriptPath;
     }
 
-    it("review で今週の振り返りを保存できる", () => {
+    it("review で今週の振り返り本文を保存できる", () => {
       const editor = makeMockEditor("今週の振り返り内容");
       const result = runCli(["review"], dbPath, { EDITOR: `node ${editor}` });
       expect(result.status).toBe(0);
       expect(result.stderr).toContain("Saved review for");
     });
 
-    it("review --week で指定週の振り返りを保存できる", () => {
+    it("review --week で指定週の振り返り本文を保存できる", () => {
       const editor = makeMockEditor("振り返り内容");
       const result = runCli(["review", "--week", "2024-W01"], dbPath, {
         EDITOR: `node ${editor}`,
@@ -578,7 +388,7 @@ describe("shirube CLI", () => {
       expect(result.stderr).toContain("Failed to open editor");
     });
 
-    it("review list --format json で振り返り一覧を JSON で取得できる", () => {
+    it("review list --format json で週次サイクル一覧を JSON で取得できる", () => {
       const editor = makeMockEditor("振り返り内容");
       runCli(["review", "--week", "2024-W01"], dbPath, {
         EDITOR: `node ${editor}`,
@@ -593,10 +403,11 @@ describe("shirube CLI", () => {
       expect(Array.isArray(list)).toBe(true);
       expect(list).toHaveLength(2);
       expect(list[0].week).toBe("2024-W02");
+      expect(list[0].reviewContent).toBe("振り返り内容");
       expect(list[1].week).toBe("2024-W01");
     });
 
-    it("同じ週を再度 review すると内容が更新される", () => {
+    it("同じ週を再度 review すると振り返り本文が更新される", () => {
       const editor1 = makeMockEditor("最初の内容");
       runCli(["review", "--week", "2024-W10"], dbPath, {
         EDITOR: `node ${editor1}`,
@@ -610,7 +421,56 @@ describe("shirube CLI", () => {
       const result = runCli(["review", "list", "--format", "json"], dbPath);
       const list = JSON.parse(result.stdout);
       expect(list).toHaveLength(1);
-      expect(list[0].content).toBe("更新後の内容");
+      expect(list[0].reviewContent).toBe("更新後の内容");
+    });
+  });
+
+  describe("goal", () => {
+    function makeMockEditor(content: string): string {
+      const { writeFileSync, chmodSync } =
+        require("node:fs") as typeof import("fs");
+      const scriptPath = join(tmpDir, `mock-goal-editor-${Date.now()}.js`);
+      const escaped = JSON.stringify(content);
+      writeFileSync(
+        scriptPath,
+        `const fs = require('fs');\nfs.writeFileSync(process.argv[2], ${escaped}, 'utf8');\n`,
+        "utf8",
+      );
+      chmodSync(scriptPath, 0o755);
+      return scriptPath;
+    }
+
+    it("goal で今週の目標本文を保存できる", () => {
+      const editor = makeMockEditor("- 今週の目標");
+      const result = runCli(["goal"], dbPath, { EDITOR: `node ${editor}` });
+      expect(result.status).toBe(0);
+      expect(result.stderr).toContain("Saved goal for");
+    });
+
+    it("goal --week で指定週の目標本文を保存できる", () => {
+      const editor = makeMockEditor("指定週の目標");
+      const result = runCli(["goal", "--week", "2024-W01"], dbPath, {
+        EDITOR: `node ${editor}`,
+      });
+      expect(result.status).toBe(0);
+      expect(result.stderr).toContain("Saved goal for 2024-W01");
+    });
+
+    it("goal list --format json で週次サイクル一覧を取得できる", () => {
+      const editor = makeMockEditor("目標内容");
+      runCli(["goal", "--week", "2024-W01"], dbPath, {
+        EDITOR: `node ${editor}`,
+      });
+
+      const result = runCli(["goal", "list", "--format", "json"], dbPath);
+      expect(result.status).toBe(0);
+      const list = JSON.parse(result.stdout);
+      expect(list).toHaveLength(1);
+      expect(list[0]).toMatchObject({
+        week: "2024-W01",
+        goalContent: "目標内容",
+        reviewContent: "",
+      });
     });
   });
 

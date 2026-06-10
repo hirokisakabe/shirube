@@ -1,12 +1,11 @@
-import type { Goal } from "./goals";
-import type { Review } from "./reviews";
+import type { WeeklyCycle } from "./reviews";
 import type { Task } from "./tasks";
 
 const dbName = "shirube-preview";
-const dbVersion = 1;
+const dbVersion = 2;
 
-type StoreName = "tasks" | "goals" | "reviews";
-type StoredRecord = Task | Goal | Review;
+type StoreName = "tasks" | "weekly_cycles";
+type StoredRecord = Task | WeeklyCycle;
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 let currentDb: IDBDatabase | null = null;
@@ -39,18 +38,18 @@ function openDb() {
             autoIncrement: true,
           });
         }
-        if (!db.objectStoreNames.contains("goals")) {
-          db.createObjectStore("goals", {
-            keyPath: "id",
-            autoIncrement: true,
-          });
+        if (db.objectStoreNames.contains("goals")) {
+          db.deleteObjectStore("goals");
         }
-        if (!db.objectStoreNames.contains("reviews")) {
-          const reviews = db.createObjectStore("reviews", {
+        if (db.objectStoreNames.contains("reviews")) {
+          db.deleteObjectStore("reviews");
+        }
+        if (!db.objectStoreNames.contains("weekly_cycles")) {
+          const weeklyCycles = db.createObjectStore("weekly_cycles", {
             keyPath: "id",
             autoIncrement: true,
           });
-          reviews.createIndex("week", "week", { unique: true });
+          weeklyCycles.createIndex("week", "week", { unique: true });
         }
       };
     }).catch((error: unknown) => {
@@ -161,71 +160,46 @@ export async function deleteIndexedDbTask(id: number) {
   });
 }
 
-export async function fetchIndexedDbGoals(includeAchieved = false) {
-  const goals = await readAll<Goal>("goals");
-  return goals
-    .filter((goal) => !goal.deletedAt && (includeAchieved || !goal.doneAt))
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+export async function fetchIndexedDbWeeklyCycles() {
+  const cycles = await readAll<WeeklyCycle>("weekly_cycles");
+  return cycles.sort((a, b) => b.week.localeCompare(a.week));
 }
 
-export async function createIndexedDbGoal(title: string) {
-  return addRecord<Goal>("goals", {
-    title,
-    doneAt: null,
-    deletedAt: null,
-    createdAt: new Date().toISOString(),
-  });
-}
-
-export async function updateIndexedDbGoal(
-  id: number,
-  updates: { doneAt?: string | null },
-) {
-  if (!("doneAt" in updates)) throw new Error("No fields to update");
-  return updateRecord<Goal>("goals", id, { doneAt: updates.doneAt ?? null });
-}
-
-export async function deleteIndexedDbGoal(id: number) {
-  return updateRecord<Goal>("goals", id, {
-    deletedAt: new Date().toISOString(),
-  });
-}
-
-export async function fetchIndexedDbReviews() {
-  const reviews = await readAll<Review>("reviews");
-  return reviews.sort((a, b) => b.week.localeCompare(a.week));
-}
-
-export async function fetchIndexedDbReview(week: string) {
+export async function fetchIndexedDbWeeklyCycle(week: string) {
   const db = await openDb();
-  const transaction = db.transaction("reviews", "readonly");
-  const store = transaction.objectStore("reviews");
+  const transaction = db.transaction("weekly_cycles", "readonly");
+  const store = transaction.objectStore("weekly_cycles");
   const index = store.index("week");
-  const review = await requestToPromise<Review | undefined>(index.get(week));
+  const cycle = await requestToPromise<WeeklyCycle | undefined>(
+    index.get(week),
+  );
   await transactionDone(transaction);
-  return review ?? null;
+  return cycle ?? null;
 }
 
-export async function upsertIndexedDbReview(week: string, content: string) {
-  if (content.length === 0) throw new Error("content is required");
-
+export async function upsertIndexedDbWeeklyCycle(
+  week: string,
+  content: { goalContent: string; reviewContent: string },
+) {
   const db = await openDb();
-  const transaction = db.transaction("reviews", "readwrite");
-  const store = transaction.objectStore("reviews");
+  const transaction = db.transaction("weekly_cycles", "readwrite");
+  const store = transaction.objectStore("weekly_cycles");
   const index = store.index("week");
-  const existing = await requestToPromise<Review | undefined>(index.get(week));
+  const existing = await requestToPromise<WeeklyCycle | undefined>(
+    index.get(week),
+  );
   const now = new Date().toISOString();
-  const review = existing
-    ? { ...existing, content, updatedAt: now }
-    : { week, content, createdAt: now, updatedAt: now };
+  const cycle = existing
+    ? { ...existing, ...content, updatedAt: now }
+    : { week, ...content, createdAt: now, updatedAt: now };
 
   if (existing) {
-    await requestToPromise(store.put(review));
+    await requestToPromise(store.put(cycle));
   } else {
-    const id = Number(await requestToPromise<IDBValidKey>(store.add(review)));
-    Object.assign(review, { id });
+    const id = Number(await requestToPromise<IDBValidKey>(store.add(cycle)));
+    Object.assign(cycle, { id });
   }
 
   await transactionDone(transaction);
-  return review as Review;
+  return cycle as WeeklyCycle;
 }

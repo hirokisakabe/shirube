@@ -34,18 +34,18 @@ describe("storage driver selection", () => {
       .mockRejectedValue(new Error("network disabled"));
 
     const { createTask, fetchTasks } = await import("./tasks");
-    const { createGoal, fetchGoals } = await import("./goals");
-    const { fetchReview, upsertReview } = await import("./reviews");
+    const { fetchWeeklyCycle, upsertWeeklyCycle } = await import("./reviews");
 
     const task = await createTask("Preview task", "2026-06-09");
     expect(await fetchTasks("2026-06-09")).toMatchObject([{ id: task.id }]);
 
-    const goal = await createGoal("Preview goal");
-    expect(await fetchGoals()).toMatchObject([{ id: goal.id }]);
-
-    await upsertReview("2026-W23", "Preview review");
-    expect(await fetchReview("2026-W23")).toMatchObject({
-      content: "Preview review",
+    await upsertWeeklyCycle("2026-W23", {
+      goalContent: "Preview goal",
+      reviewContent: "Preview review",
+    });
+    expect(await fetchWeeklyCycle("2026-W23")).toMatchObject({
+      goalContent: "Preview goal",
+      reviewContent: "Preview review",
     });
     expect(fetchSpy).not.toHaveBeenCalled();
   });

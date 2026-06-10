@@ -1,60 +1,66 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import {
-  type Review,
-  fetchReview,
-  fetchReviews,
-  upsertReview,
+  type WeeklyCycle,
+  fetchWeeklyCycle,
+  fetchWeeklyCycles,
+  upsertWeeklyCycle,
 } from "../api/reviews";
 import { queryKeys } from "../query";
 
-export function useReviews() {
+export function useWeeklyCycles() {
   const queryClient = useQueryClient();
   const query = useQuery({
-    queryKey: queryKeys.reviews,
-    queryFn: fetchReviews,
+    queryKey: queryKeys.weeklyCycles,
+    queryFn: fetchWeeklyCycles,
   });
 
   const reload = useCallback(async () => {
-    await queryClient.invalidateQueries({ queryKey: queryKeys.reviews });
+    await queryClient.invalidateQueries({ queryKey: queryKeys.weeklyCycles });
   }, [queryClient]);
 
   return {
-    reviews: query.data ?? [],
+    cycles: query.data ?? [],
     loading: query.isLoading,
     error: query.error ? String(query.error) : null,
     reload,
   };
 }
 
-export function useWeekReview(week: string) {
+export function useWeeklyCycle(week: string) {
   const queryClient = useQueryClient();
   const query = useQuery({
-    queryKey: queryKeys.review(week),
-    queryFn: () => fetchReview(week),
+    queryKey: queryKeys.weeklyCycle(week),
+    queryFn: () => fetchWeeklyCycle(week),
   });
 
   const saveMutation = useMutation({
-    mutationFn: (content: string) => upsertReview(week, content),
+    mutationFn: (content: { goalContent: string; reviewContent: string }) =>
+      upsertWeeklyCycle(week, content),
     onSuccess: (updated) => {
-      queryClient.setQueryData(queryKeys.review(week), updated);
-      queryClient.setQueryData<Review[]>(queryKeys.reviews, (previous = []) => {
-        const withoutCurrent = previous.filter(
-          (review) => review.week !== updated.week,
-        );
-        return [updated, ...withoutCurrent].sort((a, b) =>
-          b.week.localeCompare(a.week),
-        );
-      });
+      queryClient.setQueryData(queryKeys.weeklyCycle(week), updated);
+      queryClient.setQueryData<WeeklyCycle[]>(
+        queryKeys.weeklyCycles,
+        (previous = []) => {
+          const withoutCurrent = previous.filter(
+            (cycle) => cycle.week !== updated.week,
+          );
+          return [updated, ...withoutCurrent].sort((a, b) =>
+            b.week.localeCompare(a.week),
+          );
+        },
+      );
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.review(week) });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.reviews });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.weeklyCycle(week),
+      });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.weeklyCycles });
     },
   });
 
   const save = useCallback(
-    async (content: string) => {
+    async (content: { goalContent: string; reviewContent: string }) => {
       try {
         return await saveMutation.mutateAsync(content);
       } catch {
@@ -65,7 +71,7 @@ export function useWeekReview(week: string) {
   );
 
   return {
-    review: query.data ?? null,
+    cycle: query.data ?? null,
     loading: query.isLoading,
     saving: saveMutation.isPending,
     error: query.error

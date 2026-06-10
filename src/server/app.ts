@@ -2,7 +2,7 @@ import { and, desc, eq, isNull } from "drizzle-orm";
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import { z } from "zod";
-import { type createDb, goals, reviews, tasks } from "../db/index";
+import { type createDb, tasks, weeklyCycles } from "../db/index";
 
 type Db = ReturnType<typeof createDb>;
 
@@ -32,10 +32,15 @@ const taskUpdateSchema = z.object({
   title: z.string().min(1).optional(),
   date: dateSchema.optional(),
 });
-const goalQuerySchema = z.object({ all: z.enum(["true", "false"]).optional() });
-const goalCreateSchema = z.object({ title: z.string().min(1) });
-const goalUpdateSchema = z.object({ doneAt: z.string().nullable().optional() });
-const reviewUpdateSchema = z.object({ content: z.string().min(1) });
+const weeklyCycleCreateSchema = z.object({
+  week: weekSchema,
+  goalContent: z.string().optional(),
+  reviewContent: z.string().optional(),
+});
+const weeklyCycleUpdateSchema = z.object({
+  goalContent: z.string().optional(),
+  reviewContent: z.string().optional(),
+});
 
 type TaskUpdateInput = z.infer<typeof taskUpdateSchema>;
 
@@ -157,140 +162,105 @@ export function createApp(db: Db) {
         return c.json(task);
       },
     )
-    .get("/api/reviews", async (c) => {
+    .get("/api/weekly-cycles", async (c) => {
       const result = await db
         .select()
-        .from(reviews)
-        .orderBy(desc(reviews.week));
+        .from(weeklyCycles)
+        .orderBy(desc(weeklyCycles.week));
       return c.json(result);
     })
     .get(
-      "/api/reviews/:week",
+      "/api/weekly-cycles/:week",
       zValidator("param", weekParamSchema, validationError("Invalid week")),
       async (c) => {
         const { week } = c.req.valid("param");
-        const review = await db.query.reviews.findFirst({
-          where: eq(reviews.week, week),
+        const cycle = await db.query.weeklyCycles.findFirst({
+          where: eq(weeklyCycles.week, week),
         });
-        if (!review) return c.json({ error: "Not found" }, 404);
-        return c.json(review);
-      },
-    )
-    .put(
-      "/api/reviews/:week",
-      zValidator("param", weekParamSchema, validationError("Invalid week")),
-      zValidator(
-        "json",
-        reviewUpdateSchema,
-        bodyValidationError("content", "content is required"),
-      ),
-      async (c) => {
-        const { week } = c.req.valid("param");
-        const body = c.req.valid("json");
-        const [review] = await db
-          .insert(reviews)
-          .values({ week, content: body.content })
-          .onConflictDoUpdate({
-            target: reviews.week,
-            set: { content: body.content, updatedAt: new Date().toISOString() },
-          })
-          .returning();
-        return c.json(review);
-      },
-    )
-    .delete(
-      "/api/reviews/:week",
-      zValidator("param", weekParamSchema, validationError("Invalid week")),
-      async (c) => {
-        const { week } = c.req.valid("param");
-        const existing = await db.query.reviews.findFirst({
-          where: eq(reviews.week, week),
-        });
-        if (!existing) return c.json({ error: "Not found" }, 404);
-        await db.delete(reviews).where(eq(reviews.week, week));
-        return c.json(existing);
-      },
-    )
-    .get(
-      "/api/goals",
-      zValidator("query", goalQuerySchema, validationError("Invalid query")),
-      async (c) => {
-        const all = c.req.valid("query").all === "true";
-        const result = await db
-          .select()
-          .from(goals)
-          .where(
-            all
-              ? isNull(goals.deletedAt)
-              : and(isNull(goals.deletedAt), isNull(goals.doneAt)),
-          )
-          .orderBy(desc(goals.createdAt));
-        return c.json(result);
-      },
-    )
-    .get(
-      "/api/goals/:id",
-      zValidator("param", idParamSchema, validationError("Invalid id")),
-      async (c) => {
-        const { id } = c.req.valid("param");
-        const goal = await db.query.goals.findFirst({
-          where: and(eq(goals.id, id), isNull(goals.deletedAt)),
-        });
-        if (!goal) return c.json({ error: "Not found" }, 404);
-        return c.json(goal);
+        if (!cycle) return c.json({ error: "Not found" }, 404);
+        return c.json(cycle);
       },
     )
     .post(
-      "/api/goals",
+      "/api/weekly-cycles",
       zValidator(
         "json",
-        goalCreateSchema,
-        bodyValidationError("title", "title is required"),
+        weeklyCycleCreateSchema,
+        bodyValidationError("week", "week is required"),
       ),
       async (c) => {
         const body = c.req.valid("json");
-        const [goal] = await db
-          .insert(goals)
-          .values({ title: body.title })
+        const existing = await db.query.weeklyCycles.findFirst({
+          where: eq(weeklyCycles.week, body.week),
+        });
+        if (existing) return c.json({ error: "Already exists" }, 409);
+        const [cycle] = await db
+          .insert(weeklyCycles)
+          .values({
+            week: body.week,
+            goalContent: body.goalContent ?? "",
+            reviewContent: body.reviewContent ?? "",
+          })
           .returning();
-        return c.json(goal, 201);
+        return c.json(cycle, 201);
       },
     )
-    .patch(
-      "/api/goals/:id",
-      zValidator("param", idParamSchema, validationError("Invalid id")),
+    .put(
+      "/api/weekly-cycles/:week",
+      zValidator("param", weekParamSchema, validationError("Invalid week")),
       zValidator(
         "json",
-        goalUpdateSchema,
+        weeklyCycleUpdateSchema,
         validationError("Invalid request body"),
       ),
       async (c) => {
-        const { id } = c.req.valid("param");
+        const { week } = c.req.valid("param");
         const body = c.req.valid("json");
-        if (!("doneAt" in body)) {
-          return c.json({ error: "No fields to update" }, 400);
-        }
-        const [goal] = await db
-          .update(goals)
-          .set({ doneAt: body.doneAt ?? null })
-          .where(and(eq(goals.id, id), isNull(goals.deletedAt)))
+        const now = new Date().toISOString();
+        const values = {
+          goalContent: body.goalContent ?? "",
+          reviewContent: body.reviewContent ?? "",
+        };
+        const [cycle] = await db
+          .insert(weeklyCycles)
+          .values({ week, ...values })
+          .onConflictDoUpdate({
+            target: weeklyCycles.week,
+            set: { ...values, updatedAt: now },
+          })
           .returning();
-        if (!goal) return c.json({ error: "Not found" }, 404);
-        return c.json(goal);
+        return c.json(cycle);
       },
     )
-    .delete(
-      "/api/goals/:id",
-      zValidator("param", idParamSchema, validationError("Invalid id")),
+    .patch(
+      "/api/weekly-cycles/:week",
+      zValidator("param", weekParamSchema, validationError("Invalid week")),
+      zValidator(
+        "json",
+        weeklyCycleUpdateSchema,
+        validationError("Invalid request body"),
+      ),
       async (c) => {
-        const { id } = c.req.valid("param");
-        const [goal] = await db
-          .update(goals)
-          .set({ deletedAt: new Date().toISOString() })
-          .where(and(eq(goals.id, id), isNull(goals.deletedAt)))
+        const { week } = c.req.valid("param");
+        const body = c.req.valid("json");
+        if (!("goalContent" in body) && !("reviewContent" in body)) {
+          return c.json({ error: "No fields to update" }, 400);
+        }
+        const set: {
+          goalContent?: string;
+          reviewContent?: string;
+          updatedAt: string;
+        } = { updatedAt: new Date().toISOString() };
+        if (body.goalContent !== undefined) set.goalContent = body.goalContent;
+        if (body.reviewContent !== undefined)
+          set.reviewContent = body.reviewContent;
+        const [cycle] = await db
+          .update(weeklyCycles)
+          .set(set)
+          .where(eq(weeklyCycles.week, week))
           .returning();
-        if (!goal) return c.json({ error: "Not found" }, 404);
-        return c.json(goal);
+        if (!cycle) return c.json({ error: "Not found" }, 404);
+        return c.json(cycle);
       },
     );
 }

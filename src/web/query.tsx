@@ -3,10 +3,8 @@ import type { ReactNode } from "react";
 
 export const queryKeys = {
   tasks: ["tasks"] as const,
-  goals: (showAchieved: boolean) => ["goals", showAchieved] as const,
-  goalsRoot: ["goals"] as const,
-  reviews: ["reviews"] as const,
-  review: (week: string) => ["review", week] as const,
+  weeklyCycles: ["weekly-cycles"] as const,
+  weeklyCycle: (week: string) => ["weekly-cycle", week] as const,
 };
 
 export function createWebQueryClient() {

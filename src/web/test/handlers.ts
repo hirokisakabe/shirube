@@ -1,13 +1,11 @@
 import { http, HttpResponse } from "msw";
-import type { Goal } from "../api/goals";
-import type { Review } from "../api/reviews";
+import type { WeeklyCycle } from "../api/reviews";
 import type { Task } from "../api/tasks";
 
 const now = () => new Date().toISOString();
 
 let tasks: Task[] = [];
-let goals: Goal[] = [];
-let reviews: Review[] = [];
+let weeklyCycles: WeeklyCycle[] = [];
 
 export const makeTask = (overrides: Partial<Task> = {}): Task => ({
   id: 1,
@@ -19,19 +17,13 @@ export const makeTask = (overrides: Partial<Task> = {}): Task => ({
   ...overrides,
 });
 
-export const makeGoal = (overrides: Partial<Goal> = {}): Goal => ({
-  id: 1,
-  title: "テスト目標",
-  doneAt: null,
-  deletedAt: null,
-  createdAt: "2026-06-01T00:00:00.000Z",
-  ...overrides,
-});
-
-export const makeReview = (overrides: Partial<Review> = {}): Review => ({
+export const makeWeeklyCycle = (
+  overrides: Partial<WeeklyCycle> = {},
+): WeeklyCycle => ({
   id: 1,
   week: "2026-W23",
-  content: "テスト振り返り",
+  goalContent: "テスト目標",
+  reviewContent: "テスト振り返り",
   createdAt: "2026-06-01T00:00:00.000Z",
   updatedAt: "2026-06-01T00:00:00.000Z",
   ...overrides,
@@ -41,18 +33,13 @@ export function setMockTasks(nextTasks: Task[]) {
   tasks = [...nextTasks];
 }
 
-export function setMockGoals(nextGoals: Goal[]) {
-  goals = [...nextGoals];
-}
-
-export function setMockReviews(nextReviews: Review[]) {
-  reviews = [...nextReviews];
+export function setMockWeeklyCycles(nextCycles: WeeklyCycle[]) {
+  weeklyCycles = [...nextCycles];
 }
 
 export function resetMockData() {
   tasks = [];
-  goals = [];
-  reviews = [];
+  weeklyCycles = [];
 }
 
 function nextId(items: Array<{ id: number }>) {
@@ -119,80 +106,38 @@ export const handlers = [
     return HttpResponse.json(deleted);
   }),
 
-  http.get("/api/goals", ({ request }) => {
-    const all = new URL(request.url).searchParams.get("all") === "true";
-    const result = goals
-      .filter((goal) => !goal.deletedAt && (all || !goal.doneAt))
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  http.get("/api/weekly-cycles", () => {
+    const result = [...weeklyCycles].sort((a, b) =>
+      b.week.localeCompare(a.week),
+    );
     return HttpResponse.json(result);
   }),
-  http.post("/api/goals", async ({ request }) => {
-    const body = (await request.json()) as { title?: string };
-    if (!body.title)
-      return HttpResponse.json({ error: "title is required" }, { status: 400 });
-    const goal = makeGoal({
-      id: nextId(goals),
-      title: body.title,
-      createdAt: now(),
-    });
-    goals = [goal, ...goals];
-    return HttpResponse.json(goal, { status: 201 });
-  }),
-  http.patch("/api/goals/:id", async ({ params, request }) => {
-    const id = Number(params.id);
-    if (Number.isNaN(id))
-      return HttpResponse.json({ error: "Invalid id" }, { status: 400 });
-    const body = (await request.json()) as { doneAt?: string | null };
-    const goal = goals.find((item) => item.id === id && !item.deletedAt);
-    if (!goal)
+  http.get("/api/weekly-cycles/:week", ({ params }) => {
+    const cycle = weeklyCycles.find((item) => item.week === params.week);
+    if (!cycle)
       return HttpResponse.json({ error: "Not found" }, { status: 404 });
-    const updated = { ...goal, doneAt: body.doneAt ?? null };
-    goals = goals.map((item) => (item.id === id ? updated : item));
-    return HttpResponse.json(updated);
+    return HttpResponse.json(cycle);
   }),
-  http.delete("/api/goals/:id", ({ params }) => {
-    const id = Number(params.id);
-    if (Number.isNaN(id))
-      return HttpResponse.json({ error: "Invalid id" }, { status: 400 });
-    const goal = goals.find((item) => item.id === id && !item.deletedAt);
-    if (!goal)
-      return HttpResponse.json({ error: "Not found" }, { status: 404 });
-    const deleted = { ...goal, deletedAt: now() };
-    goals = goals.map((item) => (item.id === id ? deleted : item));
-    return HttpResponse.json(deleted);
-  }),
-
-  http.get("/api/reviews", () => {
-    const result = [...reviews].sort((a, b) => b.week.localeCompare(a.week));
-    return HttpResponse.json(result);
-  }),
-  http.get("/api/reviews/:week", ({ params }) => {
-    const review = reviews.find((item) => item.week === params.week);
-    if (!review)
-      return HttpResponse.json({ error: "Not found" }, { status: 404 });
-    return HttpResponse.json(review);
-  }),
-  http.put("/api/reviews/:week", async ({ params, request }) => {
+  http.put("/api/weekly-cycles/:week", async ({ params, request }) => {
     const week = String(params.week);
-    const body = (await request.json()) as { content?: string };
-    if (!body.content)
-      return HttpResponse.json(
-        { error: "content is required" },
-        { status: 400 },
-      );
-    const existing = reviews.find((item) => item.week === week);
-    const review = existing
-      ? { ...existing, content: body.content, updatedAt: now() }
-      : makeReview({
-          id: nextId(reviews),
+    const body = (await request.json()) as {
+      goalContent?: string;
+      reviewContent?: string;
+    };
+    const existing = weeklyCycles.find((item) => item.week === week);
+    const cycle = existing
+      ? { ...existing, ...body, updatedAt: now() }
+      : makeWeeklyCycle({
+          id: nextId(weeklyCycles),
           week,
-          content: body.content,
+          goalContent: body.goalContent ?? "",
+          reviewContent: body.reviewContent ?? "",
           createdAt: now(),
           updatedAt: now(),
         });
-    reviews = existing
-      ? reviews.map((item) => (item.week === week ? review : item))
-      : [...reviews, review];
-    return HttpResponse.json(review);
+    weeklyCycles = existing
+      ? weeklyCycles.map((item) => (item.week === week ? cycle : item))
+      : [...weeklyCycles, cycle];
+    return HttpResponse.json(cycle);
   }),
 ];
