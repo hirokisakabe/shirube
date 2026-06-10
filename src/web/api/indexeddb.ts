@@ -16,11 +16,16 @@ function toError(error: unknown, fallback: string) {
 }
 
 function openDb() {
+  if (typeof indexedDB === "undefined") {
+    return Promise.reject(new Error("IndexedDB is not available"));
+  }
+
   if (!dbPromise) {
-    dbPromise = new Promise((resolve, reject) => {
+    dbPromise = new Promise<IDBDatabase>((resolve, reject) => {
       const request = indexedDB.open(dbName, dbVersion);
       request.onerror = () =>
         reject(toError(request.error, "Failed to open IndexedDB"));
+      request.onblocked = () => reject(new Error("IndexedDB open blocked"));
       request.onsuccess = () => {
         currentDb = request.result;
         resolve(request.result);
@@ -48,6 +53,10 @@ function openDb() {
           reviews.createIndex("week", "week", { unique: true });
         }
       };
+    }).catch((error: unknown) => {
+      currentDb = null;
+      dbPromise = null;
+      throw error;
     });
   }
 
