@@ -198,6 +198,8 @@ export async function fetchIndexedDbReview(week: string) {
 }
 
 export async function upsertIndexedDbReview(week: string, content: string) {
+  if (content.length === 0) throw new Error("content is required");
+
   const db = await openDb();
   const transaction = db.transaction("reviews", "readwrite");
   const store = transaction.objectStore("reviews");

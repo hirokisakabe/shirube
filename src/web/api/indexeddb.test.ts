@@ -82,6 +82,9 @@ describe("IndexedDB storage backend", () => {
 
   it("reviewsのupsert、単体取得、week降順を保持する", async () => {
     expect(await fetchIndexedDbReview("2026-W23")).toBeNull();
+    await expect(upsertIndexedDbReview("2026-W23", "")).rejects.toThrow(
+      "content is required",
+    );
 
     await upsertIndexedDbReview("2026-W22", "Older review");
     const saved = await upsertIndexedDbReview("2026-W23", "IDB review");

@@ -32,7 +32,7 @@ Web preview は Hono API server や SQLite を使わず、ブラウザ内 Indexe
 pnpm build:web:preview
 ```
 
-Vercel の build command は `pnpm build:web:preview`、output directory は `dist/web` です。Vercel 側の環境変数でも `VITE_STORAGE_DRIVER=indexeddb` を設定する前提です。未指定の場合、ローカル server 版と同じ Hono API client 経由で動作します。
+Vercel の build command は `pnpm build:web:preview`、output directory は `dist/web` です。`pnpm build:web:preview` が build-time に `VITE_STORAGE_DRIVER=indexeddb` を設定します。未指定の通常 Web build では、ローカル server 版と同じ Hono API client 経由で動作します。
 
 ## 使い方
 
