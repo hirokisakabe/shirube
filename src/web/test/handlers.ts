@@ -86,6 +86,12 @@ export const handlers = [
     if ("doneAt" in body) updates.doneAt = body.doneAt ?? null;
     if (body.title !== undefined) updates.title = body.title;
     if (body.date !== undefined) updates.date = body.date;
+    if ("deletedAt" in body && body.deletedAt !== null) {
+      return HttpResponse.json(
+        { error: "Invalid request body" },
+        { status: 400 },
+      );
+    }
     if ("deletedAt" in body) updates.deletedAt = body.deletedAt ?? null;
     if (Object.keys(updates).length === 0) {
       return HttpResponse.json(

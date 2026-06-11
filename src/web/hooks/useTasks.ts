@@ -51,6 +51,7 @@ export function useTasks() {
   const [undoAction, setUndoAction] = useState<UndoAction | null>(null);
   const [undoing, setUndoing] = useState(false);
   const latestOperationIdRef = useRef(0);
+  const undoingRef = useRef(false);
   const query = useQuery({
     queryKey: queryKeys.tasks,
     queryFn: () => fetchTasks(),
@@ -301,8 +302,6 @@ export function useTasks() {
         setUndoAction({
           message: "削除を取り消す",
           run: async () => {
-            const currentBeforeUndo =
-              queryClient.getQueryData<Task[]>(queryKeys.tasks) ?? [];
             replaceTask(previousTask);
             try {
               const restored = await updateTask(previousTask.id, {
@@ -315,9 +314,8 @@ export function useTasks() {
               setOperationError(null);
               void queryClient.invalidateQueries({ queryKey: queryKeys.tasks });
             } catch {
-              queryClient.setQueryData<Task[]>(
-                queryKeys.tasks,
-                currentBeforeUndo,
+              setTasks((current) =>
+                current.filter((task) => task.id !== previousTask.id),
               );
               showUndoError();
               void queryClient.invalidateQueries({ queryKey: queryKeys.tasks });
@@ -333,6 +331,7 @@ export function useTasks() {
   });
 
   const add = (date: string, text: string) => {
+    if (undoingRef.current) return;
     const clean = text.replace(/\s+/g, " ").trim();
     if (!clean) return;
     setUndoAction(null);
@@ -344,6 +343,7 @@ export function useTasks() {
   };
 
   const toggle = (id: number) => {
+    if (undoingRef.current) return;
     if (isOptimisticTaskId(id)) return;
     const task = tasks.find((t) => t.id === id);
     if (!task) return;
@@ -358,12 +358,14 @@ export function useTasks() {
   };
 
   const remove = (id: number) => {
+    if (undoingRef.current) return;
     if (isOptimisticTaskId(id)) return;
     setUndoAction(null);
     deleteMutation.mutate({ id, operationId: nextOperationId() });
   };
 
   const edit = (id: number, text: string) => {
+    if (undoingRef.current) return;
     if (isOptimisticTaskId(id)) return;
     const clean = text.replace(/\s+/g, " ").trim();
     if (!clean) {
@@ -382,6 +384,7 @@ export function useTasks() {
   };
 
   const moveTo = (id: number, date: string) => {
+    if (undoingRef.current) return;
     if (isOptimisticTaskId(id)) return;
     const task = tasks.find((t) => t.id === id);
     if (!task || task.date === date) return;
@@ -397,6 +400,7 @@ export function useTasks() {
   const undo = async () => {
     const action = undoAction;
     if (!action || undoing) return;
+    undoingRef.current = true;
     setUndoing(true);
     setUndoAction(null);
     try {
@@ -404,6 +408,7 @@ export function useTasks() {
     } catch {
       // The action already restored visible state and surfaced an error.
     } finally {
+      undoingRef.current = false;
       setUndoing(false);
     }
   };
