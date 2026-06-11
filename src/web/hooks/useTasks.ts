@@ -13,6 +13,10 @@ type TaskUpdate = { doneAt?: string | null; title?: string; date?: string };
 
 let nextOptimisticTaskId = -1;
 
+export function isOptimisticTaskId(id: number) {
+  return id < 0;
+}
+
 function sortForDay(items: Task[]): Task[] {
   return [...items].sort((a, b) => {
     if (!!a.doneAt !== !!b.doneAt) return a.doneAt ? 1 : -1;
@@ -52,7 +56,6 @@ export function useTasks() {
   const restoreTaskFromSnapshot = (snapshot: Task[], id: number) => {
     const snapshotTask = snapshot.find((task) => task.id === id);
     if (!snapshotTask) {
-      queryClient.setQueryData(queryKeys.tasks, snapshot);
       showOperationError();
       return;
     }
@@ -97,9 +100,9 @@ export function useTasks() {
       );
       return { previous };
     },
-    onError: (_error, _variables, context) => {
+    onError: (_error, variables, context) => {
       if (context?.previous) {
-        restoreTaskFromSnapshot(context.previous, _variables.id);
+        restoreTaskFromSnapshot(context.previous, variables.id);
       } else {
         showOperationError();
       }
@@ -168,9 +171,9 @@ export function useTasks() {
       setTasks((current) => current.filter((task) => task.id !== id));
       return { previous };
     },
-    onError: (_error, _variables, context) => {
+    onError: (_error, variables, context) => {
       if (context?.previous) {
-        restoreTaskFromSnapshot(context.previous, _variables);
+        restoreTaskFromSnapshot(context.previous, variables);
       } else {
         showOperationError();
       }
@@ -180,8 +183,6 @@ export function useTasks() {
     },
   });
 
-  const isOptimisticTask = (id: number) => id < 0;
-
   const add = (date: string, text: string) => {
     const clean = text.replace(/\s+/g, " ").trim();
     if (!clean) return;
@@ -189,7 +190,7 @@ export function useTasks() {
   };
 
   const toggle = (id: number) => {
-    if (isOptimisticTask(id)) return;
+    if (isOptimisticTaskId(id)) return;
     const task = tasks.find((t) => t.id === id);
     if (!task) return;
     const doneAt = task.doneAt ? null : new Date().toISOString();
@@ -201,12 +202,12 @@ export function useTasks() {
   };
 
   const remove = (id: number) => {
-    if (isOptimisticTask(id)) return;
+    if (isOptimisticTaskId(id)) return;
     deleteMutation.mutate(id);
   };
 
   const edit = (id: number, text: string) => {
-    if (isOptimisticTask(id)) return;
+    if (isOptimisticTaskId(id)) return;
     const clean = text.replace(/\s+/g, " ").trim();
     if (!clean) {
       remove(id);
@@ -220,7 +221,7 @@ export function useTasks() {
   };
 
   const moveTo = (id: number, date: string) => {
-    if (isOptimisticTask(id)) return;
+    if (isOptimisticTaskId(id)) return;
     updateMutation.mutate({
       id,
       updates: { date },

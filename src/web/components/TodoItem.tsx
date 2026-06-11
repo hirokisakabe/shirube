@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { Task } from "../api/tasks";
+import { isOptimisticTaskId } from "../hooks/useTasks";
 
 type Props = {
   todo: Task;
@@ -19,7 +20,7 @@ export function TodoItem({
   const [editing, setEditing] = useState(false);
   const [val, setVal] = useState(todo.title);
   const inputRef = useRef<HTMLInputElement>(null);
-  const pending = todo.id < 0;
+  const pending = isOptimisticTaskId(todo.id);
 
   useEffect(() => {
     if (editing) inputRef.current?.focus();
@@ -42,6 +43,7 @@ export function TodoItem({
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- The wrapper prevents parent month-cell navigation; child buttons and edit input keep keyboard controls.
     <div
       className={`todo${variant === "compact" ? " todo-compact" : ""}${done ? " done" : ""}${pending ? " pending" : ""}`}
+      aria-busy={pending}
       data-todo-done={done ? "true" : "false"}
       draggable={!editing && !pending}
       onDragStart={onDragStart}
