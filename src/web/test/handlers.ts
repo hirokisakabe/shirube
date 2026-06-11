@@ -64,7 +64,7 @@ export const handlers = [
     const task = makeTask({
       id: nextId(tasks),
       title: body.title,
-      date: body.date ?? now().slice(0, 10),
+      date: body.date === undefined ? now().slice(0, 10) : body.date,
       createdAt: now(),
     });
     tasks = [...tasks, task];
