@@ -148,7 +148,12 @@ export async function createIndexedDbTask(title: string, date: string) {
 
 export async function updateIndexedDbTask(
   id: number,
-  updates: { doneAt?: string | null; title?: string; date?: string },
+  updates: {
+    doneAt?: string | null;
+    title?: string;
+    date?: string;
+    deletedAt?: string | null;
+  },
 ) {
   if (Object.keys(updates).length === 0) throw new Error("No fields to update");
   return updateRecord<Task>("tasks", id, updates);

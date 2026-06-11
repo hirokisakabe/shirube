@@ -115,6 +115,19 @@ export function CalendarPage() {
           {ctx.operationError}
         </div>
       )}
+      {ctx.undoState.message && (
+        <div className="task-undo-bar" role="status">
+          <span>{ctx.undoState.message}</span>
+          <button
+            type="button"
+            className="task-undo-button"
+            onClick={() => void ctx.undo()}
+            disabled={ctx.undoState.undoing}
+          >
+            Undo
+          </button>
+        </div>
+      )}
 
       <main className="stage">
         {view === "week" ? (

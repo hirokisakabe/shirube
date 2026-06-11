@@ -487,6 +487,142 @@ describe("CalendarPage", () => {
     });
   });
 
+  it("タスク追加直後にundoすると追加したタスクが消える", async () => {
+    setMockTasks([]);
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime.bind(vi),
+    });
+    renderWithQueryClient(<CalendarPage />);
+
+    const inputs = await screen.findAllByPlaceholderText("タスクを追加");
+    await user.click(inputs[0]);
+    await user.type(inputs[0], "undo追加{Enter}");
+
+    expect(await screen.findByText("undo追加")).toBeInTheDocument();
+    expect(await screen.findByText("追加を取り消す")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Undo" }));
+
+    await waitFor(() => {
+      expect(screen.queryByText("undo追加")).not.toBeInTheDocument();
+    });
+  });
+
+  it("タスク名編集直後にundoすると編集前の値に戻る", async () => {
+    setMockTasks([makeTask({ id: 1, title: "編集前undo" })]);
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime.bind(vi),
+    });
+    renderWithQueryClient(<CalendarPage />);
+
+    await user.dblClick(await screen.findByText("編集前undo"));
+    const editInput = screen.getByDisplayValue("編集前undo");
+    await user.clear(editInput);
+    await user.type(editInput, "編集後undo{Enter}");
+
+    expect(await screen.findByText("編集後undo")).toBeInTheDocument();
+    expect(await screen.findByText("タスクを元に戻す")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Undo" }));
+
+    expect(await screen.findByText("編集前undo")).toBeInTheDocument();
+    expect(screen.queryByText("編集後undo")).not.toBeInTheDocument();
+  });
+
+  it("タスク完了切替直後にundoすると切り替え前の状態に戻る", async () => {
+    setMockTasks([makeTask({ id: 1, title: "完了undo" })]);
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime.bind(vi),
+    });
+    renderWithQueryClient(<CalendarPage />);
+
+    expect(
+      (await screen.findByText("完了undo")).closest("[data-todo-done]"),
+    ).toHaveAttribute("data-todo-done", "false");
+
+    await user.click(screen.getByLabelText("完了にする"));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("完了undo").closest("[data-todo-done]"),
+      ).toHaveAttribute("data-todo-done", "true");
+    });
+    expect(await screen.findByText("タスクを元に戻す")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Undo" }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("完了undo").closest("[data-todo-done]"),
+      ).toHaveAttribute("data-todo-done", "false");
+    });
+  });
+
+  it("タスク削除直後にundoすると削除前の状態で一覧に戻る", async () => {
+    setMockTasks([
+      makeTask({
+        id: 1,
+        title: "削除undo",
+        doneAt: "2026-06-01T09:00:00.000Z",
+      }),
+    ]);
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime.bind(vi),
+    });
+    renderWithQueryClient(<CalendarPage />);
+
+    await screen.findByText("削除undo");
+    await user.click(screen.getByTitle("削除"));
+
+    await waitFor(() => {
+      expect(screen.queryByText("削除undo")).not.toBeInTheDocument();
+    });
+    expect(await screen.findByText("削除を取り消す")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Undo" }));
+
+    expect(await screen.findByText("削除undo")).toBeInTheDocument();
+    expect(
+      screen.getByText("削除undo").closest("[data-todo-done]"),
+    ).toHaveAttribute("data-todo-done", "true");
+  });
+
+  it("undo復元に失敗すると失敗表示を出して保存状態に戻す", async () => {
+    let task = makeTask({ id: 1, title: "復元失敗undo" });
+    setMockTasks([task]);
+    server.use(
+      http.get("/api/tasks", () =>
+        HttpResponse.json(task.deletedAt ? [] : [task]),
+      ),
+      http.delete("/api/tasks/:id", () => {
+        task = { ...task, deletedAt: "2026-06-01T12:00:00.000Z" };
+        return HttpResponse.json(task);
+      }),
+      http.patch("/api/tasks/:id", () =>
+        HttpResponse.json({ error: "network error" }, { status: 500 }),
+      ),
+    );
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime.bind(vi),
+    });
+    renderWithQueryClient(<CalendarPage />);
+
+    await screen.findByText("復元失敗undo");
+    await user.click(screen.getByTitle("削除"));
+    await waitFor(() => {
+      expect(screen.queryByText("復元失敗undo")).not.toBeInTheDocument();
+    });
+
+    await user.click(await screen.findByRole("button", { name: "Undo" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Undoに失敗しました",
+    );
+    await waitFor(() => {
+      expect(screen.queryByText("復元失敗undo")).not.toBeInTheDocument();
+    });
+  });
+
   it("月表示で表示中タスクを追加・完了・編集・削除・移動できる", async () => {
     let task = makeTask({ id: 1, title: "月表示タスク" });
     setMockTasks([task]);

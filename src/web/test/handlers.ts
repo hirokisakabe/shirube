@@ -75,19 +75,27 @@ export const handlers = [
       doneAt?: string | null;
       title?: string;
       date?: string;
+      deletedAt?: string | null;
     };
-    const updates: { doneAt?: string | null; title?: string; date?: string } =
-      {};
+    const updates: {
+      doneAt?: string | null;
+      title?: string;
+      date?: string;
+      deletedAt?: string | null;
+    } = {};
     if ("doneAt" in body) updates.doneAt = body.doneAt ?? null;
     if (body.title !== undefined) updates.title = body.title;
     if (body.date !== undefined) updates.date = body.date;
+    if ("deletedAt" in body) updates.deletedAt = body.deletedAt ?? null;
     if (Object.keys(updates).length === 0) {
       return HttpResponse.json(
         { error: "No fields to update" },
         { status: 400 },
       );
     }
-    const task = tasks.find((item) => item.id === id && !item.deletedAt);
+    const task = tasks.find(
+      (item) => item.id === id && (!item.deletedAt || body.deletedAt === null),
+    );
     if (!task)
       return HttpResponse.json({ error: "Not found" }, { status: 404 });
     const updated = { ...task, ...updates };

@@ -12,6 +12,7 @@ type Ctx = {
   remove: (id: number) => void;
   edit: (id: number, text: string) => void;
   moveTo: (id: number, date: string) => void;
+  undo: () => void;
 };
 
 type Props = {

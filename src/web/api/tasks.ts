@@ -28,7 +28,12 @@ export async function createTask(title: string, date: string) {
 
 export async function updateTask(
   id: number,
-  updates: { doneAt?: string | null; title?: string; date?: string },
+  updates: {
+    doneAt?: string | null;
+    title?: string;
+    date?: string;
+    deletedAt?: string | null;
+  },
 ) {
   if (usesIndexedDbStorage) return updateIndexedDbTask(id, updates);
   const res = await apiClient.api.tasks[":id"].$patch({
