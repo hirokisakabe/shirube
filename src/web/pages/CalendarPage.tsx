@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { Link } from "@tanstack/react-router";
 import { MonthView } from "../components/MonthView";
 import { StorageNotice } from "../components/StorageNotice";
 import { WeekView } from "../components/WeekView";
+import { WeeklyCycleDrawer } from "../components/WeeklyCycleDrawer";
 import { useTasks } from "../hooks/useTasks";
 import { DateU } from "../utils/date";
 
@@ -14,8 +14,10 @@ export function CalendarPage() {
   const [layout] = useState<WeekLayout>("columns");
   const [anchor, setAnchor] = useState(() => DateU.today());
   const [showWeekend, setShowWeekend] = useState(false);
+  const [cycleDrawerOpen, setCycleDrawerOpen] = useState(false);
 
   const weekStart = DateU.startOfWeek(anchor);
+  const currentWeek = DateU.isoWeek(weekStart);
   const monthAnchor =
     view === "month"
       ? new Date(anchor.getFullYear(), anchor.getMonth(), 1)
@@ -104,9 +106,15 @@ export function CalendarPage() {
               月
             </button>
           </div>
-          <Link to="/review" className="review-nav-link">
-            週次サイクル
-          </Link>
+          {view === "week" && (
+            <button
+              type="button"
+              className="review-nav-link"
+              onClick={() => setCycleDrawerOpen(true)}
+            >
+              週次サイクル
+            </button>
+          )}
         </div>
       </header>
 
@@ -146,6 +154,13 @@ export function CalendarPage() {
           />
         )}
       </main>
+      {view === "week" && (
+        <WeeklyCycleDrawer
+          week={currentWeek}
+          open={cycleDrawerOpen}
+          onClose={() => setCycleDrawerOpen(false)}
+        />
+      )}
     </div>
   );
 }

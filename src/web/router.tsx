@@ -5,7 +5,6 @@ import {
   createRouter,
 } from "@tanstack/react-router";
 import { CalendarPage } from "./pages/CalendarPage";
-import { ReviewPage } from "./pages/ReviewPage";
 
 const rootRoute = createRootRoute({ component: () => <Outlet /> });
 
@@ -15,13 +14,7 @@ const indexRoute = createRoute({
   component: CalendarPage,
 });
 
-const reviewRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/review",
-  component: ReviewPage,
-});
-
-const routeTree = rootRoute.addChildren([indexRoute, reviewRoute]);
+const routeTree = rootRoute.addChildren([indexRoute]);
 
 export const router = createRouter({ routeTree });
 

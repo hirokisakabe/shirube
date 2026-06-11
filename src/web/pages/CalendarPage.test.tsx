@@ -8,21 +8,15 @@ import {
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { makeTask, setMockTasks } from "../test/handlers";
+import {
+  makeTask,
+  makeWeeklyCycle,
+  setMockTasks,
+  setMockWeeklyCycles,
+} from "../test/handlers";
 import { renderWithQueryClient } from "../test/render";
 import { server } from "../test/server";
 import { CalendarPage } from "./CalendarPage";
-
-vi.mock("@tanstack/react-router", async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import("@tanstack/react-router")>();
-  return {
-    ...actual,
-    Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
-      <a href={to}>{children}</a>
-    ),
-  };
-});
 
 // Fix Date to 2026-06-01 (Monday) — week starts on 2026-06-01 (Mon) in Monday-start convention
 const FIXED_NOW = new Date("2026-06-01T12:00:00.000Z");
@@ -58,6 +52,165 @@ describe("CalendarPage", () => {
     expect(screen.getByText("水曜タスク")).toBeInTheDocument();
     expect(screen.queryByText("今週 完了")).not.toBeInTheDocument();
     expect(screen.queryByText("%")).not.toBeInTheDocument();
+  });
+
+  it("週表示では週次サイクルドロワーがデフォルトで閉じている", async () => {
+    renderWithQueryClient(<CalendarPage />);
+
+    await screen.findAllByPlaceholderText("タスクを追加");
+
+    expect(
+      screen.getByRole("button", { name: "週次サイクル" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("週表示のボタンから対象週の週次サイクルを開ける", async () => {
+    setMockWeeklyCycles([
+      makeWeeklyCycle({
+        id: 1,
+        week: "2026-W23",
+        goalContent: "今週の目標内容",
+        reviewContent: "今週の振り返り内容",
+      }),
+    ]);
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime.bind(vi),
+    });
+    renderWithQueryClient(<CalendarPage />);
+
+    await user.click(
+      await screen.findByRole("button", { name: "週次サイクル" }),
+    );
+
+    expect(
+      await screen.findByRole("dialog", { name: "6/1週の週次サイクル" }),
+    ).toBeInTheDocument();
+    const dialog = screen.getByRole("dialog", {
+      name: "6/1週の週次サイクル",
+    });
+    expect(
+      within(dialog).getByDisplayValue("今週の目標内容"),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).getByDisplayValue("今週の振り返り内容"),
+    ).toBeInTheDocument();
+  });
+
+  it("週次サイクルドロワーから目標と振り返りを保存できる", async () => {
+    setMockWeeklyCycles([]);
+    const requests: Array<{ week: string; body: unknown }> = [];
+    server.use(
+      http.put("/api/weekly-cycles/:week", async ({ params, request }) => {
+        const body = await request.json();
+        requests.push({ week: String(params.week), body });
+        return HttpResponse.json(
+          makeWeeklyCycle({
+            id: 1,
+            week: String(params.week),
+            goalContent: (body as { goalContent: string }).goalContent,
+            reviewContent: (body as { reviewContent: string }).reviewContent,
+          }),
+        );
+      }),
+    );
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime.bind(vi),
+    });
+    renderWithQueryClient(<CalendarPage />);
+
+    await user.click(
+      await screen.findByRole("button", { name: "週次サイクル" }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    const [goalTextarea, reviewTextarea] =
+      within(dialog).getAllByRole("textbox");
+    await user.type(goalTextarea, "新しい目標");
+    await user.type(reviewTextarea, "新しい振り返り");
+    await user.click(screen.getByRole("button", { name: "保存" }));
+
+    expect(await screen.findByText("保存しました")).toBeInTheDocument();
+    expect(requests).toContainEqual({
+      week: "2026-W23",
+      body: { goalContent: "新しい目標", reviewContent: "新しい振り返り" },
+    });
+  });
+
+  it("週を移動すると開いている週次サイクルドロワーの内容も切り替わる", async () => {
+    setMockWeeklyCycles([
+      makeWeeklyCycle({
+        id: 1,
+        week: "2026-W23",
+        goalContent: "今週の目標",
+        reviewContent: "今週の振り返り",
+      }),
+      makeWeeklyCycle({
+        id: 2,
+        week: "2026-W24",
+        goalContent: "次週の目標",
+        reviewContent: "次週の振り返り",
+      }),
+    ]);
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime.bind(vi),
+    });
+    renderWithQueryClient(<CalendarPage />);
+
+    await user.click(
+      await screen.findByRole("button", { name: "週次サイクル" }),
+    );
+    let dialog = await screen.findByRole("dialog");
+    expect(
+      await within(dialog).findByDisplayValue("今週の目標"),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "次へ" }));
+
+    dialog = await screen.findByRole("dialog", {
+      name: "6/8週の週次サイクル",
+    });
+    expect(
+      await within(dialog).findByDisplayValue("次週の目標"),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).getByDisplayValue("次週の振り返り"),
+    ).toBeInTheDocument();
+  });
+
+  it("月表示では週次サイクルボタンとドロワーが表示されない", async () => {
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime.bind(vi),
+    });
+    renderWithQueryClient(<CalendarPage />);
+
+    await screen.findAllByPlaceholderText("タスクを追加");
+    await user.click(screen.getByRole("button", { name: "月" }));
+
+    expect(
+      screen.queryByRole("button", { name: "週次サイクル" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("週次サイクルドロワーを背景クリックとEscで閉じられる", async () => {
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime.bind(vi),
+    });
+    renderWithQueryClient(<CalendarPage />);
+
+    await user.click(
+      await screen.findByRole("button", { name: "週次サイクル" }),
+    );
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+    await user.click(
+      screen.getAllByRole("button", { name: "週次サイクルを閉じる" })[0],
+    );
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "週次サイクル" }));
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("週表示の長いタスク名に全文確認用のtitleが付く", async () => {
