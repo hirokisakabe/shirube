@@ -3,29 +3,9 @@ import { useCallback } from "react";
 import {
   type WeeklyCycle,
   fetchWeeklyCycle,
-  fetchWeeklyCycles,
   upsertWeeklyCycle,
 } from "../api/weeklyCycles";
 import { queryKeys } from "../query";
-
-export function useWeeklyCycles() {
-  const queryClient = useQueryClient();
-  const query = useQuery({
-    queryKey: queryKeys.weeklyCycles,
-    queryFn: fetchWeeklyCycles,
-  });
-
-  const reload = useCallback(async () => {
-    await queryClient.invalidateQueries({ queryKey: queryKeys.weeklyCycles });
-  }, [queryClient]);
-
-  return {
-    cycles: query.data ?? [],
-    loading: query.isLoading,
-    error: query.error ? String(query.error) : null,
-    reload,
-  };
-}
 
 export function useWeeklyCycle(week: string) {
   const queryClient = useQueryClient();
