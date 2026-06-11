@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   type Task,
@@ -9,6 +10,13 @@ import {
 import { queryKeys } from "../query";
 
 type TaskUpdate = { doneAt?: string | null; title?: string; date?: string };
+
+const taskMutationKey = ["tasks", "mutation"] as const;
+let nextOptimisticTaskId = -1;
+
+export function isOptimisticTaskId(id: number) {
+  return id < 0;
+}
 
 function sortForDay(items: Task[]): Task[] {
   return [...items].sort((a, b) => {
@@ -29,6 +37,7 @@ export function dayStats(todos: Task[], dateKey: string) {
 
 export function useTasks() {
   const queryClient = useQueryClient();
+  const [operationError, setOperationError] = useState<string | null>(null);
   const query = useQuery({
     queryKey: queryKeys.tasks,
     queryFn: () => fetchTasks(),
@@ -41,7 +50,47 @@ export function useTasks() {
     );
   };
 
+  const showOperationError = () => {
+    setOperationError("タスク操作に失敗しました。変更を元に戻しました。");
+  };
+
+  const restoreTaskFromSnapshot = (snapshot: Task[], id: number) => {
+    const snapshotTask = snapshot.find((task) => task.id === id);
+    if (!snapshotTask) {
+      showOperationError();
+      return;
+    }
+
+    queryClient.setQueryData<Task[]>(queryKeys.tasks, (current = []) => {
+      if (current.some((task) => task.id === id)) {
+        return current.map((task) => (task.id === id ? snapshotTask : task));
+      }
+
+      const snapshotIds = new Set(snapshot.map((task) => task.id));
+      const restored = snapshot.flatMap((snapshotItem) => {
+        if (snapshotItem.id === id) return [snapshotTask];
+        const currentItem = current.find((task) => task.id === snapshotItem.id);
+        return currentItem ? [currentItem] : [];
+      });
+      const currentOnly = current.filter((task) => !snapshotIds.has(task.id));
+      return [...restored, ...currentOnly];
+    });
+    showOperationError();
+  };
+
+  const removeOptimisticTask = (id: number) => {
+    setTasks((current) => current.filter((task) => task.id !== id));
+    showOperationError();
+  };
+
+  const invalidateTasksWhenSettled = () => {
+    if (queryClient.isMutating({ mutationKey: taskMutationKey }) === 1) {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.tasks });
+    }
+  };
+
   const updateMutation = useMutation({
+    mutationKey: taskMutationKey,
     mutationFn: ({
       id,
       updates,
@@ -52,53 +101,97 @@ export function useTasks() {
     }) => updateTask(id, updates),
     onMutate: async ({ id, optimistic }) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.tasks });
-      const previous = queryClient.getQueryData<Task[]>(queryKeys.tasks);
+      const previous = queryClient.getQueryData<Task[]>(queryKeys.tasks) ?? [];
       setTasks((current) =>
         current.map((task) => (task.id === id ? optimistic(task) : task)),
       );
       return { previous };
     },
-    onError: (_error, _variables, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(queryKeys.tasks, context.previous);
+    onError: (_error, variables, context) => {
+      if (context) {
+        restoreTaskFromSnapshot(context.previous, variables.id);
+      } else {
+        showOperationError();
       }
     },
     onSuccess: (updated) => {
+      setOperationError(null);
       setTasks((previous) =>
         previous.map((task) => (task.id === updated.id ? updated : task)),
       );
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.tasks });
+      invalidateTasksWhenSettled();
     },
   });
 
   const createMutation = useMutation({
+    mutationKey: taskMutationKey,
     mutationFn: ({ title, date }: { title: string; date: string }) =>
       createTask(title, date),
-    onSuccess: (task) => {
-      setTasks((previous) => [...previous, task]);
+    onMutate: async ({ title, date }) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.tasks });
+      const previous = queryClient.getQueryData<Task[]>(queryKeys.tasks) ?? [];
+      const tempId = nextOptimisticTaskId--;
+      const optimisticTask: Task = {
+        id: tempId,
+        title,
+        date,
+        doneAt: null,
+        deletedAt: null,
+        createdAt: new Date().toISOString(),
+      };
+      setTasks((current) => [...current, optimisticTask]);
+      return { previous, tempId };
+    },
+    onError: (_error, _variables, context) => {
+      if (context) {
+        removeOptimisticTask(context.tempId);
+      } else {
+        showOperationError();
+      }
+    },
+    onSuccess: (task, _variables, context) => {
+      setOperationError(null);
+      setTasks((previous) => {
+        if (previous.some((item) => item.id === task.id)) {
+          return previous.map((item) => (item.id === task.id ? task : item));
+        }
+        let replacedTempTask = false;
+        const next = previous.map((item) => {
+          if (item.id !== context.tempId) return item;
+          replacedTempTask = true;
+          return task;
+        });
+        return replacedTempTask ? next : [...next, task];
+      });
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.tasks });
+      invalidateTasksWhenSettled();
     },
   });
 
   const deleteMutation = useMutation({
+    mutationKey: taskMutationKey,
     mutationFn: deleteTask,
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.tasks });
-      const previous = queryClient.getQueryData<Task[]>(queryKeys.tasks);
+      const previous = queryClient.getQueryData<Task[]>(queryKeys.tasks) ?? [];
       setTasks((current) => current.filter((task) => task.id !== id));
       return { previous };
     },
-    onError: (_error, _variables, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(queryKeys.tasks, context.previous);
+    onError: (_error, variables, context) => {
+      if (context) {
+        restoreTaskFromSnapshot(context.previous, variables);
+      } else {
+        showOperationError();
       }
     },
+    onSuccess: () => {
+      setOperationError(null);
+    },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.tasks });
+      invalidateTasksWhenSettled();
     },
   });
 
@@ -109,6 +202,7 @@ export function useTasks() {
   };
 
   const toggle = (id: number) => {
+    if (isOptimisticTaskId(id)) return;
     const task = tasks.find((t) => t.id === id);
     if (!task) return;
     const doneAt = task.doneAt ? null : new Date().toISOString();
@@ -120,10 +214,12 @@ export function useTasks() {
   };
 
   const remove = (id: number) => {
+    if (isOptimisticTaskId(id)) return;
     deleteMutation.mutate(id);
   };
 
   const edit = (id: number, text: string) => {
+    if (isOptimisticTaskId(id)) return;
     const clean = text.replace(/\s+/g, " ").trim();
     if (!clean) {
       remove(id);
@@ -137,6 +233,7 @@ export function useTasks() {
   };
 
   const moveTo = (id: number, date: string) => {
+    if (isOptimisticTaskId(id)) return;
     updateMutation.mutate({
       id,
       updates: { date },
@@ -148,6 +245,7 @@ export function useTasks() {
     tasks,
     loading: query.isLoading,
     error: query.error ? String(query.error) : null,
+    operationError,
     add,
     toggle,
     remove,

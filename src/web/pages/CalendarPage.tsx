@@ -110,6 +110,12 @@ export function CalendarPage() {
         </div>
       </header>
 
+      {ctx.operationError && (
+        <div className="task-operation-error" role="alert">
+          {ctx.operationError}
+        </div>
+      )}
+
       <main className="stage">
         {view === "week" ? (
           <WeekView

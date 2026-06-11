@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { Task } from "../api/tasks";
+import { isOptimisticTaskId } from "../hooks/useTasks";
 
 type Props = {
   todo: Task;
@@ -19,12 +20,14 @@ export function TodoItem({
   const [editing, setEditing] = useState(false);
   const [val, setVal] = useState(todo.title);
   const inputRef = useRef<HTMLInputElement>(null);
+  const pending = isOptimisticTaskId(todo.id);
 
   useEffect(() => {
     if (editing) inputRef.current?.focus();
   }, [editing]);
 
   const onDragStart = (e: React.DragEvent) => {
+    if (pending) return;
     e.dataTransfer.setData("text/todo-id", String(todo.id));
     e.dataTransfer.effectAllowed = "move";
   };
@@ -39,9 +42,10 @@ export function TodoItem({
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- The wrapper prevents parent month-cell navigation; child buttons and edit input keep keyboard controls.
     <div
-      className={`todo${variant === "compact" ? " todo-compact" : ""}${done ? " done" : ""}`}
+      className={`todo${variant === "compact" ? " todo-compact" : ""}${done ? " done" : ""}${pending ? " pending" : ""}`}
+      aria-busy={pending}
       data-todo-done={done ? "true" : "false"}
-      draggable={!editing}
+      draggable={!editing && !pending}
       onDragStart={onDragStart}
       onClick={(e) => e.stopPropagation()}
     >
@@ -49,6 +53,7 @@ export function TodoItem({
         type="button"
         className="check"
         aria-label={done ? "未完了に戻す" : "完了にする"}
+        disabled={pending}
         onClick={() => onToggle(todo.id)}
       >
         <span className="check-mark" />
@@ -73,13 +78,16 @@ export function TodoItem({
         <span
           className="todo-text"
           onDoubleClick={() => {
+            if (pending) return;
             setVal(todo.title);
             setEditing(true);
           }}
           title={
-            variant === "compact"
-              ? todo.title
-              : `${todo.title}\nダブルクリックで編集`
+            pending
+              ? "保存中"
+              : variant === "compact"
+                ? todo.title
+                : `${todo.title}\nダブルクリックで編集`
           }
         >
           {todo.title}
@@ -90,7 +98,8 @@ export function TodoItem({
         <button
           type="button"
           className="act"
-          title="削除"
+          title={pending ? "保存中" : "削除"}
+          disabled={pending}
           onClick={() => onRemove(todo.id)}
         >
           ×
