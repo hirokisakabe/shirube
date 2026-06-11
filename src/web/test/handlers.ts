@@ -55,7 +55,10 @@ export const handlers = [
     return HttpResponse.json(result);
   }),
   http.post("/api/tasks", async ({ request }) => {
-    const body = (await request.json()) as { title?: string; date?: string };
+    const body = (await request.json()) as {
+      title?: string;
+      date?: string | null;
+    };
     if (!body.title)
       return HttpResponse.json({ error: "title is required" }, { status: 400 });
     const task = makeTask({
@@ -74,13 +77,13 @@ export const handlers = [
     const body = (await request.json()) as {
       doneAt?: string | null;
       title?: string;
-      date?: string;
+      date?: string | null;
       deletedAt?: null;
     };
     const updates: {
       doneAt?: string | null;
       title?: string;
-      date?: string;
+      date?: string | null;
       deletedAt?: null;
     } = {};
     if ("doneAt" in body) updates.doneAt = body.doneAt ?? null;

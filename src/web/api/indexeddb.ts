@@ -140,7 +140,7 @@ export async function fetchIndexedDbTasks(date?: string) {
   );
 }
 
-export async function createIndexedDbTask(title: string, date: string) {
+export async function createIndexedDbTask(title: string, date: string | null) {
   return addRecord<Task>("tasks", {
     title,
     date,
@@ -155,7 +155,7 @@ export async function updateIndexedDbTask(
   updates: {
     doneAt?: string | null;
     title?: string;
-    date?: string;
+    date?: string | null;
     deletedAt?: null;
   },
 ) {

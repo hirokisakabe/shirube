@@ -54,6 +54,158 @@ describe("CalendarPage", () => {
     expect(screen.queryByText("%")).not.toBeInTheDocument();
   });
 
+  it("Inboxで日付未設定タスクを追加・編集・完了・削除・日付移動できる", async () => {
+    let tasks = [
+      makeTask({ id: 1, title: "Inbox完了移動", date: null }),
+      makeTask({ id: 2, title: "Inbox編集", date: null }),
+      makeTask({ id: 3, title: "Inbox削除", date: null }),
+      makeTask({ id: 4, title: "日付付きタスク", date: "2026-06-01" }),
+    ];
+    setMockTasks(tasks);
+    const requests: Array<{ method: string; id?: string; body?: unknown }> = [];
+    server.use(
+      http.get("/api/tasks", () =>
+        HttpResponse.json(tasks.filter((task) => !task.deletedAt)),
+      ),
+      http.post("/api/tasks", async ({ request }) => {
+        const body = (await request.json()) as {
+          title: string;
+          date: string | null;
+        };
+        requests.push({ method: "POST", body });
+        const task = makeTask({ id: 5, ...body });
+        tasks = [...tasks, task];
+        return HttpResponse.json(task, { status: 201 });
+      }),
+      http.patch("/api/tasks/:id", async ({ params, request }) => {
+        const id = Number(params.id);
+        const body = (await request.json()) as {
+          doneAt?: string | null;
+          title?: string;
+          date?: string | null;
+        };
+        requests.push({ method: "PATCH", id: String(params.id), body });
+        tasks = tasks.map((task) =>
+          task.id === id ? { ...task, ...body } : task,
+        );
+        return HttpResponse.json(tasks.find((task) => task.id === id));
+      }),
+      http.delete("/api/tasks/:id", ({ params }) => {
+        const id = Number(params.id);
+        requests.push({ method: "DELETE", id: String(params.id) });
+        tasks = tasks.map((task) =>
+          task.id === id
+            ? { ...task, deletedAt: "2026-06-01T12:00:00.000Z" }
+            : task,
+        );
+        return HttpResponse.json(tasks.find((task) => task.id === id));
+      }),
+    );
+
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime.bind(vi),
+    });
+    const { container } = renderWithQueryClient(<CalendarPage />);
+
+    const inbox = await screen.findByRole("complementary", { name: "Inbox" });
+    expect(within(inbox).getByText("Inbox完了移動")).toBeInTheDocument();
+    expect(within(inbox).getByText("Inbox編集")).toBeInTheDocument();
+    expect(within(inbox).getByText("Inbox削除")).toBeInTheDocument();
+    const calendarMain = container.querySelector(
+      ".calendar-main",
+    ) as HTMLElement;
+    expect(
+      within(calendarMain).queryByText("Inbox完了移動"),
+    ).not.toBeInTheDocument();
+    expect(
+      within(calendarMain).getByText("日付付きタスク"),
+    ).toBeInTheDocument();
+
+    await user.click(within(inbox).getByPlaceholderText("Inboxに追加"));
+    await user.type(
+      within(inbox).getByPlaceholderText("Inboxに追加"),
+      "Inbox追加{Enter}",
+    );
+    await waitFor(() => {
+      expect(requests).toContainEqual({
+        method: "POST",
+        body: { title: "Inbox追加", date: null },
+      });
+    });
+    expect(await within(inbox).findByText("Inbox追加")).toBeInTheDocument();
+
+    await user.click(
+      within(
+        within(inbox)
+          .getByText("Inbox完了移動")
+          .closest("[data-todo-done]") as HTMLElement,
+      ).getByLabelText("完了にする"),
+    );
+    await waitFor(() => {
+      expect(requests).toContainEqual({
+        method: "PATCH",
+        id: "1",
+        body: { doneAt: expect.any(String) },
+      });
+    });
+
+    await user.dblClick(within(inbox).getByText("Inbox編集"));
+    const editInput = within(inbox).getByDisplayValue("Inbox編集");
+    await user.clear(editInput);
+    await user.type(editInput, "Inbox編集後{Enter}");
+    await waitFor(() => {
+      expect(requests).toContainEqual({
+        method: "PATCH",
+        id: "2",
+        body: { title: "Inbox編集後" },
+      });
+    });
+
+    await user.click(
+      within(
+        within(inbox)
+          .getByText("Inbox削除")
+          .closest("[data-todo-done]") as HTMLElement,
+      ).getByTitle("削除"),
+    );
+    expect(within(inbox).queryByText("Inbox削除")).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(requests).toContainEqual({ method: "DELETE", id: "3" });
+    });
+
+    const moveDateInput =
+      within(inbox).getByLabelText("Inbox完了移動の移動先日付");
+    fireEvent.change(moveDateInput, { target: { value: "2026-06-03" } });
+    await user.click(
+      within(moveDateInput.closest(".inbox-task") as HTMLElement).getByRole(
+        "button",
+        { name: "移動" },
+      ),
+    );
+    await waitFor(() => {
+      expect(requests).toContainEqual({
+        method: "PATCH",
+        id: "1",
+        body: { date: "2026-06-03" },
+      });
+    });
+    expect(within(inbox).queryByText("Inbox完了移動")).not.toBeInTheDocument();
+    const wednesdayColumn = screen
+      .getByText("3")
+      .closest(".col") as HTMLElement;
+    expect(
+      within(wednesdayColumn).getByText("Inbox完了移動"),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "月" }));
+    expect(within(inbox).getByText("Inbox編集後")).toBeInTheDocument();
+    expect(
+      within(
+        container.querySelector(".calendar-main") as HTMLElement,
+      ).queryByText("Inbox編集後"),
+    ).not.toBeInTheDocument();
+  });
+
   it("週表示では週次サイクルドロワーがデフォルトで閉じている", async () => {
     renderWithQueryClient(<CalendarPage />);
 

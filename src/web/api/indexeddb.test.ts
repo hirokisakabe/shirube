@@ -60,6 +60,28 @@ describe("IndexedDB storage backend", () => {
     ]);
   });
 
+  it("dateがnullの日付未設定タスクを保存し、日付指定取得からは除外する", async () => {
+    const inboxTask = await createIndexedDbTask("Inbox IDB task", null);
+    await createIndexedDbTask("Dated IDB task", "2026-06-10");
+
+    expect(await fetchIndexedDbTasks()).toContainEqual(
+      expect.objectContaining({ id: inboxTask.id, date: null }),
+    );
+    expect(await fetchIndexedDbTasks("2026-06-10")).toMatchObject([
+      { title: "Dated IDB task", date: "2026-06-10" },
+    ]);
+
+    const movedToDate = await updateIndexedDbTask(inboxTask.id, {
+      date: "2026-06-11",
+    });
+    expect(movedToDate.date).toBe("2026-06-11");
+
+    const movedToInbox = await updateIndexedDbTask(inboxTask.id, {
+      date: null,
+    });
+    expect(movedToInbox.date).toBeNull();
+  });
+
   it("weekly cyclesのupsert、単体取得、week降順を保持する", async () => {
     expect(await fetchIndexedDbWeeklyCycle("2026-W23")).toBeNull();
 
