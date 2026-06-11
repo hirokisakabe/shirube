@@ -112,7 +112,7 @@ describe("CalendarPage", () => {
     expect(within(inbox).getByText("Inbox編集")).toBeInTheDocument();
     expect(within(inbox).getByText("Inbox削除")).toBeInTheDocument();
     const calendarMain = container.querySelector(
-      ".calendar-main",
+      "[data-calendar-main]",
     ) as HTMLElement;
     expect(
       within(calendarMain).queryByText("Inbox完了移動"),
@@ -177,10 +177,9 @@ describe("CalendarPage", () => {
       within(inbox).getByLabelText("Inbox完了移動の移動先日付");
     fireEvent.change(moveDateInput, { target: { value: "2026-06-03" } });
     await user.click(
-      within(moveDateInput.closest(".inbox-task") as HTMLElement).getByRole(
-        "button",
-        { name: "移動" },
-      ),
+      within(
+        moveDateInput.closest("[data-inbox-task]") as HTMLElement,
+      ).getByRole("button", { name: "移動" }),
     );
     await waitFor(() => {
       expect(requests).toContainEqual({
@@ -192,7 +191,7 @@ describe("CalendarPage", () => {
     expect(within(inbox).queryByText("Inbox完了移動")).not.toBeInTheDocument();
     const wednesdayColumn = screen
       .getByText("3")
-      .closest(".col") as HTMLElement;
+      .closest("[data-week-day]") as HTMLElement;
     expect(
       within(wednesdayColumn).getByText("Inbox完了移動"),
     ).toBeInTheDocument();
@@ -214,7 +213,7 @@ describe("CalendarPage", () => {
     expect(within(inbox).getByText("Inbox編集後")).toBeInTheDocument();
     expect(
       within(
-        container.querySelector(".calendar-main") as HTMLElement,
+        container.querySelector("[data-calendar-main]") as HTMLElement,
       ).queryByText("Inbox編集後"),
     ).not.toBeInTheDocument();
   });
@@ -479,7 +478,7 @@ describe("CalendarPage", () => {
       .closest("[data-todo-done]") as HTMLElement;
     const optimisticCheck = within(optimisticItem).getByLabelText("完了にする");
     const optimisticRemove = optimisticItem.querySelector(
-      ".act",
+      "[data-task-action='remove']",
     ) as HTMLButtonElement;
 
     expect(optimisticItem).toHaveAttribute("draggable", "false");
@@ -622,7 +621,7 @@ describe("CalendarPage", () => {
       effectAllowed: "move",
     };
     const todo = screen.getByText("編集後タスク").closest("[draggable]");
-    const wednesdayColumn = screen.getByText("3").closest(".col");
+    const wednesdayColumn = screen.getByText("3").closest("[data-week-day]");
     fireEvent.dragStart(todo as Element, { dataTransfer });
     fireEvent.drop(wednesdayColumn as Element, { dataTransfer });
 
@@ -891,13 +890,12 @@ describe("CalendarPage", () => {
       expect(screen.queryByText("削除undo")).not.toBeInTheDocument();
     });
     const undoToast = (await screen.findByText("削除を取り消す")).closest(
-      ".task-undo-bar",
+      "[role='status']",
     );
     expect(undoToast).toBeInTheDocument();
-    expect(undoToast).toHaveClass("ui-toast", "ui-toast--corner");
 
     const undoButton = screen.getByRole("button", { name: "Undo" });
-    expect(undoButton).toHaveClass("ui-button", "ui-button--compact");
+    expect(undoButton).toBeEnabled();
 
     await user.click(undoButton);
 
@@ -1034,7 +1032,9 @@ describe("CalendarPage", () => {
       effectAllowed: "move",
     };
     const todo = screen.getByText("月表示編集後").closest("[draggable]");
-    const wednesdayCell = screen.getAllByText("3")[0].closest(".mcell");
+    const wednesdayCell = screen
+      .getAllByText("3")[0]
+      .closest("[data-month-cell]");
     fireEvent.dragStart(todo as Element, { dataTransfer });
     fireEvent.drop(wednesdayCell as Element, { dataTransfer });
 
@@ -1107,8 +1107,8 @@ describe("CalendarPage", () => {
     await user.click(screen.getByRole("button", { name: "＋1件" }));
 
     expect(screen.getByText("月表示多件タスク5")).toBeInTheDocument();
-    const sourceCell = screen.getAllByText("1")[0].closest(".mcell");
-    expect(sourceCell).toHaveClass("expanded");
+    const sourceCell = screen.getAllByText("1")[0].closest("[data-month-cell]");
+    expect(sourceCell).toHaveAttribute("data-expanded", "true");
 
     const fifthItem = screen
       .getByText("月表示多件タスク5")
@@ -1141,7 +1141,9 @@ describe("CalendarPage", () => {
       effectAllowed: "move",
     };
     const todo = screen.getByText("月表示多件編集後").closest("[draggable]");
-    const wednesdayCell = screen.getAllByText("3")[0].closest(".mcell");
+    const wednesdayCell = screen
+      .getAllByText("3")[0]
+      .closest("[data-month-cell]");
     fireEvent.dragStart(todo as Element, { dataTransfer });
     fireEvent.drop(wednesdayCell as Element, { dataTransfer });
 
@@ -1152,7 +1154,7 @@ describe("CalendarPage", () => {
         body: { date: "2026-06-03" },
       });
     });
-    expect(sourceCell).not.toHaveClass("expanded");
+    expect(sourceCell).toHaveAttribute("data-expanded", "false");
     expect(
       screen.queryByRole("button", { name: "折りたたむ" }),
     ).not.toBeInTheDocument();
@@ -1182,6 +1184,9 @@ describe("CalendarPage", () => {
     await user.click(screen.getByRole("button", { name: "月" }));
     await user.click(screen.getAllByText("3")[0]);
 
-    expect(screen.getByRole("button", { name: "週" })).toHaveClass("on");
+    expect(screen.getByRole("button", { name: "週" })).toHaveAttribute(
+      "data-active",
+      "true",
+    );
   });
 });
