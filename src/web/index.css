@@ -8,9 +8,19 @@
   --ink-faint: #a7a399;
   --hair: #e4e0d6;
   --hair-soft: #ece8df;
+  /* UI primitive scale: use these for shared spacing, radius, borders, shadows, and compact text. */
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --radius-sm: 6px;
+  --radius-md: 7px;
+  --border-subtle: 1px solid var(--hair);
+  --shadow-float: 0 10px 34px -22px rgba(40, 30, 20, 0.55);
+  --text-sm: 13px;
   --gap: 14px;
   --pad: 16px;
-  --radius: 7px;
+  --radius: var(--radius-md);
+  --shadow: var(--shadow-float);
   --num: "Zen Kaku Gothic New", sans-serif;
 }
 :root[data-mononums="on"] {
@@ -55,6 +65,62 @@ button {
 }
 input {
   font-family: inherit;
+}
+
+/* ---------- ui primitives ---------- */
+.ui-toast {
+  max-width: min(360px, calc(100vw - 48px));
+  padding: 10px var(--space-3);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  border: var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--text-sm);
+  box-shadow: var(--shadow-float);
+}
+.ui-toast--corner {
+  position: fixed;
+  left: 32px;
+  bottom: 32px;
+  z-index: 20;
+}
+.ui-toast__message {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.ui-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-height: 30px;
+  padding: 0 var(--space-3);
+  border: var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--text-sm);
+  transition:
+    border-color 0.15s,
+    color 0.15s,
+    opacity 0.15s;
+}
+.ui-button:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.ui-button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.ui-button--compact {
+  min-height: 26px;
+  padding: 0 10px;
 }
 
 .app {
@@ -212,52 +278,6 @@ input {
   background: color-mix(in srgb, var(--accent) 6%, var(--surface));
   color: var(--accent);
   font-size: 13px;
-}
-
-.task-undo-bar {
-  position: fixed;
-  left: 32px;
-  bottom: 32px;
-  z-index: 20;
-  max-width: min(360px, calc(100vw - 48px));
-  padding: 10px 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  border: 1px solid var(--hair);
-  border-radius: var(--radius);
-  background: var(--surface);
-  color: var(--ink);
-  font-size: 13px;
-  box-shadow: var(--shadow);
-}
-
-.task-undo-bar span {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-.task-undo-button {
-  flex: 0 0 auto;
-  height: 26px;
-  padding: 0 10px;
-  border: 1px solid var(--ink-faint);
-  border-radius: 6px;
-  background: var(--surface-2);
-  color: var(--ink);
-  font: inherit;
-  cursor: pointer;
-}
-
-.task-undo-button:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.task-undo-button:disabled {
-  opacity: 0.55;
-  cursor: default;
 }
 
 /* ===== WEEK : columns / focus ===== */
