@@ -116,11 +116,11 @@ export function CalendarPage() {
         </div>
       )}
       {ctx.undoState.message && (
-        <div className="task-undo-bar" role="status">
-          <span>{ctx.undoState.message}</span>
+        <div className="ui-toast ui-toast--corner task-undo-bar" role="status">
+          <span className="ui-toast__message">{ctx.undoState.message}</span>
           <button
             type="button"
-            className="task-undo-button"
+            className="ui-button ui-button--compact task-undo-button"
             onClick={() => void ctx.undo()}
             disabled={ctx.undoState.undoing}
           >

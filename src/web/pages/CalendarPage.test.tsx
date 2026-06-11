@@ -571,8 +571,12 @@ describe("CalendarPage", () => {
       ".task-undo-bar",
     );
     expect(undoToast).toBeInTheDocument();
+    expect(undoToast).toHaveClass("ui-toast", "ui-toast--corner");
 
-    await user.click(screen.getByRole("button", { name: "Undo" }));
+    const undoButton = screen.getByRole("button", { name: "Undo" });
+    expect(undoButton).toHaveClass("ui-button", "ui-button--compact");
+
+    await user.click(undoButton);
 
     expect(await screen.findByText("削除undo")).toBeInTheDocument();
     expect(
