@@ -282,6 +282,11 @@ describe("CalendarPage", () => {
       });
     });
     movePatchResponse.resolve();
+    await waitFor(() => {
+      expect(
+        within(wednesdayColumn as HTMLElement).getByText("編集後タスク"),
+      ).toBeInTheDocument();
+    });
   });
 
   it("タスク操作失敗時にrollbackして失敗表示と再取得を行う", async () => {
@@ -321,6 +326,76 @@ describe("CalendarPage", () => {
     expect(
       screen.getByText("失敗確認タスク").closest("[data-todo-done]"),
     ).toHaveAttribute("data-todo-done", "false");
+    await waitFor(() => {
+      expect(fetchCount).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  it("タスク追加失敗時に仮タスクを消して失敗表示と再取得を行う", async () => {
+    setMockTasks([]);
+    let fetchCount = 0;
+    const postResponse = deferred();
+    server.use(
+      http.get("/api/tasks", () => {
+        fetchCount += 1;
+        return HttpResponse.json([]);
+      }),
+      http.post("/api/tasks", async () => {
+        await postResponse.promise;
+        return HttpResponse.json({ error: "network error" }, { status: 500 });
+      }),
+    );
+
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime.bind(vi),
+    });
+    renderWithQueryClient(<CalendarPage />);
+
+    const inputs = await screen.findAllByPlaceholderText("タスクを追加");
+    await user.click(inputs[0]);
+    await user.type(inputs[0], "失敗する追加{Enter}");
+
+    expect(screen.getByText("失敗する追加")).toBeInTheDocument();
+    postResponse.resolve();
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "タスク操作に失敗しました",
+    );
+    expect(screen.queryByText("失敗する追加")).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(fetchCount).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  it("タスク削除失敗時に削除前の表示へ戻して失敗表示と再取得を行う", async () => {
+    const task = makeTask({ id: 1, title: "削除失敗タスク" });
+    setMockTasks([task]);
+    let fetchCount = 0;
+    const deleteResponse = deferred();
+    server.use(
+      http.get("/api/tasks", () => {
+        fetchCount += 1;
+        return HttpResponse.json([task]);
+      }),
+      http.delete("/api/tasks/:id", async () => {
+        await deleteResponse.promise;
+        return HttpResponse.json({ error: "network error" }, { status: 500 });
+      }),
+    );
+
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime.bind(vi),
+    });
+    renderWithQueryClient(<CalendarPage />);
+
+    await screen.findByText("削除失敗タスク");
+    await user.click(screen.getByTitle("削除"));
+
+    expect(screen.queryByText("削除失敗タスク")).not.toBeInTheDocument();
+    deleteResponse.resolve();
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "タスク操作に失敗しました",
+    );
+    expect(screen.getByText("削除失敗タスク")).toBeInTheDocument();
     await waitFor(() => {
       expect(fetchCount).toBeGreaterThanOrEqual(2);
     });
