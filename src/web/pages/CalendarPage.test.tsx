@@ -487,7 +487,7 @@ describe("CalendarPage", () => {
     });
   });
 
-  it("タスク追加直後にundoすると追加したタスクが消える", async () => {
+  it("タスク追加直後にはundoを表示しない", async () => {
     setMockTasks([]);
     const user = userEvent.setup({
       advanceTimers: vi.advanceTimersByTime.bind(vi),
@@ -499,16 +499,13 @@ describe("CalendarPage", () => {
     await user.type(inputs[0], "undo追加{Enter}");
 
     expect(await screen.findByText("undo追加")).toBeInTheDocument();
-    expect(await screen.findByText("追加を取り消す")).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "Undo" }));
-
-    await waitFor(() => {
-      expect(screen.queryByText("undo追加")).not.toBeInTheDocument();
-    });
+    expect(
+      screen.queryByRole("button", { name: "Undo" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("追加を取り消す")).not.toBeInTheDocument();
   });
 
-  it("タスク名編集直後にundoすると編集前の値に戻る", async () => {
+  it("タスク名編集直後にはundoを表示しない", async () => {
     setMockTasks([makeTask({ id: 1, title: "編集前undo" })]);
     const user = userEvent.setup({
       advanceTimers: vi.advanceTimersByTime.bind(vi),
@@ -521,15 +518,13 @@ describe("CalendarPage", () => {
     await user.type(editInput, "編集後undo{Enter}");
 
     expect(await screen.findByText("編集後undo")).toBeInTheDocument();
-    expect(await screen.findByText("タスクを元に戻す")).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "Undo" }));
-
-    expect(await screen.findByText("編集前undo")).toBeInTheDocument();
-    expect(screen.queryByText("編集後undo")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Undo" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("タスクを元に戻す")).not.toBeInTheDocument();
   });
 
-  it("タスク完了切替直後にundoすると切り替え前の状態に戻る", async () => {
+  it("タスク完了切替直後にはundoを表示しない", async () => {
     setMockTasks([makeTask({ id: 1, title: "完了undo" })]);
     const user = userEvent.setup({
       advanceTimers: vi.advanceTimersByTime.bind(vi),
@@ -547,15 +542,10 @@ describe("CalendarPage", () => {
         screen.getByText("完了undo").closest("[data-todo-done]"),
       ).toHaveAttribute("data-todo-done", "true");
     });
-    expect(await screen.findByText("タスクを元に戻す")).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "Undo" }));
-
-    await waitFor(() => {
-      expect(
-        screen.getByText("完了undo").closest("[data-todo-done]"),
-      ).toHaveAttribute("data-todo-done", "false");
-    });
+    expect(
+      screen.queryByRole("button", { name: "Undo" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("タスクを元に戻す")).not.toBeInTheDocument();
   });
 
   it("タスク削除直後にundoすると削除前の状態で一覧に戻る", async () => {
@@ -577,7 +567,10 @@ describe("CalendarPage", () => {
     await waitFor(() => {
       expect(screen.queryByText("削除undo")).not.toBeInTheDocument();
     });
-    expect(await screen.findByText("削除を取り消す")).toBeInTheDocument();
+    const undoToast = (await screen.findByText("削除を取り消す")).closest(
+      ".task-undo-bar",
+    );
+    expect(undoToast).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Undo" }));
 

@@ -116,36 +116,6 @@ export function useTasks() {
     });
   };
 
-  const createUpdateUndo = (
-    previousTask: Task,
-    updatedTask: Task,
-    message: string,
-  ): UndoAction => ({
-    message,
-    run: async () => {
-      const currentBeforeUndo =
-        queryClient
-          .getQueryData<Task[]>(queryKeys.tasks)
-          ?.find((task) => task.id === updatedTask.id) ?? updatedTask;
-      replaceTask(previousTask);
-      try {
-        const restored = await updateTask(previousTask.id, {
-          title: previousTask.title,
-          date: previousTask.date,
-          doneAt: previousTask.doneAt,
-        });
-        replaceTask(restored);
-        setOperationError(null);
-        void queryClient.invalidateQueries({ queryKey: queryKeys.tasks });
-      } catch {
-        replaceTask(currentBeforeUndo);
-        showUndoError();
-        void queryClient.invalidateQueries({ queryKey: queryKeys.tasks });
-        throw new Error("Failed to undo task update");
-      }
-    },
-  });
-
   const nextOperationId = () => {
     latestOperationIdRef.current += 1;
     return latestOperationIdRef.current;
@@ -180,18 +150,8 @@ export function useTasks() {
         showOperationError();
       }
     },
-    onSuccess: (updated, variables, context) => {
+    onSuccess: (updated) => {
       setOperationError(null);
-      const previousTask = context?.previous.find(
-        (task) => task.id === variables.id,
-      );
-      if (previousTask) {
-        if (isLatestOperation(variables.operationId)) {
-          setUndoAction(
-            createUpdateUndo(previousTask, updated, "タスクを元に戻す"),
-          );
-        }
-      }
       setTasks((previous) =>
         previous.map((task) => (task.id === updated.id ? updated : task)),
       );
@@ -233,32 +193,8 @@ export function useTasks() {
         showOperationError();
       }
     },
-    onSuccess: (task, variables, context) => {
+    onSuccess: (task, _variables, context) => {
       setOperationError(null);
-      if (isLatestOperation(variables.operationId)) {
-        setUndoAction({
-          message: "追加を取り消す",
-          run: async () => {
-            const currentBeforeUndo =
-              queryClient
-                .getQueryData<Task[]>(queryKeys.tasks)
-                ?.find((item) => item.id === task.id) ?? task;
-            setTasks((previous) =>
-              previous.filter((item) => item.id !== task.id),
-            );
-            try {
-              await deleteTask(task.id);
-              setOperationError(null);
-              void queryClient.invalidateQueries({ queryKey: queryKeys.tasks });
-            } catch {
-              replaceTask(currentBeforeUndo);
-              showUndoError();
-              void queryClient.invalidateQueries({ queryKey: queryKeys.tasks });
-              throw new Error("Failed to undo task creation");
-            }
-          },
-        });
-      }
       setTasks((previous) => {
         if (previous.some((item) => item.id === task.id)) {
           return previous.map((item) => (item.id === task.id ? task : item));
