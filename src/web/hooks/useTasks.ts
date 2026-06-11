@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   type Task,
@@ -9,7 +9,17 @@ import {
 } from "../api/tasks";
 import { queryKeys } from "../query";
 
-type TaskUpdate = { doneAt?: string | null; title?: string; date?: string };
+type TaskUpdate = {
+  doneAt?: string | null;
+  title?: string;
+  date?: string;
+  deletedAt?: null;
+};
+
+type UndoAction = {
+  message: string;
+  run: () => Promise<void>;
+};
 
 const taskMutationKey = ["tasks", "mutation"] as const;
 let nextOptimisticTaskId = -1;
@@ -38,6 +48,10 @@ export function dayStats(todos: Task[], dateKey: string) {
 export function useTasks() {
   const queryClient = useQueryClient();
   const [operationError, setOperationError] = useState<string | null>(null);
+  const [undoAction, setUndoAction] = useState<UndoAction | null>(null);
+  const [undoing, setUndoing] = useState(false);
+  const latestOperationIdRef = useRef(0);
+  const undoingRef = useRef(false);
   const query = useQuery({
     queryKey: queryKeys.tasks,
     queryFn: () => fetchTasks(),
@@ -52,6 +66,10 @@ export function useTasks() {
 
   const showOperationError = () => {
     setOperationError("タスク操作に失敗しました。変更を元に戻しました。");
+  };
+
+  const showUndoError = () => {
+    setOperationError("Undoに失敗しました。最新の状態に戻しました。");
   };
 
   const restoreTaskFromSnapshot = (snapshot: Task[], id: number) => {
@@ -89,6 +107,53 @@ export function useTasks() {
     }
   };
 
+  const replaceTask = (task: Task) => {
+    setTasks((current) => {
+      if (current.some((item) => item.id === task.id)) {
+        return current.map((item) => (item.id === task.id ? task : item));
+      }
+      return [...current, task];
+    });
+  };
+
+  const createUpdateUndo = (
+    previousTask: Task,
+    updatedTask: Task,
+    message: string,
+  ): UndoAction => ({
+    message,
+    run: async () => {
+      const currentBeforeUndo =
+        queryClient
+          .getQueryData<Task[]>(queryKeys.tasks)
+          ?.find((task) => task.id === updatedTask.id) ?? updatedTask;
+      replaceTask(previousTask);
+      try {
+        const restored = await updateTask(previousTask.id, {
+          title: previousTask.title,
+          date: previousTask.date,
+          doneAt: previousTask.doneAt,
+        });
+        replaceTask(restored);
+        setOperationError(null);
+        void queryClient.invalidateQueries({ queryKey: queryKeys.tasks });
+      } catch {
+        replaceTask(currentBeforeUndo);
+        showUndoError();
+        void queryClient.invalidateQueries({ queryKey: queryKeys.tasks });
+        throw new Error("Failed to undo task update");
+      }
+    },
+  });
+
+  const nextOperationId = () => {
+    latestOperationIdRef.current += 1;
+    return latestOperationIdRef.current;
+  };
+
+  const isLatestOperation = (operationId: number) =>
+    latestOperationIdRef.current === operationId;
+
   const updateMutation = useMutation({
     mutationKey: taskMutationKey,
     mutationFn: ({
@@ -98,6 +163,7 @@ export function useTasks() {
       id: number;
       updates: TaskUpdate;
       optimistic: (task: Task) => Task;
+      operationId: number;
     }) => updateTask(id, updates),
     onMutate: async ({ id, optimistic }) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.tasks });
@@ -114,8 +180,18 @@ export function useTasks() {
         showOperationError();
       }
     },
-    onSuccess: (updated) => {
+    onSuccess: (updated, variables, context) => {
       setOperationError(null);
+      const previousTask = context?.previous.find(
+        (task) => task.id === variables.id,
+      );
+      if (previousTask) {
+        if (isLatestOperation(variables.operationId)) {
+          setUndoAction(
+            createUpdateUndo(previousTask, updated, "タスクを元に戻す"),
+          );
+        }
+      }
       setTasks((previous) =>
         previous.map((task) => (task.id === updated.id ? updated : task)),
       );
@@ -127,8 +203,14 @@ export function useTasks() {
 
   const createMutation = useMutation({
     mutationKey: taskMutationKey,
-    mutationFn: ({ title, date }: { title: string; date: string }) =>
-      createTask(title, date),
+    mutationFn: ({
+      title,
+      date,
+    }: {
+      title: string;
+      date: string;
+      operationId: number;
+    }) => createTask(title, date),
     onMutate: async ({ title, date }) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.tasks });
       const previous = queryClient.getQueryData<Task[]>(queryKeys.tasks) ?? [];
@@ -151,8 +233,32 @@ export function useTasks() {
         showOperationError();
       }
     },
-    onSuccess: (task, _variables, context) => {
+    onSuccess: (task, variables, context) => {
       setOperationError(null);
+      if (isLatestOperation(variables.operationId)) {
+        setUndoAction({
+          message: "追加を取り消す",
+          run: async () => {
+            const currentBeforeUndo =
+              queryClient
+                .getQueryData<Task[]>(queryKeys.tasks)
+                ?.find((item) => item.id === task.id) ?? task;
+            setTasks((previous) =>
+              previous.filter((item) => item.id !== task.id),
+            );
+            try {
+              await deleteTask(task.id);
+              setOperationError(null);
+              void queryClient.invalidateQueries({ queryKey: queryKeys.tasks });
+            } catch {
+              replaceTask(currentBeforeUndo);
+              showUndoError();
+              void queryClient.invalidateQueries({ queryKey: queryKeys.tasks });
+              throw new Error("Failed to undo task creation");
+            }
+          },
+        });
+      }
       setTasks((previous) => {
         if (previous.some((item) => item.id === task.id)) {
           return previous.map((item) => (item.id === task.id ? task : item));
@@ -173,8 +279,8 @@ export function useTasks() {
 
   const deleteMutation = useMutation({
     mutationKey: taskMutationKey,
-    mutationFn: deleteTask,
-    onMutate: async (id) => {
+    mutationFn: ({ id }: { id: number; operationId: number }) => deleteTask(id),
+    onMutate: async ({ id }) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.tasks });
       const previous = queryClient.getQueryData<Task[]>(queryKeys.tasks) ?? [];
       setTasks((current) => current.filter((task) => task.id !== id));
@@ -182,13 +288,42 @@ export function useTasks() {
     },
     onError: (_error, variables, context) => {
       if (context) {
-        restoreTaskFromSnapshot(context.previous, variables);
+        restoreTaskFromSnapshot(context.previous, variables.id);
       } else {
         showOperationError();
       }
     },
-    onSuccess: () => {
+    onSuccess: (_deleted, variables, context) => {
       setOperationError(null);
+      const previousTask = context?.previous.find(
+        (task) => task.id === variables.id,
+      );
+      if (previousTask && isLatestOperation(variables.operationId)) {
+        setUndoAction({
+          message: "削除を取り消す",
+          run: async () => {
+            replaceTask(previousTask);
+            try {
+              const restored = await updateTask(previousTask.id, {
+                title: previousTask.title,
+                date: previousTask.date,
+                doneAt: previousTask.doneAt,
+                deletedAt: null,
+              });
+              replaceTask(restored);
+              setOperationError(null);
+              void queryClient.invalidateQueries({ queryKey: queryKeys.tasks });
+            } catch {
+              setTasks((current) =>
+                current.filter((task) => task.id !== previousTask.id),
+              );
+              showUndoError();
+              void queryClient.invalidateQueries({ queryKey: queryKeys.tasks });
+              throw new Error("Failed to undo task deletion");
+            }
+          },
+        });
+      }
     },
     onSettled: () => {
       invalidateTasksWhenSettled();
@@ -196,49 +331,86 @@ export function useTasks() {
   });
 
   const add = (date: string, text: string) => {
+    if (undoingRef.current) return;
     const clean = text.replace(/\s+/g, " ").trim();
     if (!clean) return;
-    createMutation.mutate({ title: clean, date });
+    setUndoAction(null);
+    createMutation.mutate({
+      title: clean,
+      date,
+      operationId: nextOperationId(),
+    });
   };
 
   const toggle = (id: number) => {
+    if (undoingRef.current) return;
     if (isOptimisticTaskId(id)) return;
     const task = tasks.find((t) => t.id === id);
     if (!task) return;
     const doneAt = task.doneAt ? null : new Date().toISOString();
+    setUndoAction(null);
     updateMutation.mutate({
       id,
       updates: { doneAt },
       optimistic: (current) => ({ ...current, doneAt }),
+      operationId: nextOperationId(),
     });
   };
 
   const remove = (id: number) => {
+    if (undoingRef.current) return;
     if (isOptimisticTaskId(id)) return;
-    deleteMutation.mutate(id);
+    setUndoAction(null);
+    deleteMutation.mutate({ id, operationId: nextOperationId() });
   };
 
   const edit = (id: number, text: string) => {
+    if (undoingRef.current) return;
     if (isOptimisticTaskId(id)) return;
     const clean = text.replace(/\s+/g, " ").trim();
     if (!clean) {
       remove(id);
       return;
     }
+    const task = tasks.find((t) => t.id === id);
+    if (!task || task.title === clean) return;
+    setUndoAction(null);
     updateMutation.mutate({
       id,
       updates: { title: clean },
       optimistic: (current) => ({ ...current, title: clean }),
+      operationId: nextOperationId(),
     });
   };
 
   const moveTo = (id: number, date: string) => {
+    if (undoingRef.current) return;
     if (isOptimisticTaskId(id)) return;
+    const task = tasks.find((t) => t.id === id);
+    if (!task || task.date === date) return;
+    setUndoAction(null);
     updateMutation.mutate({
       id,
       updates: { date },
       optimistic: (current) => ({ ...current, date }),
+      operationId: nextOperationId(),
     });
+  };
+
+  const undo = async () => {
+    const action = undoAction;
+    if (!action || undoing) return;
+    undoingRef.current = true;
+    setUndoing(true);
+    setUndoAction(null);
+    try {
+      await action.run();
+    } catch {
+      // The action already restored visible state and surfaced an error.
+    } finally {
+      undoingRef.current = false;
+      setUndoing(false);
+    }
   };
 
   return {
@@ -246,10 +418,14 @@ export function useTasks() {
     loading: query.isLoading,
     error: query.error ? String(query.error) : null,
     operationError,
+    undoState: undoAction
+      ? { message: undoAction.message, undoing }
+      : { message: null, undoing },
     add,
     toggle,
     remove,
     edit,
     moveTo,
+    undo,
   };
 }

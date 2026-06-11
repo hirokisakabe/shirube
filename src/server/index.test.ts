@@ -193,6 +193,23 @@ describe("Server API", () => {
         await expectJsonError(res, "Invalid request body");
       });
 
+      it("deletedAt に null 以外を指定した場合は 400 を返す", async () => {
+        const created = await app.request("/api/tasks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: "不正復元確認", date: "2026-06-01" }),
+        });
+        const task = (await created.json()) as { id: number };
+
+        const res = await app.request(`/api/tasks/${task.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ deletedAt: "2026-06-01T12:00:00.000Z" }),
+        });
+        expect(res.status).toBe(400);
+        await expectJsonError(res, "Invalid request body");
+      });
+
       it("更新項目が空の場合は 400 を返す", async () => {
         const created = await app.request("/api/tasks", {
           method: "POST",
@@ -210,6 +227,34 @@ describe("Server API", () => {
           body: JSON.stringify({}),
         });
         expect(res.status).toBe(400);
+      });
+
+      it("deletedAt に null を指定して削除済みタスクを復元できる", async () => {
+        const created = await app.request("/api/tasks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: "復元するタスク",
+            date: "2026-06-01",
+          }),
+        });
+        const task = (await created.json()) as { id: number };
+        await app.request(`/api/tasks/${task.id}`, { method: "DELETE" });
+
+        const restored = await app.request(`/api/tasks/${task.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ deletedAt: null }),
+        });
+        expect(restored.status).toBe(200);
+        const data = (await restored.json()) as { deletedAt: string | null };
+        expect(data.deletedAt).toBeNull();
+
+        const list = await app.request("/api/tasks");
+        const listData = (await list.json()) as Array<{ id: number }>;
+        expect(listData).toContainEqual(
+          expect.objectContaining({ id: task.id }),
+        );
       });
     });
 

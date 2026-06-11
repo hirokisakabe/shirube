@@ -31,6 +31,7 @@ const taskUpdateSchema = z.object({
   doneAt: z.string().nullable().optional(),
   title: z.string().min(1).optional(),
   date: dateSchema.optional(),
+  deletedAt: z.null().optional(),
 });
 const weeklyCycleCreateSchema = z.object({
   week: weekSchema,
@@ -140,13 +141,19 @@ export function createApp(db: Db) {
         if ("doneAt" in body) set.doneAt = body.doneAt ?? null;
         if (body.title !== undefined) set.title = body.title;
         if (body.date !== undefined) set.date = body.date;
+        if ("deletedAt" in body) set.deletedAt = body.deletedAt ?? null;
         if (Object.keys(set).length === 0) {
           return c.json({ error: "No fields to update" }, 400);
         }
+        const shouldRestoreDeletedTask = body.deletedAt === null;
         const [task] = await db
           .update(tasks)
           .set(set)
-          .where(and(eq(tasks.id, id), isNull(tasks.deletedAt)))
+          .where(
+            shouldRestoreDeletedTask
+              ? eq(tasks.id, id)
+              : and(eq(tasks.id, id), isNull(tasks.deletedAt)),
+          )
           .returning();
         if (!task) return c.json({ error: "Not found" }, 404);
         return c.json(task);

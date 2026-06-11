@@ -214,6 +214,41 @@ input {
   font-size: 13px;
 }
 
+.task-undo-bar {
+  margin: 12px 26px 0;
+  padding: 8px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--hair);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+  box-shadow: var(--shadow);
+}
+
+.task-undo-button {
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--ink-faint);
+  border-radius: 6px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+.task-undo-button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.task-undo-button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
 /* ===== WEEK : columns / focus ===== */
 .wk-columns {
   height: 100%;
