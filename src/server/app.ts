@@ -31,7 +31,7 @@ const taskUpdateSchema = z.object({
   doneAt: z.string().nullable().optional(),
   title: z.string().min(1).optional(),
   date: dateSchema.optional(),
-  deletedAt: z.string().nullable().optional(),
+  deletedAt: z.null().optional(),
 });
 const weeklyCycleCreateSchema = z.object({
   week: weekSchema,

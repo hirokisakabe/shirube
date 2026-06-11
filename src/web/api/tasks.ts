@@ -32,7 +32,7 @@ export async function updateTask(
     doneAt?: string | null;
     title?: string;
     date?: string;
-    deletedAt?: string | null;
+    deletedAt?: null;
   },
 ) {
   if (usesIndexedDbStorage) return updateIndexedDbTask(id, updates);

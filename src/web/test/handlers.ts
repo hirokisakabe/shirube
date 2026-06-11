@@ -75,13 +75,13 @@ export const handlers = [
       doneAt?: string | null;
       title?: string;
       date?: string;
-      deletedAt?: string | null;
+      deletedAt?: null;
     };
     const updates: {
       doneAt?: string | null;
       title?: string;
       date?: string;
-      deletedAt?: string | null;
+      deletedAt?: null;
     } = {};
     if ("doneAt" in body) updates.doneAt = body.doneAt ?? null;
     if (body.title !== undefined) updates.title = body.title;

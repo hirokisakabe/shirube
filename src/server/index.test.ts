@@ -193,6 +193,23 @@ describe("Server API", () => {
         await expectJsonError(res, "Invalid request body");
       });
 
+      it("deletedAt に null 以外を指定した場合は 400 を返す", async () => {
+        const created = await app.request("/api/tasks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: "不正復元確認", date: "2026-06-01" }),
+        });
+        const task = (await created.json()) as { id: number };
+
+        const res = await app.request(`/api/tasks/${task.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ deletedAt: "2026-06-01T12:00:00.000Z" }),
+        });
+        expect(res.status).toBe(400);
+        await expectJsonError(res, "Invalid request body");
+      });
+
       it("更新項目が空の場合は 400 を返す", async () => {
         const created = await app.request("/api/tasks", {
           method: "POST",

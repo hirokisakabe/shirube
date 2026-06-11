@@ -109,12 +109,16 @@ async function updateRecord<T extends StoredRecord>(
   storeName: StoreName,
   id: number,
   updates: Partial<T>,
+  options: { allowDeleted?: boolean } = {},
 ) {
   const db = await openDb();
   const transaction = db.transaction(storeName, "readwrite");
   const store = transaction.objectStore(storeName);
   const current = await requestToPromise<T | undefined>(store.get(id));
-  if (!current || ("deletedAt" in current && current.deletedAt)) {
+  if (
+    !current ||
+    ("deletedAt" in current && current.deletedAt && !options.allowDeleted)
+  ) {
     throw new Error("Not found");
   }
   const updated = { ...current, ...updates };
@@ -152,11 +156,13 @@ export async function updateIndexedDbTask(
     doneAt?: string | null;
     title?: string;
     date?: string;
-    deletedAt?: string | null;
+    deletedAt?: null;
   },
 ) {
   if (Object.keys(updates).length === 0) throw new Error("No fields to update");
-  return updateRecord<Task>("tasks", id, updates);
+  return updateRecord<Task>("tasks", id, updates, {
+    allowDeleted: updates.deletedAt === null,
+  });
 }
 
 export async function deleteIndexedDbTask(id: number) {

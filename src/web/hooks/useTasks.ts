@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   type Task,
@@ -13,7 +13,7 @@ type TaskUpdate = {
   doneAt?: string | null;
   title?: string;
   date?: string;
-  deletedAt?: string | null;
+  deletedAt?: null;
 };
 
 type UndoAction = {
@@ -50,6 +50,7 @@ export function useTasks() {
   const [operationError, setOperationError] = useState<string | null>(null);
   const [undoAction, setUndoAction] = useState<UndoAction | null>(null);
   const [undoing, setUndoing] = useState(false);
+  const latestOperationIdRef = useRef(0);
   const query = useQuery({
     queryKey: queryKeys.tasks,
     queryFn: () => fetchTasks(),
@@ -144,6 +145,14 @@ export function useTasks() {
     },
   });
 
+  const nextOperationId = () => {
+    latestOperationIdRef.current += 1;
+    return latestOperationIdRef.current;
+  };
+
+  const isLatestOperation = (operationId: number) =>
+    latestOperationIdRef.current === operationId;
+
   const updateMutation = useMutation({
     mutationKey: taskMutationKey,
     mutationFn: ({
@@ -153,6 +162,7 @@ export function useTasks() {
       id: number;
       updates: TaskUpdate;
       optimistic: (task: Task) => Task;
+      operationId: number;
     }) => updateTask(id, updates),
     onMutate: async ({ id, optimistic }) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.tasks });
@@ -175,9 +185,11 @@ export function useTasks() {
         (task) => task.id === variables.id,
       );
       if (previousTask) {
-        setUndoAction(
-          createUpdateUndo(previousTask, updated, "タスクを元に戻す"),
-        );
+        if (isLatestOperation(variables.operationId)) {
+          setUndoAction(
+            createUpdateUndo(previousTask, updated, "タスクを元に戻す"),
+          );
+        }
       }
       setTasks((previous) =>
         previous.map((task) => (task.id === updated.id ? updated : task)),
@@ -190,8 +202,14 @@ export function useTasks() {
 
   const createMutation = useMutation({
     mutationKey: taskMutationKey,
-    mutationFn: ({ title, date }: { title: string; date: string }) =>
-      createTask(title, date),
+    mutationFn: ({
+      title,
+      date,
+    }: {
+      title: string;
+      date: string;
+      operationId: number;
+    }) => createTask(title, date),
     onMutate: async ({ title, date }) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.tasks });
       const previous = queryClient.getQueryData<Task[]>(queryKeys.tasks) ?? [];
@@ -214,30 +232,32 @@ export function useTasks() {
         showOperationError();
       }
     },
-    onSuccess: (task, _variables, context) => {
+    onSuccess: (task, variables, context) => {
       setOperationError(null);
-      setUndoAction({
-        message: "追加を取り消す",
-        run: async () => {
-          const currentBeforeUndo =
-            queryClient
-              .getQueryData<Task[]>(queryKeys.tasks)
-              ?.find((item) => item.id === task.id) ?? task;
-          setTasks((previous) =>
-            previous.filter((item) => item.id !== task.id),
-          );
-          try {
-            await deleteTask(task.id);
-            setOperationError(null);
-            void queryClient.invalidateQueries({ queryKey: queryKeys.tasks });
-          } catch {
-            replaceTask(currentBeforeUndo);
-            showUndoError();
-            void queryClient.invalidateQueries({ queryKey: queryKeys.tasks });
-            throw new Error("Failed to undo task creation");
-          }
-        },
-      });
+      if (isLatestOperation(variables.operationId)) {
+        setUndoAction({
+          message: "追加を取り消す",
+          run: async () => {
+            const currentBeforeUndo =
+              queryClient
+                .getQueryData<Task[]>(queryKeys.tasks)
+                ?.find((item) => item.id === task.id) ?? task;
+            setTasks((previous) =>
+              previous.filter((item) => item.id !== task.id),
+            );
+            try {
+              await deleteTask(task.id);
+              setOperationError(null);
+              void queryClient.invalidateQueries({ queryKey: queryKeys.tasks });
+            } catch {
+              replaceTask(currentBeforeUndo);
+              showUndoError();
+              void queryClient.invalidateQueries({ queryKey: queryKeys.tasks });
+              throw new Error("Failed to undo task creation");
+            }
+          },
+        });
+      }
       setTasks((previous) => {
         if (previous.some((item) => item.id === task.id)) {
           return previous.map((item) => (item.id === task.id ? task : item));
@@ -258,8 +278,8 @@ export function useTasks() {
 
   const deleteMutation = useMutation({
     mutationKey: taskMutationKey,
-    mutationFn: deleteTask,
-    onMutate: async (id) => {
+    mutationFn: ({ id }: { id: number; operationId: number }) => deleteTask(id),
+    onMutate: async ({ id }) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.tasks });
       const previous = queryClient.getQueryData<Task[]>(queryKeys.tasks) ?? [];
       setTasks((current) => current.filter((task) => task.id !== id));
@@ -267,15 +287,17 @@ export function useTasks() {
     },
     onError: (_error, variables, context) => {
       if (context) {
-        restoreTaskFromSnapshot(context.previous, variables);
+        restoreTaskFromSnapshot(context.previous, variables.id);
       } else {
         showOperationError();
       }
     },
-    onSuccess: (_deleted, id, context) => {
+    onSuccess: (_deleted, variables, context) => {
       setOperationError(null);
-      const previousTask = context?.previous.find((task) => task.id === id);
-      if (previousTask) {
+      const previousTask = context?.previous.find(
+        (task) => task.id === variables.id,
+      );
+      if (previousTask && isLatestOperation(variables.operationId)) {
         setUndoAction({
           message: "削除を取り消す",
           run: async () => {
@@ -314,7 +336,11 @@ export function useTasks() {
     const clean = text.replace(/\s+/g, " ").trim();
     if (!clean) return;
     setUndoAction(null);
-    createMutation.mutate({ title: clean, date });
+    createMutation.mutate({
+      title: clean,
+      date,
+      operationId: nextOperationId(),
+    });
   };
 
   const toggle = (id: number) => {
@@ -327,13 +353,14 @@ export function useTasks() {
       id,
       updates: { doneAt },
       optimistic: (current) => ({ ...current, doneAt }),
+      operationId: nextOperationId(),
     });
   };
 
   const remove = (id: number) => {
     if (isOptimisticTaskId(id)) return;
     setUndoAction(null);
-    deleteMutation.mutate(id);
+    deleteMutation.mutate({ id, operationId: nextOperationId() });
   };
 
   const edit = (id: number, text: string) => {
@@ -350,6 +377,7 @@ export function useTasks() {
       id,
       updates: { title: clean },
       optimistic: (current) => ({ ...current, title: clean }),
+      operationId: nextOperationId(),
     });
   };
 
@@ -362,6 +390,7 @@ export function useTasks() {
       id,
       updates: { date },
       optimistic: (current) => ({ ...current, date }),
+      operationId: nextOperationId(),
     });
   };
 

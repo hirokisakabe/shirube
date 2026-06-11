@@ -52,6 +52,12 @@ describe("IndexedDB storage backend", () => {
     const deleted = await deleteIndexedDbTask(created.id);
     expect(deleted.deletedAt).not.toBeNull();
     expect(await fetchIndexedDbTasks("2026-06-09")).toHaveLength(0);
+
+    const restored = await updateIndexedDbTask(created.id, { deletedAt: null });
+    expect(restored.deletedAt).toBeNull();
+    expect(await fetchIndexedDbTasks("2026-06-09")).toMatchObject([
+      { title: "Updated IDB task", date: "2026-06-09", deletedAt: null },
+    ]);
   });
 
   it("weekly cyclesのupsert、単体取得、week降順を保持する", async () => {
