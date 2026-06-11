@@ -1,5 +1,6 @@
 import {
   Outlet,
+  Navigate,
   createRootRoute,
   createRoute,
   createRouter,
@@ -14,7 +15,13 @@ const indexRoute = createRoute({
   component: CalendarPage,
 });
 
-const routeTree = rootRoute.addChildren([indexRoute]);
+const reviewRedirectRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/review",
+  component: () => <Navigate to="/" replace />,
+});
+
+const routeTree = rootRoute.addChildren([indexRoute, reviewRedirectRoute]);
 
 export const router = createRouter({ routeTree });
 

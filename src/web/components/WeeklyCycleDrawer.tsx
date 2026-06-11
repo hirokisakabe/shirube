@@ -13,6 +13,8 @@ export function WeeklyCycleDrawer({ week, open, onClose }: Props) {
   const [reviewDraft, setReviewDraft] = useState("");
   const [saved, setSaved] = useState(false);
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dialogRef = useRef<HTMLElement | null>(null);
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
 
   const { cycle, loading, saving, error, save } = useWeeklyCycle(week);
 
@@ -24,11 +26,37 @@ export function WeeklyCycleDrawer({ week, open, onClose }: Props) {
 
   useEffect(() => {
     if (!open) return;
+    const previouslyFocused = document.activeElement;
+    closeButtonRef.current?.focus();
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") {
+        onClose();
+        return;
+      }
+
+      if (event.key !== "Tab") return;
+      const focusable = Array.from(
+        dialogRef.current?.querySelectorAll<HTMLElement>(
+          'button:not(:disabled), textarea:not(:disabled), [href], input:not(:disabled), select:not(:disabled), [tabindex]:not([tabindex="-1"])',
+        ) ?? [],
+      ).filter((element) => !element.hasAttribute("aria-hidden"));
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
     document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      if (previouslyFocused instanceof HTMLElement) previouslyFocused.focus();
+    };
   }, [onClose, open]);
 
   useEffect(
@@ -65,6 +93,7 @@ export function WeeklyCycleDrawer({ week, open, onClose }: Props) {
         onClick={onClose}
       />
       <aside
+        ref={dialogRef}
         className="cycle-drawer"
         aria-label={`${DateU.fmtIsoWeek(week)}の週次サイクル`}
         aria-modal="true"
@@ -76,6 +105,7 @@ export function WeeklyCycleDrawer({ week, open, onClose }: Props) {
             <h2 className="cycle-drawer-title">週次サイクル</h2>
           </div>
           <button
+            ref={closeButtonRef}
             type="button"
             className="cycle-drawer-close"
             aria-label="週次サイクルを閉じる"
@@ -86,7 +116,11 @@ export function WeeklyCycleDrawer({ week, open, onClose }: Props) {
         </header>
 
         <div className="cycle-drawer-body">
-          {error && <div className="review-error">エラー: {error}</div>}
+          {error && (
+            <div className="review-error" role="alert">
+              エラー: {error}
+            </div>
+          )}
           {loading ? (
             <div className="review-loading">読み込み中…</div>
           ) : (
@@ -119,7 +153,11 @@ export function WeeklyCycleDrawer({ week, open, onClose }: Props) {
                   </span>
                 )}
                 <div className="review-actions">
-                  {saved && <span className="review-saved">保存しました</span>}
+                  {saved && (
+                    <span className="review-saved" role="status">
+                      保存しました
+                    </span>
+                  )}
                   <button
                     type="button"
                     className="review-save-btn"

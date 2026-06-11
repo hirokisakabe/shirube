@@ -201,7 +201,11 @@ describe("CalendarPage", () => {
     await user.click(
       await screen.findByRole("button", { name: "週次サイクル" }),
     );
+    const trigger = screen.getByRole("button", { name: "週次サイクル" });
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
+    expect(
+      screen.getAllByRole("button", { name: "週次サイクルを閉じる" })[1],
+    ).toHaveFocus();
     await user.click(
       screen.getAllByRole("button", { name: "週次サイクルを閉じる" })[0],
     );
@@ -211,6 +215,7 @@ describe("CalendarPage", () => {
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
     await user.keyboard("{Escape}");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
   });
 
   it("週表示の長いタスク名に全文確認用のtitleが付く", async () => {
