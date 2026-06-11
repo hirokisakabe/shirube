@@ -1,4 +1,10 @@
-import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -20,6 +26,14 @@ vi.mock("@tanstack/react-router", async (importOriginal) => {
 
 // Fix Date to 2026-06-01 (Monday) — week starts on 2026-06-01 (Mon) in Monday-start convention
 const FIXED_NOW = new Date("2026-06-01T12:00:00.000Z");
+
+function deferred() {
+  let resolve!: () => void;
+  const promise = new Promise<void>((next) => {
+    resolve = next;
+  });
+  return { promise, resolve };
+}
 
 beforeEach(() => {
   vi.useFakeTimers({ shouldAdvanceTime: true });
@@ -100,6 +114,16 @@ describe("CalendarPage", () => {
 
   it("add inputにタスクを入力してEnterで追加できる", async () => {
     setMockTasks([]);
+    const postResponse = deferred();
+    server.use(
+      http.post("/api/tasks", async ({ request }) => {
+        const body = (await request.json()) as { title: string; date: string };
+        await postResponse.promise;
+        return HttpResponse.json(makeTask({ id: 1, ...body }), {
+          status: 201,
+        });
+      }),
+    );
 
     const user = userEvent.setup({
       advanceTimers: vi.advanceTimersByTime.bind(vi),
@@ -111,13 +135,20 @@ describe("CalendarPage", () => {
     await user.type(inputs[0], "新タスク");
     await user.keyboard("{Enter}");
 
-    expect(await screen.findByText("新タスク")).toBeInTheDocument();
+    expect(screen.getByText("新タスク")).toBeInTheDocument();
+
+    postResponse.resolve();
+    await waitFor(() => {
+      expect(screen.getByText("新タスク")).toBeInTheDocument();
+    });
   });
 
   it("週表示でタスクを完了・削除できる", async () => {
     let task = makeTask({ id: 1, title: "操作対象タスク" });
     setMockTasks([task]);
     const requests: Array<{ method: string; id: string; body?: unknown }> = [];
+    const patchResponse = deferred();
+    const deleteResponse = deferred();
     server.use(
       http.get("/api/tasks", () =>
         HttpResponse.json(task.deletedAt ? [] : [task]),
@@ -125,11 +156,13 @@ describe("CalendarPage", () => {
       http.patch("/api/tasks/:id", async ({ params, request }) => {
         const body = (await request.json()) as { doneAt?: string | null };
         requests.push({ method: "PATCH", id: String(params.id), body });
+        await patchResponse.promise;
         task = { ...task, ...body };
         return HttpResponse.json(task);
       }),
-      http.delete("/api/tasks/:id", ({ params }) => {
+      http.delete("/api/tasks/:id", async ({ params }) => {
         requests.push({ method: "DELETE", id: String(params.id) });
+        await deleteResponse.promise;
         task = { ...task, deletedAt: "2026-06-01T12:00:00.000Z" };
         return HttpResponse.json(task);
       }),
@@ -147,17 +180,21 @@ describe("CalendarPage", () => {
 
     await user.click(screen.getByLabelText("完了にする"));
 
-    await waitFor(() => {
-      expect(
-        screen.getByText("操作対象タスク").closest("[data-todo-done]"),
-      ).toHaveAttribute("data-todo-done", "true");
-    });
+    expect(
+      screen.getByText("操作対象タスク").closest("[data-todo-done]"),
+    ).toHaveAttribute("data-todo-done", "true");
     await waitFor(() => {
       expect(requests).toContainEqual({
         method: "PATCH",
         id: "1",
         body: { doneAt: expect.any(String) },
       });
+    });
+    patchResponse.resolve();
+    await waitFor(() => {
+      expect(
+        screen.getByText("操作対象タスク").closest("[data-todo-done]"),
+      ).toHaveAttribute("data-todo-done", "true");
     });
 
     await user.click(screen.getByTitle("削除"));
@@ -166,12 +203,19 @@ describe("CalendarPage", () => {
     await waitFor(() => {
       expect(requests).toContainEqual({ method: "DELETE", id: "1" });
     });
+    deleteResponse.resolve();
+    await waitFor(() => {
+      expect(screen.queryByText("操作対象タスク")).not.toBeInTheDocument();
+    });
   });
 
   it("週表示でタスクを編集して別日に移動できる", async () => {
     let task = makeTask({ id: 1, title: "編集前タスク" });
     setMockTasks([task]);
     const requests: Array<{ id: string; body?: unknown }> = [];
+    const titlePatchResponse = deferred();
+    const movePatchResponse = deferred();
+    let patchCallCount = 0;
     server.use(
       http.get("/api/tasks", () => HttpResponse.json([task])),
       http.patch("/api/tasks/:id", async ({ params, request }) => {
@@ -180,6 +224,10 @@ describe("CalendarPage", () => {
           date?: string;
         };
         requests.push({ id: String(params.id), body });
+        patchCallCount += 1;
+        await (patchCallCount === 1
+          ? titlePatchResponse.promise
+          : movePatchResponse.promise);
         task = { ...task, ...body };
         return HttpResponse.json(task);
       }),
@@ -195,12 +243,16 @@ describe("CalendarPage", () => {
     await user.clear(editInput);
     await user.type(editInput, "編集後タスク{Enter}");
 
-    expect(await screen.findByText("編集後タスク")).toBeInTheDocument();
+    expect(screen.getByText("編集後タスク")).toBeInTheDocument();
     await waitFor(() => {
       expect(requests).toContainEqual({
         id: "1",
         body: { title: "編集後タスク" },
       });
+    });
+    titlePatchResponse.resolve();
+    await waitFor(() => {
+      expect(screen.getByText("編集後タスク")).toBeInTheDocument();
     });
 
     const dataTransfer = {
@@ -219,10 +271,58 @@ describe("CalendarPage", () => {
     fireEvent.drop(wednesdayColumn as Element, { dataTransfer });
 
     await waitFor(() => {
+      expect(
+        within(wednesdayColumn as HTMLElement).getByText("編集後タスク"),
+      ).toBeInTheDocument();
+    });
+    await waitFor(() => {
       expect(requests).toContainEqual({
         id: "1",
         body: { date: "2026-06-03" },
       });
+    });
+    movePatchResponse.resolve();
+  });
+
+  it("タスク操作失敗時にrollbackして失敗表示と再取得を行う", async () => {
+    const task = makeTask({ id: 1, title: "失敗確認タスク" });
+    setMockTasks([task]);
+    let fetchCount = 0;
+    const patchResponse = deferred();
+    server.use(
+      http.get("/api/tasks", () => {
+        fetchCount += 1;
+        return HttpResponse.json([task]);
+      }),
+      http.patch("/api/tasks/:id", async () => {
+        await patchResponse.promise;
+        return HttpResponse.json({ error: "network error" }, { status: 500 });
+      }),
+    );
+
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime.bind(vi),
+    });
+    renderWithQueryClient(<CalendarPage />);
+
+    expect(
+      (await screen.findByText("失敗確認タスク")).closest("[data-todo-done]"),
+    ).toHaveAttribute("data-todo-done", "false");
+
+    await user.click(screen.getByLabelText("完了にする"));
+
+    expect(
+      screen.getByText("失敗確認タスク").closest("[data-todo-done]"),
+    ).toHaveAttribute("data-todo-done", "true");
+    patchResponse.resolve();
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "タスク操作に失敗しました",
+    );
+    expect(
+      screen.getByText("失敗確認タスク").closest("[data-todo-done]"),
+    ).toHaveAttribute("data-todo-done", "false");
+    await waitFor(() => {
+      expect(fetchCount).toBeGreaterThanOrEqual(2);
     });
   });
 

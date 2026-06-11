@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   type Task,
@@ -9,6 +10,8 @@ import {
 import { queryKeys } from "../query";
 
 type TaskUpdate = { doneAt?: string | null; title?: string; date?: string };
+
+let nextOptimisticTaskId = -1;
 
 function sortForDay(items: Task[]): Task[] {
   return [...items].sort((a, b) => {
@@ -29,6 +32,7 @@ export function dayStats(todos: Task[], dateKey: string) {
 
 export function useTasks() {
   const queryClient = useQueryClient();
+  const [operationError, setOperationError] = useState<string | null>(null);
   const query = useQuery({
     queryKey: queryKeys.tasks,
     queryFn: () => fetchTasks(),
@@ -41,6 +45,11 @@ export function useTasks() {
     );
   };
 
+  const rollbackTasks = (previous: Task[]) => {
+    queryClient.setQueryData(queryKeys.tasks, previous);
+    setOperationError("タスク操作に失敗しました。変更を元に戻しました。");
+  };
+
   const updateMutation = useMutation({
     mutationFn: ({
       id,
@@ -51,8 +60,9 @@ export function useTasks() {
       optimistic: (task: Task) => Task;
     }) => updateTask(id, updates),
     onMutate: async ({ id, optimistic }) => {
+      setOperationError(null);
       await queryClient.cancelQueries({ queryKey: queryKeys.tasks });
-      const previous = queryClient.getQueryData<Task[]>(queryKeys.tasks);
+      const previous = queryClient.getQueryData<Task[]>(queryKeys.tasks) ?? [];
       setTasks((current) =>
         current.map((task) => (task.id === id ? optimistic(task) : task)),
       );
@@ -60,7 +70,7 @@ export function useTasks() {
     },
     onError: (_error, _variables, context) => {
       if (context?.previous) {
-        queryClient.setQueryData(queryKeys.tasks, context.previous);
+        rollbackTasks(context.previous);
       }
     },
     onSuccess: (updated) => {
@@ -76,8 +86,40 @@ export function useTasks() {
   const createMutation = useMutation({
     mutationFn: ({ title, date }: { title: string; date: string }) =>
       createTask(title, date),
-    onSuccess: (task) => {
-      setTasks((previous) => [...previous, task]);
+    onMutate: async ({ title, date }) => {
+      setOperationError(null);
+      await queryClient.cancelQueries({ queryKey: queryKeys.tasks });
+      const previous = queryClient.getQueryData<Task[]>(queryKeys.tasks) ?? [];
+      const tempId = nextOptimisticTaskId--;
+      const optimisticTask: Task = {
+        id: tempId,
+        title,
+        date,
+        doneAt: null,
+        deletedAt: null,
+        createdAt: new Date().toISOString(),
+      };
+      setTasks((current) => [...current, optimisticTask]);
+      return { previous, tempId };
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previous) {
+        rollbackTasks(context.previous);
+      }
+    },
+    onSuccess: (task, _variables, context) => {
+      setTasks((previous) => {
+        if (previous.some((item) => item.id === task.id)) {
+          return previous.map((item) => (item.id === task.id ? task : item));
+        }
+        let replacedTempTask = false;
+        const next = previous.map((item) => {
+          if (item.id !== context.tempId) return item;
+          replacedTempTask = true;
+          return task;
+        });
+        return replacedTempTask ? next : [...next, task];
+      });
     },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.tasks });
@@ -87,14 +129,15 @@ export function useTasks() {
   const deleteMutation = useMutation({
     mutationFn: deleteTask,
     onMutate: async (id) => {
+      setOperationError(null);
       await queryClient.cancelQueries({ queryKey: queryKeys.tasks });
-      const previous = queryClient.getQueryData<Task[]>(queryKeys.tasks);
+      const previous = queryClient.getQueryData<Task[]>(queryKeys.tasks) ?? [];
       setTasks((current) => current.filter((task) => task.id !== id));
       return { previous };
     },
     onError: (_error, _variables, context) => {
       if (context?.previous) {
-        queryClient.setQueryData(queryKeys.tasks, context.previous);
+        rollbackTasks(context.previous);
       }
     },
     onSettled: () => {
@@ -148,6 +191,7 @@ export function useTasks() {
     tasks,
     loading: query.isLoading,
     error: query.error ? String(query.error) : null,
+    operationError,
     add,
     toggle,
     remove,

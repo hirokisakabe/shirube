@@ -204,6 +204,16 @@ input {
   overflow: hidden;
 }
 
+.task-operation-error {
+  margin: 12px 26px 0;
+  padding: 8px 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+  color: var(--accent);
+  font-size: 13px;
+}
+
 /* ===== WEEK : columns / focus ===== */
 .wk-columns {
   height: 100%;
