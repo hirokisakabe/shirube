@@ -19,7 +19,7 @@ export async function fetchTasks(date?: string) {
   return res.json();
 }
 
-export async function createTask(title: string, date: string) {
+export async function createTask(title: string, date: string | null) {
   if (usesIndexedDbStorage) return createIndexedDbTask(title, date);
   const res = await apiClient.api.tasks.$post({ json: { title, date } });
   if (!res.ok) throw new Error(`Failed to create task: ${res.status}`);
@@ -31,7 +31,7 @@ export async function updateTask(
   updates: {
     doneAt?: string | null;
     title?: string;
-    date?: string;
+    date?: string | null;
     deletedAt?: null;
   },
 ) {

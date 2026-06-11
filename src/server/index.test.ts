@@ -51,6 +51,33 @@ describe("Server API", () => {
         expect(data).toHaveLength(2);
       });
 
+      it("date が null の日付未設定タスクを一覧で返し、date query では除外する", async () => {
+        await app.request("/api/tasks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: "Inboxタスク", date: null }),
+        });
+        await app.request("/api/tasks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: "日付付き", date: "2026-06-01" }),
+        });
+
+        const all = await app.request("/api/tasks");
+        const allData = (await all.json()) as Array<{
+          title: string;
+          date: string | null;
+        }>;
+        expect(allData).toContainEqual(
+          expect.objectContaining({ title: "Inboxタスク", date: null }),
+        );
+
+        const byDate = await app.request("/api/tasks?date=2026-06-01");
+        const byDateData = (await byDate.json()) as Array<{ title: string }>;
+        expect(byDateData).toHaveLength(1);
+        expect(byDateData[0]?.title).toBe("日付付き");
+      });
+
       it("削除済みタスクは一覧に含まれない", async () => {
         const created = await app.request("/api/tasks", {
           method: "POST",
@@ -118,6 +145,21 @@ describe("Server API", () => {
         expect(typeof data.id).toBe("number");
       });
 
+      it("date に null を指定して日付未設定タスクを作成できる", async () => {
+        const res = await app.request("/api/tasks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: "日付未設定", date: null }),
+        });
+        expect(res.status).toBe(201);
+        const data = (await res.json()) as {
+          title: string;
+          date: string | null;
+        };
+        expect(data.title).toBe("日付未設定");
+        expect(data.date).toBeNull();
+      });
+
       it("title が空の場合は 400 を返す", async () => {
         const res = await app.request("/api/tasks", {
           method: "POST",
@@ -156,6 +198,38 @@ describe("Server API", () => {
         expect(res.status).toBe(200);
         const data = (await res.json()) as { doneAt: string | null };
         expect(data.doneAt).toBe(doneAt);
+      });
+
+      it("date を null と日付の間で更新できる", async () => {
+        const created = await app.request("/api/tasks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: "日付移動タスク",
+            date: "2026-06-01",
+          }),
+        });
+        const task = (await created.json()) as { id: number };
+
+        const movedToInbox = await app.request(`/api/tasks/${task.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ date: null }),
+        });
+        expect(movedToInbox.status).toBe(200);
+        await expect(movedToInbox.json()).resolves.toMatchObject({
+          date: null,
+        });
+
+        const movedToDate = await app.request(`/api/tasks/${task.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ date: "2026-06-03" }),
+        });
+        expect(movedToDate.status).toBe(200);
+        await expect(movedToDate.json()).resolves.toMatchObject({
+          date: "2026-06-03",
+        });
       });
 
       it("存在しない ID は 404 を返す", async () => {

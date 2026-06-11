@@ -12,7 +12,7 @@ import { queryKeys } from "../query";
 type TaskUpdate = {
   doneAt?: string | null;
   title?: string;
-  date?: string;
+  date?: string | null;
   deletedAt?: null;
 };
 
@@ -38,6 +38,10 @@ function sortForDay(items: Task[]): Task[] {
 
 export function dayItems(todos: Task[], dateKey: string): Task[] {
   return sortForDay(todos.filter((t) => t.date === dateKey));
+}
+
+export function inboxItems(todos: Task[]): Task[] {
+  return sortForDay(todos.filter((t) => t.date === null));
 }
 
 export function dayStats(todos: Task[], dateKey: string) {
@@ -168,7 +172,7 @@ export function useTasks() {
       date,
     }: {
       title: string;
-      date: string;
+      date: string | null;
       operationId: number;
     }) => createTask(title, date),
     onMutate: async ({ title, date }) => {
@@ -266,7 +270,7 @@ export function useTasks() {
     },
   });
 
-  const add = (date: string, text: string) => {
+  const add = (date: string | null, text: string) => {
     if (undoingRef.current) return;
     const clean = text.replace(/\s+/g, " ").trim();
     if (!clean) return;
@@ -319,7 +323,7 @@ export function useTasks() {
     });
   };
 
-  const moveTo = (id: number, date: string) => {
+  const moveTo = (id: number, date: string | null) => {
     if (undoingRef.current) return;
     if (isOptimisticTaskId(id)) return;
     const task = tasks.find((t) => t.id === id);

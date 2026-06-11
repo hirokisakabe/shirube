@@ -1,9 +1,10 @@
 import { useState } from "react";
+import { InboxPanel } from "../components/InboxPanel";
 import { MonthView } from "../components/MonthView";
 import { StorageNotice } from "../components/StorageNotice";
 import { WeekView } from "../components/WeekView";
 import { WeeklyCycleDrawer } from "../components/WeeklyCycleDrawer";
-import { useTasks } from "../hooks/useTasks";
+import { inboxItems, useTasks } from "../hooks/useTasks";
 import { DateU } from "../utils/date";
 
 type WeekLayout = "columns" | "focus" | "rows";
@@ -138,21 +139,33 @@ export function CalendarPage() {
       )}
 
       <main className="stage">
-        {view === "week" ? (
-          <WeekView
-            weekStart={weekStart}
-            ctx={ctx}
-            layout={layout}
-            showWeekend={showWeekend}
+        <div className="calendar-shell">
+          <InboxPanel
+            tasks={inboxItems(ctx.tasks)}
+            onAdd={(text) => ctx.add(null, text)}
+            onToggle={ctx.toggle}
+            onRemove={ctx.remove}
+            onEdit={ctx.edit}
+            onMoveToDate={ctx.moveTo}
           />
-        ) : (
-          <MonthView
-            monthDate={monthAnchor}
-            ctx={ctx}
-            onPickDay={pickDay}
-            showWeekend={showWeekend}
-          />
-        )}
+          <div className="calendar-main">
+            {view === "week" ? (
+              <WeekView
+                weekStart={weekStart}
+                ctx={ctx}
+                layout={layout}
+                showWeekend={showWeekend}
+              />
+            ) : (
+              <MonthView
+                monthDate={monthAnchor}
+                ctx={ctx}
+                onPickDay={pickDay}
+                showWeekend={showWeekend}
+              />
+            )}
+          </div>
+        </div>
       </main>
       {view === "week" && (
         <WeeklyCycleDrawer

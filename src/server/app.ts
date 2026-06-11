@@ -25,12 +25,12 @@ const weekParamSchema = z.object({ week: weekSchema });
 const taskQuerySchema = z.object({ date: dateSchema.optional() });
 const taskCreateSchema = z.object({
   title: z.string().min(1),
-  date: dateSchema.optional(),
+  date: dateSchema.nullable().optional(),
 });
 const taskUpdateSchema = z.object({
   doneAt: z.string().nullable().optional(),
   title: z.string().min(1).optional(),
-  date: dateSchema.optional(),
+  date: dateSchema.nullable().optional(),
   deletedAt: z.null().optional(),
 });
 const weeklyCycleCreateSchema = z.object({
@@ -118,7 +118,10 @@ export function createApp(db: Db) {
       ),
       async (c) => {
         const body = c.req.valid("json");
-        const date = body.date ?? new Date().toISOString().slice(0, 10);
+        const date =
+          body.date === undefined
+            ? new Date().toISOString().slice(0, 10)
+            : body.date;
         const [task] = await db
           .insert(tasks)
           .values({ title: body.title, date })

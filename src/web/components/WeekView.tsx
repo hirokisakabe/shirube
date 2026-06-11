@@ -11,7 +11,7 @@ type Ctx = {
   toggle: (id: number) => void;
   remove: (id: number) => void;
   edit: (id: number, text: string) => void;
-  moveTo: (id: number, date: string) => void;
+  moveTo: (id: number, date: string | null) => void;
   undo: () => void;
 };
 
@@ -89,6 +89,7 @@ export function WeekView({ weekStart, ctx, layout, showWeekend }: Props) {
         onToggle={ctx.toggle}
         onRemove={ctx.remove}
         onEdit={ctx.edit}
+        onMoveToInbox={(id) => ctx.moveTo(id, null)}
       />
     ));
   };

@@ -11,7 +11,7 @@ type Ctx = {
   toggle: (id: number) => void;
   remove: (id: number) => void;
   edit: (id: number, text: string) => void;
-  moveTo: (id: number, date: string) => void;
+  moveTo: (id: number, date: string | null) => void;
   undo: () => void;
 };
 
@@ -30,7 +30,7 @@ function DropZone({
   onClick,
 }: {
   dateKey: string;
-  onMove: (id: number, date: string) => void;
+  onMove: (id: number, date: string | null) => void;
   className: string;
   children: React.ReactNode;
   onClick?: () => void;
@@ -111,6 +111,7 @@ function MonthCell({
             onToggle={ctx.toggle}
             onRemove={ctx.remove}
             onEdit={ctx.edit}
+            onMoveToInbox={(id) => ctx.moveTo(id, null)}
             variant="compact"
           />
         ))}
