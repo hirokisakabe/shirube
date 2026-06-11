@@ -418,6 +418,10 @@ input {
 .todo[draggable="true"] {
   cursor: grab;
 }
+.todo.pending {
+  opacity: 0.65;
+  cursor: wait;
+}
 .check {
   width: 17px;
   height: 17px;
@@ -431,6 +435,13 @@ input {
 }
 .check:hover {
   border-color: var(--accent);
+}
+.check:disabled,
+.act:disabled {
+  cursor: wait;
+}
+.check:disabled:hover {
+  border-color: var(--ink-faint);
 }
 .check-mark {
   width: 8px;
@@ -534,6 +545,10 @@ input {
 .act:hover {
   background: color-mix(in srgb, var(--accent) 14%, transparent);
   color: var(--accent);
+}
+.act:disabled:hover {
+  background: transparent;
+  color: var(--ink-faint);
 }
 
 /* ---------- add input ---------- */

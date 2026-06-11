@@ -115,13 +115,28 @@ describe("CalendarPage", () => {
   it("add inputにタスクを入力してEnterで追加できる", async () => {
     setMockTasks([]);
     const postResponse = deferred();
+    let savedTask: ReturnType<typeof makeTask> | null = null;
+    let patchRequestCount = 0;
+    let deleteRequestCount = 0;
     server.use(
+      http.get("/api/tasks", () =>
+        HttpResponse.json(savedTask ? [savedTask] : []),
+      ),
       http.post("/api/tasks", async ({ request }) => {
         const body = (await request.json()) as { title: string; date: string };
         await postResponse.promise;
-        return HttpResponse.json(makeTask({ id: 1, ...body }), {
+        savedTask = makeTask({ id: 1, ...body });
+        return HttpResponse.json(savedTask, {
           status: 201,
         });
+      }),
+      http.patch("/api/tasks/:id", () => {
+        patchRequestCount += 1;
+        return HttpResponse.json({ error: "Not found" }, { status: 404 });
+      }),
+      http.delete("/api/tasks/:id", () => {
+        deleteRequestCount += 1;
+        return HttpResponse.json({ error: "Not found" }, { status: 404 });
       }),
     );
 
@@ -136,6 +151,21 @@ describe("CalendarPage", () => {
     await user.keyboard("{Enter}");
 
     expect(screen.getByText("新タスク")).toBeInTheDocument();
+    const optimisticItem = screen
+      .getByText("新タスク")
+      .closest("[data-todo-done]") as HTMLElement;
+    const optimisticCheck = within(optimisticItem).getByLabelText("完了にする");
+    const optimisticRemove = optimisticItem.querySelector(
+      ".act",
+    ) as HTMLButtonElement;
+
+    expect(optimisticItem).toHaveAttribute("draggable", "false");
+    expect(optimisticCheck).toBeDisabled();
+    expect(optimisticRemove).toBeDisabled();
+    fireEvent.click(optimisticCheck);
+    fireEvent.click(optimisticRemove);
+    expect(patchRequestCount).toBe(0);
+    expect(deleteRequestCount).toBe(0);
 
     postResponse.resolve();
     await waitFor(() => {
