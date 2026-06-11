@@ -4,6 +4,7 @@ import { DateU, WEEKDAYS_JP } from "../utils/date";
 import { AddInput } from "./AddInput";
 import { TodoItem } from "./TodoItem";
 import { dayItems, dayStats } from "../hooks/useTasks";
+import { cn } from "../styles";
 
 type Ctx = {
   tasks: Task[];
@@ -41,7 +42,11 @@ function DropZone({
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- Column click is a pointer convenience; primary actions use child controls.
     <div
-      className={className + (over ? " drop-over" : "")}
+      className={cn(
+        className,
+        over && "bg-[color-mix(in_srgb,var(--accent)_12%,transparent)]",
+      )}
+      data-week-day={dateKey}
       style={style}
       onClick={onClick}
       onDragOver={(e) => {
@@ -64,12 +69,35 @@ function DropZone({
 function DayHead({ date }: { date: Date }) {
   const dow = DateU.dowMon(date);
   const isToday = DateU.isToday(date);
-  const cls = `dayhead${isToday ? " today" : ""}${dow === 6 ? " sun" : ""}${dow === 5 ? " sat" : ""}`;
   return (
-    <div className={cls}>
-      <span className="dow">{WEEKDAYS_JP[dow]}</span>
-      <span className="dnum">{date.getDate()}</span>
-      {isToday && <span className="today-dot" />}
+    <div
+      className={cn(
+        "flex items-baseline gap-[7px] border-b border-[var(--hair)] px-0.5 pb-2 pt-1",
+        isToday && "border-[var(--accent)]",
+      )}
+    >
+      <span
+        className={cn(
+          "text-xs font-medium text-[var(--ink-soft)]",
+          dow === 6 && "text-[var(--accent)]",
+          dow === 5 && "text-[var(--ink-faint)]",
+          isToday && "font-bold text-[var(--accent)]",
+        )}
+      >
+        {WEEKDAYS_JP[dow]}
+      </span>
+      <span
+        className={cn(
+          "font-[var(--num)] text-[19px] font-medium",
+          isToday &&
+            "inline-flex h-[27px] w-[27px] items-center justify-center rounded-full bg-[var(--accent)] text-sm text-white",
+        )}
+      >
+        {date.getDate()}
+      </span>
+      {isToday && (
+        <span className="h-[5px] w-[5px] rounded-full bg-[var(--accent)]" />
+      )}
     </div>
   );
 }
@@ -98,7 +126,7 @@ export function WeekView({ weekStart, ctx, layout, showWeekend }: Props) {
   if (layout === "columns") {
     return (
       <div
-        className="wk wk-columns"
+        className="grid h-full gap-0"
         style={{ gridTemplateColumns: `repeat(${dayCount},1fr)` }}
       >
         {days.map((date) => {
@@ -109,10 +137,20 @@ export function WeekView({ weekStart, ctx, layout, showWeekend }: Props) {
               key={k}
               dateKey={k}
               onMove={ctx.moveTo}
-              className={`col${dim ? " dim" : ""}${DateU.isToday(date) ? " col-today" : ""}`}
+              className={cn(
+                "flex min-h-0 min-w-0 flex-col border-l border-[var(--hair-soft)] px-3 transition-colors duration-150 first:border-l-0",
+                DateU.isToday(date) &&
+                  "bg-[color-mix(in_srgb,var(--accent)_5%,transparent)]",
+                dim && "bg-[var(--surface-2)]",
+              )}
             >
               <DayHead date={date} />
-              <div className="col-body">
+              <div
+                className={cn(
+                  "flex min-h-0 flex-1 flex-col gap-[5px] overflow-y-auto pt-2 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:bg-[var(--hair)] [&::-webkit-scrollbar]:w-[7px]",
+                  dim && "opacity-80",
+                )}
+              >
                 {renderItems(date)}
                 <AddInput onAdd={(text) => ctx.add(k, text)} />
               </div>
@@ -126,7 +164,7 @@ export function WeekView({ weekStart, ctx, layout, showWeekend }: Props) {
   // ----- B: today emphasized -----
   if (layout === "focus") {
     return (
-      <div className="wk wk-focus">
+      <div className="flex h-full gap-0">
         {days.map((date) => {
           const k = DateU.key(date);
           const today = DateU.isToday(date);
@@ -136,10 +174,20 @@ export function WeekView({ weekStart, ctx, layout, showWeekend }: Props) {
               key={k}
               dateKey={k}
               onMove={ctx.moveTo}
-              className={`col${today ? " col-today" : ""}${dim ? " dim" : ""}`}
+              className={cn(
+                "flex min-h-0 min-w-0 flex-[1_1_0] flex-col border-l border-[var(--hair-soft)] px-3 transition-colors duration-150 first:border-l-0",
+                dim && "bg-[var(--surface-2)]",
+                today &&
+                  "mx-1 flex-[2.6_1_0] rounded-[9px] border-l-0 bg-[var(--surface)] shadow-[0_0_0_1px_var(--hair),0_8px_30px_-20px_rgba(40,30,20,0.35)]",
+              )}
             >
               <DayHead date={date} />
-              <div className="col-body">
+              <div
+                className={cn(
+                  "flex min-h-0 flex-1 flex-col gap-[5px] overflow-y-auto pt-2 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:bg-[var(--hair)] [&::-webkit-scrollbar]:w-[7px]",
+                  dim && "opacity-80",
+                )}
+              >
                 {renderItems(date)}
                 <AddInput
                   onAdd={(text) => ctx.add(k, text)}
@@ -155,7 +203,7 @@ export function WeekView({ weekStart, ctx, layout, showWeekend }: Props) {
 
   // ----- C: horizontal rows -----
   return (
-    <div className="wk wk-rows">
+    <div className="flex h-full flex-col overflow-y-auto [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:bg-[var(--hair)] [&::-webkit-scrollbar]:w-[7px]">
       {days.map((date) => {
         const k = DateU.key(date);
         const today = DateU.isToday(date);
@@ -167,21 +215,36 @@ export function WeekView({ weekStart, ctx, layout, showWeekend }: Props) {
             key={k}
             dateKey={k}
             onMove={ctx.moveTo}
-            className={`row${today ? " row-today" : ""}${dim ? " dim" : ""}`}
+            className={cn(
+              "flex min-h-[54px] gap-[18px] border-b border-[var(--hair-soft)] px-1.5 py-[11px] transition-colors duration-150",
+              dim && "bg-[var(--surface-2)]",
+              today && "bg-[color-mix(in_srgb,var(--accent)_5%,transparent)]",
+            )}
           >
-            <div
-              className={`row-head${dow === 6 ? " sun" : ""}${dow === 5 ? " sat" : ""}`}
-            >
-              <span className="row-dow">{WEEKDAYS_JP[dow]}</span>
-              <span className="row-dnum">{date.getDate()}</span>
-              {today && <span className="row-today-tag">今日</span>}
+            <div className="flex w-24 flex-none items-baseline gap-2 pt-1">
+              <span
+                className={cn(
+                  "text-[13px] font-medium text-[var(--ink-soft)]",
+                  dow === 6 && "text-[var(--accent)]",
+                )}
+              >
+                {WEEKDAYS_JP[dow]}
+              </span>
+              <span className="font-[var(--num)] text-[21px] font-medium">
+                {date.getDate()}
+              </span>
+              {today && (
+                <span className="self-center whitespace-nowrap rounded-full bg-[var(--accent)] px-1.5 py-px text-[10px] text-white">
+                  今日
+                </span>
+              )}
               {st.total > 0 && (
-                <span className="row-frac">
+                <span className="ml-auto self-center font-[var(--num)] text-[11px] text-[var(--ink-faint)]">
                   {st.done}/{st.total}
                 </span>
               )}
             </div>
-            <div className="row-body">
+            <div className="flex min-w-0 flex-1 flex-col gap-[5px]">
               {renderItems(date)}
               <AddInput onAdd={(text) => ctx.add(k, text)} />
             </div>
