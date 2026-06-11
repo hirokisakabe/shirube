@@ -11,6 +11,7 @@ import { queryKeys } from "../query";
 
 type TaskUpdate = { doneAt?: string | null; title?: string; date?: string };
 
+const taskMutationKey = ["tasks", "mutation"] as const;
 let nextOptimisticTaskId = -1;
 
 export function isOptimisticTaskId(id: number) {
@@ -82,7 +83,14 @@ export function useTasks() {
     showOperationError();
   };
 
+  const invalidateTasksWhenSettled = () => {
+    if (queryClient.isMutating({ mutationKey: taskMutationKey }) === 1) {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.tasks });
+    }
+  };
+
   const updateMutation = useMutation({
+    mutationKey: taskMutationKey,
     mutationFn: ({
       id,
       updates,
@@ -92,7 +100,6 @@ export function useTasks() {
       optimistic: (task: Task) => Task;
     }) => updateTask(id, updates),
     onMutate: async ({ id, optimistic }) => {
-      setOperationError(null);
       await queryClient.cancelQueries({ queryKey: queryKeys.tasks });
       const previous = queryClient.getQueryData<Task[]>(queryKeys.tasks) ?? [];
       setTasks((current) =>
@@ -101,27 +108,28 @@ export function useTasks() {
       return { previous };
     },
     onError: (_error, variables, context) => {
-      if (context?.previous) {
+      if (context) {
         restoreTaskFromSnapshot(context.previous, variables.id);
       } else {
         showOperationError();
       }
     },
     onSuccess: (updated) => {
+      setOperationError(null);
       setTasks((previous) =>
         previous.map((task) => (task.id === updated.id ? updated : task)),
       );
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.tasks });
+      invalidateTasksWhenSettled();
     },
   });
 
   const createMutation = useMutation({
+    mutationKey: taskMutationKey,
     mutationFn: ({ title, date }: { title: string; date: string }) =>
       createTask(title, date),
     onMutate: async ({ title, date }) => {
-      setOperationError(null);
       await queryClient.cancelQueries({ queryKey: queryKeys.tasks });
       const previous = queryClient.getQueryData<Task[]>(queryKeys.tasks) ?? [];
       const tempId = nextOptimisticTaskId--;
@@ -144,6 +152,7 @@ export function useTasks() {
       }
     },
     onSuccess: (task, _variables, context) => {
+      setOperationError(null);
       setTasks((previous) => {
         if (previous.some((item) => item.id === task.id)) {
           return previous.map((item) => (item.id === task.id ? task : item));
@@ -158,28 +167,31 @@ export function useTasks() {
       });
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.tasks });
+      invalidateTasksWhenSettled();
     },
   });
 
   const deleteMutation = useMutation({
+    mutationKey: taskMutationKey,
     mutationFn: deleteTask,
     onMutate: async (id) => {
-      setOperationError(null);
       await queryClient.cancelQueries({ queryKey: queryKeys.tasks });
       const previous = queryClient.getQueryData<Task[]>(queryKeys.tasks) ?? [];
       setTasks((current) => current.filter((task) => task.id !== id));
       return { previous };
     },
     onError: (_error, variables, context) => {
-      if (context?.previous) {
+      if (context) {
         restoreTaskFromSnapshot(context.previous, variables);
       } else {
         showOperationError();
       }
     },
+    onSuccess: () => {
+      setOperationError(null);
+    },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.tasks });
+      invalidateTasksWhenSettled();
     },
   });
 
