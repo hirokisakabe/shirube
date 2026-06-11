@@ -216,8 +216,8 @@ input {
 
 .task-undo-bar {
   position: fixed;
-  left: 24px;
-  bottom: 24px;
+  left: 32px;
+  bottom: 32px;
   z-index: 20;
   max-width: min(360px, calc(100vw - 48px));
   padding: 10px 12px;
