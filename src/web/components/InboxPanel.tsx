@@ -9,7 +9,7 @@ type Props = {
   onToggle: (id: number) => void;
   onRemove: (id: number) => void;
   onEdit: (id: number, text: string) => void;
-  onMoveToDate: (id: number, date: string) => void;
+  onMoveToDate: (id: number, date: string | null) => void;
 };
 
 function InboxTask({
@@ -23,7 +23,7 @@ function InboxTask({
   onToggle: (id: number) => void;
   onRemove: (id: number) => void;
   onEdit: (id: number, text: string) => void;
-  onMoveToDate: (id: number, date: string) => void;
+  onMoveToDate: (id: number, date: string | null) => void;
 }) {
   const [date, setDate] = useState("");
 
@@ -75,8 +75,24 @@ export function InboxPanel({
   onEdit,
   onMoveToDate,
 }: Props) {
+  const [over, setOver] = useState(false);
+
   return (
-    <aside className="inbox-panel" aria-label="Inbox">
+    <aside
+      className={`inbox-panel${over ? " drop-over" : ""}`}
+      aria-label="Inbox"
+      onDragOver={(event) => {
+        event.preventDefault();
+        setOver(true);
+      }}
+      onDragLeave={() => setOver(false)}
+      onDrop={(event) => {
+        event.preventDefault();
+        setOver(false);
+        const id = Number(event.dataTransfer.getData("text/todo-id"));
+        if (id) onMoveToDate(id, null);
+      }}
+    >
       <div className="inbox-head">
         <h2 className="inbox-title">Inbox</h2>
         <span className="inbox-count">{tasks.length}</span>

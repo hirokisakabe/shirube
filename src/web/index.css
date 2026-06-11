@@ -298,6 +298,10 @@ input {
   flex-direction: column;
   border-right: 1px solid var(--hair);
   padding-right: 18px;
+  transition: background 0.15s;
+}
+.inbox-panel.drop-over {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
 }
 .inbox-head {
   display: flex;

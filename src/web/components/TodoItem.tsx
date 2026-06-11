@@ -7,6 +7,7 @@ type Props = {
   onToggle: (id: number) => void;
   onRemove: (id: number) => void;
   onEdit: (id: number, text: string) => void;
+  onMoveToInbox?: (id: number) => void;
   variant?: "default" | "compact";
 };
 
@@ -15,6 +16,7 @@ export function TodoItem({
   onToggle,
   onRemove,
   onEdit,
+  onMoveToInbox,
   variant = "default",
 }: Props) {
   const [editing, setEditing] = useState(false);
@@ -95,6 +97,17 @@ export function TodoItem({
       )}
 
       <span className="todo-actions">
+        {onMoveToInbox && todo.date !== null && (
+          <button
+            type="button"
+            className="act"
+            title={pending ? "保存中" : "Inboxへ戻す"}
+            disabled={pending}
+            onClick={() => onMoveToInbox(todo.id)}
+          >
+            ↩
+          </button>
+        )}
         <button
           type="button"
           className="act"

@@ -197,6 +197,19 @@ describe("CalendarPage", () => {
       within(wednesdayColumn).getByText("Inbox完了移動"),
     ).toBeInTheDocument();
 
+    await user.click(within(wednesdayColumn).getByTitle("Inboxへ戻す"));
+    await waitFor(() => {
+      expect(requests).toContainEqual({
+        method: "PATCH",
+        id: "1",
+        body: { date: null },
+      });
+    });
+    expect(await within(inbox).findByText("Inbox完了移動")).toBeInTheDocument();
+    expect(
+      within(wednesdayColumn).queryByText("Inbox完了移動"),
+    ).not.toBeInTheDocument();
+
     await user.click(screen.getByRole("button", { name: "月" }));
     expect(within(inbox).getByText("Inbox編集後")).toBeInTheDocument();
     expect(
