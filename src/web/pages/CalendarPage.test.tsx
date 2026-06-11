@@ -169,8 +169,11 @@ describe("CalendarPage", () => {
 
     postResponse.resolve();
     await waitFor(() => {
-      expect(screen.getByText("新タスク")).toBeInTheDocument();
+      expect(screen.getByLabelText("完了にする")).toBeEnabled();
     });
+    expect(
+      screen.getByText("新タスク").closest("[data-todo-done]"),
+    ).toHaveAttribute("draggable", "true");
   });
 
   it("週表示でタスクを完了・削除できる", async () => {
@@ -359,6 +362,59 @@ describe("CalendarPage", () => {
     await waitFor(() => {
       expect(fetchCount).toBeGreaterThanOrEqual(2);
     });
+  });
+
+  it("並行操作の一方が失敗しても他方の楽観更新を巻き戻さない", async () => {
+    let tasks = [
+      makeTask({ id: 1, title: "失敗するタスク" }),
+      makeTask({ id: 2, title: "維持するタスク" }),
+    ];
+    const firstPatchResponse = deferred();
+    server.use(
+      http.get("/api/tasks", () => HttpResponse.json(tasks)),
+      http.patch("/api/tasks/:id", async ({ params, request }) => {
+        const id = Number(params.id);
+        const body = (await request.json()) as { doneAt?: string | null };
+        if (id === 1) {
+          await firstPatchResponse.promise;
+          return HttpResponse.json({ error: "network error" }, { status: 500 });
+        }
+        tasks = tasks.map((task) =>
+          task.id === id ? { ...task, ...body } : task,
+        );
+        return HttpResponse.json(tasks.find((task) => task.id === id));
+      }),
+    );
+
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime.bind(vi),
+    });
+    renderWithQueryClient(<CalendarPage />);
+
+    await screen.findByText("失敗するタスク");
+    await user.click(
+      screen
+        .getByText("失敗するタスク")
+        .closest("[data-todo-done]")
+        ?.querySelector("[aria-label='完了にする']") as Element,
+    );
+    await user.click(
+      screen
+        .getByText("維持するタスク")
+        .closest("[data-todo-done]")
+        ?.querySelector("[aria-label='完了にする']") as Element,
+    );
+
+    firstPatchResponse.resolve();
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "タスク操作に失敗しました",
+    );
+    expect(
+      screen.getByText("失敗するタスク").closest("[data-todo-done]"),
+    ).toHaveAttribute("data-todo-done", "false");
+    expect(
+      screen.getByText("維持するタスク").closest("[data-todo-done]"),
+    ).toHaveAttribute("data-todo-done", "true");
   });
 
   it("タスク追加失敗時に仮タスクを消して失敗表示と再取得を行う", async () => {

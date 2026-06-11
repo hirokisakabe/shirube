@@ -45,9 +45,38 @@ export function useTasks() {
     );
   };
 
-  const rollbackTasks = (previous: Task[]) => {
-    queryClient.setQueryData(queryKeys.tasks, previous);
+  const showOperationError = () => {
     setOperationError("タスク操作に失敗しました。変更を元に戻しました。");
+  };
+
+  const restoreTaskFromSnapshot = (snapshot: Task[], id: number) => {
+    const snapshotTask = snapshot.find((task) => task.id === id);
+    if (!snapshotTask) {
+      queryClient.setQueryData(queryKeys.tasks, snapshot);
+      showOperationError();
+      return;
+    }
+
+    queryClient.setQueryData<Task[]>(queryKeys.tasks, (current = []) => {
+      if (current.some((task) => task.id === id)) {
+        return current.map((task) => (task.id === id ? snapshotTask : task));
+      }
+
+      const snapshotIds = new Set(snapshot.map((task) => task.id));
+      const restored = snapshot.flatMap((snapshotItem) => {
+        if (snapshotItem.id === id) return [snapshotTask];
+        const currentItem = current.find((task) => task.id === snapshotItem.id);
+        return currentItem ? [currentItem] : [];
+      });
+      const currentOnly = current.filter((task) => !snapshotIds.has(task.id));
+      return [...restored, ...currentOnly];
+    });
+    showOperationError();
+  };
+
+  const removeOptimisticTask = (id: number) => {
+    setTasks((current) => current.filter((task) => task.id !== id));
+    showOperationError();
   };
 
   const updateMutation = useMutation({
@@ -70,7 +99,9 @@ export function useTasks() {
     },
     onError: (_error, _variables, context) => {
       if (context?.previous) {
-        rollbackTasks(context.previous);
+        restoreTaskFromSnapshot(context.previous, _variables.id);
+      } else {
+        showOperationError();
       }
     },
     onSuccess: (updated) => {
@@ -103,8 +134,10 @@ export function useTasks() {
       return { previous, tempId };
     },
     onError: (_error, _variables, context) => {
-      if (context?.previous) {
-        rollbackTasks(context.previous);
+      if (context) {
+        removeOptimisticTask(context.tempId);
+      } else {
+        showOperationError();
       }
     },
     onSuccess: (task, _variables, context) => {
@@ -137,7 +170,9 @@ export function useTasks() {
     },
     onError: (_error, _variables, context) => {
       if (context?.previous) {
-        rollbackTasks(context.previous);
+        restoreTaskFromSnapshot(context.previous, _variables);
+      } else {
+        showOperationError();
       }
     },
     onSettled: () => {
