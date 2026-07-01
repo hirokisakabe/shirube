@@ -47,7 +47,7 @@ function InboxTask({
       <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-1.5 pl-[25px]">
         <input
           type="date"
-          className="h-[27px] min-w-0 rounded-md border border-[var(--hair)] bg-[var(--surface)] px-1.5 font-[var(--num)] text-xs text-[var(--ink)] outline-none focus:border-[var(--ink-faint)]"
+          className={cn(ui.field, "h-[27px] px-1.5 font-[var(--num)] text-xs")}
           aria-label={`${task.title}の移動先日付`}
           value={date}
           onChange={(event) => setDate(event.target.value)}
@@ -106,14 +106,14 @@ export function InboxPanel({
     >
       <div
         className={cn(
-          "grid h-[40px] grid-cols-[36px_minmax(0,1fr)] items-center border-b border-[var(--hair)] px-0.5 pb-2 pt-1",
-          collapsed &&
-            "flex w-full justify-center border-b-0 px-0 pb-0 pt-1 max-[860px]:justify-end",
+          ui.panelHeader,
+          "grid-cols-[36px_minmax(0,1fr)]",
+          collapsed && ui.panelHeaderCollapsed,
         )}
       >
         <button
           type="button"
-          className="flex h-[30px] w-[30px] flex-none flex-col items-center justify-center justify-self-center gap-[3px] rounded-md text-[var(--ink-soft)] transition-colors duration-150 hover:bg-[var(--surface-2)] hover:text-[var(--ink)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+          className={ui.collapseButton}
           onClick={onToggleCollapsed}
           aria-label={collapsed ? "日付未設定を開く" : "日付未設定を最小化"}
           title={collapsed ? "日付未設定を開く" : "日付未設定を最小化"}
@@ -124,17 +124,13 @@ export function InboxPanel({
         </button>
         {!collapsed && (
           <div className="flex items-center gap-2.5">
-            <h2 className="m-0 text-[13px] font-medium tracking-normal text-[var(--ink-soft)]">
-              日付未設定
-            </h2>
-            <span className="inline-flex h-[22px] min-w-6 items-center justify-center rounded-full border border-[var(--hair)] px-1 font-[var(--num)] text-xs text-[var(--ink-soft)]">
-              {tasks.length}
-            </span>
+            <h2 className={ui.panelTitle}>日付未設定</h2>
+            <span className={ui.countBadge}>{tasks.length}</span>
           </div>
         )}
       </div>
       {!collapsed && (
-        <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto pt-2 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:bg-[var(--hair)] [&::-webkit-scrollbar]:w-[7px]">
+        <div className={cn(ui.panelScroller, "gap-2.5 pt-2")}>
           <AddInput onAdd={onAdd} placeholder="タスクを追加" />
           {tasks.length > 0 && (
             <div className="flex flex-col gap-2">

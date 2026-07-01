@@ -60,9 +60,9 @@ export function WeeklyCyclePanel({
     >
       <div
         className={cn(
-          "grid h-[40px] grid-cols-[minmax(0,1fr)_36px] items-center border-b border-[var(--hair)] px-0.5 pb-2 pt-1",
-          collapsed &&
-            "flex w-full justify-center border-b-0 px-0 pb-0 pt-1 max-[860px]:justify-end",
+          ui.panelHeader,
+          "grid-cols-[minmax(0,1fr)_36px]",
+          collapsed && ui.panelHeaderCollapsed,
         )}
       >
         {!collapsed && (
@@ -74,7 +74,7 @@ export function WeeklyCyclePanel({
         )}
         <button
           type="button"
-          className="flex h-[30px] w-[30px] flex-none flex-col items-center justify-center justify-self-center gap-[3px] rounded-md text-[var(--ink-soft)] transition-colors duration-150 hover:bg-[var(--surface-2)] hover:text-[var(--ink)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+          className={ui.collapseButton}
           onClick={onToggleCollapsed}
           aria-label={collapsed ? "週次サイクルを開く" : "週次サイクルを最小化"}
           title={collapsed ? "週次サイクルを開く" : "週次サイクルを最小化"}
@@ -86,12 +86,9 @@ export function WeeklyCyclePanel({
       </div>
 
       {!collapsed && (
-        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pt-3 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:bg-[var(--hair)] [&::-webkit-scrollbar]:w-[7px]">
+        <div className={cn(ui.panelScroller, "gap-3 pt-3")}>
           {error && (
-            <div
-              className="rounded-[var(--radius)] border border-[color-mix(in_srgb,var(--accent)_30%,transparent)] bg-[color-mix(in_srgb,var(--accent)_6%,transparent)] px-3 py-2 text-[13px] text-[var(--accent)]"
-              role="alert"
-            >
+            <div className={ui.inlineAlert} role="alert">
               エラー: {error}
             </div>
           )}
@@ -100,22 +97,18 @@ export function WeeklyCyclePanel({
           ) : (
             <>
               <label className="flex min-w-0 flex-col gap-[6px]">
-                <span className="text-xs font-medium text-[var(--ink-soft)]">
-                  目標
-                </span>
+                <span className={ui.fieldLabel}>目標</span>
                 <textarea
-                  className="min-h-[132px] w-full resize-y rounded-[var(--radius)] border border-[var(--hair)] bg-[var(--surface)] px-3 py-2.5 text-sm leading-[1.65] text-[var(--ink)] outline-none transition-colors duration-150 placeholder:text-[var(--ink-faint)] focus:border-[var(--ink-faint)]"
+                  className={ui.textarea}
                   value={goalDraft}
                   onChange={(event) => setGoalDraft(event.target.value)}
                   placeholder={`${DateU.fmtIsoWeek(week)}の目標を記録`}
                 />
               </label>
               <label className="flex min-w-0 flex-col gap-[6px]">
-                <span className="text-xs font-medium text-[var(--ink-soft)]">
-                  ふりかえり
-                </span>
+                <span className={ui.fieldLabel}>ふりかえり</span>
                 <textarea
-                  className="min-h-[132px] w-full resize-y rounded-[var(--radius)] border border-[var(--hair)] bg-[var(--surface)] px-3 py-2.5 text-sm leading-[1.65] text-[var(--ink)] outline-none transition-colors duration-150 placeholder:text-[var(--ink-faint)] focus:border-[var(--ink-faint)]"
+                  className={ui.textarea}
                   value={reviewDraft}
                   onChange={(event) => setReviewDraft(event.target.value)}
                   placeholder={`${DateU.fmtIsoWeek(week)}のふりかえりを記録`}

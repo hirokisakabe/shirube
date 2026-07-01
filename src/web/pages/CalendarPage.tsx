@@ -53,7 +53,7 @@ export function CalendarPage() {
         <div className="flex items-center justify-self-center gap-2 max-[760px]:justify-self-start">
           <button
             type="button"
-            className="flex h-[30px] w-[30px] items-center justify-center rounded-md text-[19px] text-[var(--ink-soft)] transition-colors duration-150 hover:bg-[var(--surface-2)] hover:text-[var(--ink)]"
+            className={ui.navIconButton}
             onClick={goPrev}
             aria-label="前へ"
           >
@@ -66,7 +66,7 @@ export function CalendarPage() {
           </span>
           <button
             type="button"
-            className="flex h-[30px] w-[30px] items-center justify-center rounded-md text-[19px] text-[var(--ink-soft)] transition-colors duration-150 hover:bg-[var(--surface-2)] hover:text-[var(--ink)]"
+            className={ui.navIconButton}
             onClick={goNext}
             aria-label="次へ"
           >
@@ -74,7 +74,7 @@ export function CalendarPage() {
           </button>
           <button
             type="button"
-            className="ml-1.5 rounded-md border border-[var(--hair)] px-[11px] py-[5px] text-xs text-[var(--ink-soft)] transition-all duration-150 hover:border-[var(--accent)] hover:text-[var(--accent)]"
+            className={cn(ui.subtleButton, "ml-1.5 text-[var(--ink-soft)]")}
             onClick={goToday}
           >
             今日
@@ -85,7 +85,7 @@ export function CalendarPage() {
           <button
             type="button"
             className={cn(
-              "rounded-md border border-[var(--hair)] px-[11px] py-[5px] text-xs text-[var(--ink-faint)] transition-all duration-150 hover:border-[var(--accent)] hover:text-[var(--accent)]",
+              ui.subtleButton,
               showWeekend && "border-[var(--ink-faint)] text-[var(--ink-soft)]",
             )}
             onClick={() => setShowWeekend((v) => !v)}
@@ -93,12 +93,12 @@ export function CalendarPage() {
           >
             土日
           </button>
-          <div className="flex rounded-md border border-[var(--hair)] bg-[var(--surface-2)] p-0.5">
+          <div className={ui.segmentGroup}>
             <button
               type="button"
               className={cn(
-                "rounded-[4px] px-4 py-[5px] text-sm text-[var(--ink-soft)] transition-all duration-150",
-                view === "week" && "bg-[var(--ink)] text-[var(--surface)]",
+                ui.segmentButton,
+                view === "week" && ui.segmentButtonActive,
               )}
               data-active={view === "week" ? "true" : "false"}
               onClick={() => setView("week")}
@@ -108,8 +108,8 @@ export function CalendarPage() {
             <button
               type="button"
               className={cn(
-                "rounded-[4px] px-4 py-[5px] text-sm text-[var(--ink-soft)] transition-all duration-150",
-                view === "month" && "bg-[var(--ink)] text-[var(--surface)]",
+                ui.segmentButton,
+                view === "month" && ui.segmentButtonActive,
               )}
               data-active={view === "month" ? "true" : "false"}
               onClick={() => setView("month")}
@@ -121,10 +121,7 @@ export function CalendarPage() {
       </header>
 
       {ctx.operationError && (
-        <div
-          className="mx-[26px] mt-3 rounded-[var(--radius)] border border-[color-mix(in_srgb,var(--accent)_30%,transparent)] bg-[color-mix(in_srgb,var(--accent)_6%,var(--surface))] px-3 py-2 text-[13px] text-[var(--accent)]"
-          role="alert"
-        >
+        <div className={cn(ui.alert, "mx-[26px] mt-3")} role="alert">
           {ctx.operationError}
         </div>
       )}

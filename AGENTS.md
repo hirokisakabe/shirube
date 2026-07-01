@@ -60,6 +60,10 @@ Use pnpm with Node.js `>=22.12.0`.
 
 Code is TypeScript. Follow ESLint and Prettier: tabs, double quotes, and type-aware lint rules. React components use PascalCase file names such as `ReviewPage.tsx`; hooks use `useX.ts`; tests live beside code as `*.test.ts` or `*.test.tsx`. Prefer small functions and existing dependency injection patterns such as `createApp(db)` and `createTestDb()`.
 
+## Web UI Implementation Rules
+
+Keep the existing quiet, compact UI rhythm. Prefer Tailwind utility classes through shared primitives in `src/web/styles.ts` for repeated roles such as buttons, icon buttons, panel headers, fields, textareas, alerts, badges, and scroll areas. Use `rounded-md` / `var(--radius)` for controls and panels unless the existing element is intentionally circular, and keep borders on the shared `var(--hair)` / `var(--hair-soft)` scale. Panel headers such as `日付未設定` and `週次` should share the same height, bottom border, spacing, and medium text weight. Use overlays only for transient feedback or focused actions; keep long-lived reference content visible in panels or the main layout.
+
 ## Testing Guidelines
 
 Vitest is split by environment: `vitest.node.config.ts` for DB/server tests, `vitest.web.config.ts` for jsdom React tests, and `vitest.cli.config.ts` for CLI tests. CLI tests depend on built output, so run `pnpm build` before targeted CLI debugging or rely on `pnpm test`, which builds in CI before tests. Use `createTestDb()` for database tests to avoid writing to the user database.
