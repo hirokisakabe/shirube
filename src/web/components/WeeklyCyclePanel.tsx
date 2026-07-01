@@ -61,12 +61,19 @@ export function WeeklyCyclePanel({
       <div
         className={cn(
           ui.panelHeader,
-          "grid-cols-[minmax(0,1fr)_36px]",
-          collapsed && ui.panelHeaderCollapsed,
+          // Keep the cycle toggle in the outer 36px rail in both states. When
+          // collapsed, switch to a single 36px column so the lone button does
+          // not auto-place into the content column and jump on the x-axis. Keep
+          // the header full-width on narrow screens so the rail can stay
+          // right-aligned like the collapsed Inbox panel.
+          collapsed
+            ? "w-full grid-cols-[36px] justify-center justify-items-center border-b-0 px-0 pb-0 pt-1 max-[860px]:justify-end"
+            : "grid-cols-[minmax(0,1fr)_36px] px-0",
         )}
+        style={{ paddingLeft: 0, paddingRight: 0 }}
       >
         {!collapsed && (
-          <div className="flex min-w-0 items-center gap-2.5">
+          <div className="flex min-w-0 items-center gap-2.5 pl-0.5">
             <span className="font-[var(--num)] text-xs text-[var(--ink-faint)]">
               {DateU.fmtIsoWeek(week)}
             </span>
