@@ -1,5 +1,15 @@
 # shirube
 
+## 1.2.0
+
+### Minor Changes
+
+- deff385: Refine the calendar layout with collapsible unassigned-task and weekly-cycle panels.
+
+### Patch Changes
+
+- 99a08e3: Refine calendar header controls and stabilize weekly-cycle panel toggle layout.
+
 ## 1.1.0
 
 ### Minor Changes
