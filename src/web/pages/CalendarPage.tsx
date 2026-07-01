@@ -3,7 +3,7 @@ import { InboxPanel } from "../components/InboxPanel";
 import { MonthView } from "../components/MonthView";
 import { StorageNotice } from "../components/StorageNotice";
 import { WeekView } from "../components/WeekView";
-import { WeeklyCycleDrawer } from "../components/WeeklyCycleDrawer";
+import { WeeklyCyclePanel } from "../components/WeeklyCyclePanel";
 import { inboxItems, useTasks } from "../hooks/useTasks";
 import { cn, ui } from "../styles";
 import { DateU } from "../utils/date";
@@ -16,7 +16,8 @@ export function CalendarPage() {
   const [layout] = useState<WeekLayout>("columns");
   const [anchor, setAnchor] = useState(() => DateU.today());
   const [showWeekend, setShowWeekend] = useState(false);
-  const [cycleDrawerOpen, setCycleDrawerOpen] = useState(false);
+  const [inboxCollapsed, setInboxCollapsed] = useState(false);
+  const [cyclePanelCollapsed, setCyclePanelCollapsed] = useState(true);
 
   const weekStart = DateU.startOfWeek(anchor);
   const currentWeek = DateU.isoWeek(weekStart);
@@ -45,7 +46,6 @@ export function CalendarPage() {
     <div className="flex h-full flex-col">
       <header className="grid grid-cols-[1fr_auto_1fr] items-center gap-4 border-b border-[var(--hair)] bg-[var(--surface)] px-[26px] py-3.5 max-[760px]:grid-cols-1 max-[760px]:justify-items-start max-[760px]:gap-2.5 max-[760px]:px-[18px] max-[760px]:py-3">
         <div className="flex items-baseline gap-[9px]">
-          <span className="h-[11px] w-[11px] self-center rounded-full bg-[var(--accent)]" />
           <span className="text-xl font-bold tracking-[0.04em]">shirube</span>
           <StorageNotice />
         </div>
@@ -74,7 +74,7 @@ export function CalendarPage() {
           </button>
           <button
             type="button"
-            className="ml-1.5 rounded-full border border-[var(--hair)] px-[13px] py-[5px] text-[13px] text-[var(--ink-soft)] transition-all duration-150 hover:border-[var(--accent)] hover:text-[var(--accent)]"
+            className="ml-1.5 rounded-md border border-[var(--hair)] px-[11px] py-[5px] text-xs text-[var(--ink-soft)] transition-all duration-150 hover:border-[var(--accent)] hover:text-[var(--accent)]"
             onClick={goToday}
           >
             今日
@@ -93,11 +93,11 @@ export function CalendarPage() {
           >
             土日
           </button>
-          <div className="flex rounded-lg border border-[var(--hair)] bg-[var(--surface-2)] p-0.5">
+          <div className="flex rounded-md border border-[var(--hair)] bg-[var(--surface-2)] p-0.5">
             <button
               type="button"
               className={cn(
-                "rounded-md px-4 py-[5px] text-sm text-[var(--ink-soft)] transition-all duration-150",
+                "rounded-[4px] px-4 py-[5px] text-sm text-[var(--ink-soft)] transition-all duration-150",
                 view === "week" && "bg-[var(--ink)] text-[var(--surface)]",
               )}
               data-active={view === "week" ? "true" : "false"}
@@ -108,7 +108,7 @@ export function CalendarPage() {
             <button
               type="button"
               className={cn(
-                "rounded-md px-4 py-[5px] text-sm text-[var(--ink-soft)] transition-all duration-150",
+                "rounded-[4px] px-4 py-[5px] text-sm text-[var(--ink-soft)] transition-all duration-150",
                 view === "month" && "bg-[var(--ink)] text-[var(--surface)]",
               )}
               data-active={view === "month" ? "true" : "false"}
@@ -117,15 +117,6 @@ export function CalendarPage() {
               月
             </button>
           </div>
-          {view === "week" && (
-            <button
-              type="button"
-              className="rounded-full border border-[var(--hair)] px-[13px] py-[5px] text-[13px] text-[var(--ink-soft)] no-underline transition-all duration-150 hover:border-[var(--accent)] hover:text-[var(--accent)]"
-              onClick={() => setCycleDrawerOpen(true)}
-            >
-              週次サイクル
-            </button>
-          )}
         </div>
       </header>
 
@@ -155,14 +146,31 @@ export function CalendarPage() {
       )}
 
       <main className="min-h-0 flex-1 overflow-hidden px-[26px] pb-[26px] pt-[18px] max-[760px]:px-[18px] max-[760px]:pb-[18px]">
-        <div className="grid h-full min-h-0 grid-cols-[minmax(220px,280px)_minmax(0,1fr)] gap-[18px] max-[860px]:grid-cols-[minmax(0,1fr)] max-[860px]:grid-rows-[minmax(180px,30vh)_minmax(0,1fr)] max-[860px]:gap-4">
+        <div
+          className={cn(
+            "grid h-full min-h-0 gap-[18px] max-[860px]:grid-cols-[minmax(0,1fr)] max-[860px]:gap-4",
+            view === "week" && inboxCollapsed
+              ? cyclePanelCollapsed
+                ? "grid-cols-[36px_minmax(0,1fr)_36px] max-[860px]:grid-rows-[54px_minmax(0,1fr)_54px]"
+                : "grid-cols-[36px_minmax(0,1fr)_minmax(220px,260px)] max-[860px]:grid-rows-[54px_minmax(0,1fr)_minmax(260px,34vh)]"
+              : view === "week"
+                ? cyclePanelCollapsed
+                  ? "grid-cols-[minmax(220px,280px)_minmax(0,1fr)_36px] max-[860px]:grid-rows-[minmax(180px,30vh)_minmax(0,1fr)_54px]"
+                  : "grid-cols-[minmax(220px,280px)_minmax(0,1fr)_minmax(220px,260px)] max-[860px]:grid-rows-[minmax(180px,30vh)_minmax(0,1fr)_minmax(260px,34vh)]"
+                : inboxCollapsed
+                  ? "grid-cols-[36px_minmax(0,1fr)] max-[860px]:grid-rows-[54px_minmax(0,1fr)]"
+                  : "grid-cols-[minmax(220px,280px)_minmax(0,1fr)] max-[860px]:grid-rows-[minmax(180px,30vh)_minmax(0,1fr)]",
+          )}
+        >
           <InboxPanel
             tasks={inboxItems(ctx.tasks)}
+            collapsed={inboxCollapsed}
             onAdd={(text) => ctx.add(null, text)}
             onToggle={ctx.toggle}
             onRemove={ctx.remove}
             onEdit={ctx.edit}
             onMoveToDate={ctx.moveTo}
+            onToggleCollapsed={() => setInboxCollapsed((value) => !value)}
           />
           <div className="min-h-0 min-w-0" data-calendar-main>
             {view === "week" ? (
@@ -181,15 +189,17 @@ export function CalendarPage() {
               />
             )}
           </div>
+          {view === "week" && (
+            <WeeklyCyclePanel
+              week={currentWeek}
+              collapsed={cyclePanelCollapsed}
+              onToggleCollapsed={() =>
+                setCyclePanelCollapsed((value) => !value)
+              }
+            />
+          )}
         </div>
       </main>
-      {view === "week" && (
-        <WeeklyCycleDrawer
-          week={currentWeek}
-          open={cycleDrawerOpen}
-          onClose={() => setCycleDrawerOpen(false)}
-        />
-      )}
     </div>
   );
 }
