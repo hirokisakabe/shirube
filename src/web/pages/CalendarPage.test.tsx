@@ -107,7 +107,9 @@ describe("CalendarPage", () => {
     });
     const { container } = renderWithQueryClient(<CalendarPage />);
 
-    const inbox = await screen.findByRole("complementary", { name: "Inbox" });
+    const inbox = await screen.findByRole("complementary", {
+      name: "日付未設定",
+    });
     expect(within(inbox).getByText("Inbox完了移動")).toBeInTheDocument();
     expect(within(inbox).getByText("Inbox編集")).toBeInTheDocument();
     expect(within(inbox).getByText("Inbox削除")).toBeInTheDocument();
@@ -121,9 +123,9 @@ describe("CalendarPage", () => {
       within(calendarMain).getByText("日付付きタスク"),
     ).toBeInTheDocument();
 
-    await user.click(within(inbox).getByPlaceholderText("Inboxに追加"));
+    await user.click(within(inbox).getByPlaceholderText("タスクを追加"));
     await user.type(
-      within(inbox).getByPlaceholderText("Inboxに追加"),
+      within(inbox).getByPlaceholderText("タスクを追加"),
       "Inbox追加{Enter}",
     );
     await waitFor(() => {
@@ -224,12 +226,49 @@ describe("CalendarPage", () => {
     await screen.findAllByPlaceholderText("タスクを追加");
 
     expect(
-      screen.getByRole("button", { name: "週次サイクル" }),
+      screen.getByRole("button", { name: "週次サイクルを開く" }),
     ).toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("週表示のボタンから対象週の週次サイクルを開ける", async () => {
+  it("日付未設定を最小化して再度開ける", async () => {
+    setMockTasks([makeTask({ id: 1, title: "Inboxタスク", date: null })]);
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime.bind(vi),
+    });
+    renderWithQueryClient(<CalendarPage />);
+
+    const inbox = await screen.findByRole("complementary", {
+      name: "日付未設定",
+    });
+    expect(within(inbox).getByText("Inboxタスク")).toBeInTheDocument();
+    expect(
+      within(inbox).getByPlaceholderText("タスクを追加"),
+    ).toBeInTheDocument();
+
+    await user.click(
+      within(inbox).getByRole("button", { name: "日付未設定を最小化" }),
+    );
+
+    expect(within(inbox).queryByText("Inboxタスク")).not.toBeInTheDocument();
+    expect(
+      within(inbox).queryByPlaceholderText("タスクを追加"),
+    ).not.toBeInTheDocument();
+    expect(
+      within(inbox).getByRole("button", { name: "日付未設定を開く" }),
+    ).toBeInTheDocument();
+
+    await user.click(
+      within(inbox).getByRole("button", { name: "日付未設定を開く" }),
+    );
+
+    expect(await within(inbox).findByText("Inboxタスク")).toBeInTheDocument();
+    expect(
+      within(inbox).getByPlaceholderText("タスクを追加"),
+    ).toBeInTheDocument();
+  });
+
+  it("週表示のボタンから対象週の週次サイクルパネルを開ける", async () => {
     setMockWeeklyCycles([
       makeWeeklyCycle({
         id: 1,
@@ -244,24 +283,24 @@ describe("CalendarPage", () => {
     renderWithQueryClient(<CalendarPage />);
 
     await user.click(
-      await screen.findByRole("button", { name: "週次サイクル" }),
+      await screen.findByRole("button", { name: "週次サイクルを開く" }),
     );
 
-    expect(
-      await screen.findByRole("dialog", { name: "6/1週の週次サイクル" }),
-    ).toBeInTheDocument();
-    const dialog = screen.getByRole("dialog", {
-      name: "6/1週の週次サイクル",
+    const panel = await screen.findByRole("complementary", {
+      name: "週次サイクル",
     });
     expect(
-      within(dialog).getByDisplayValue("今週の目標内容"),
+      within(panel).getByRole("button", { name: "週次サイクルを最小化" }),
     ).toBeInTheDocument();
     expect(
-      within(dialog).getByDisplayValue("今週の振り返り内容"),
+      await within(panel).findByDisplayValue("今週の目標内容"),
+    ).toBeInTheDocument();
+    expect(
+      within(panel).getByDisplayValue("今週の振り返り内容"),
     ).toBeInTheDocument();
   });
 
-  it("週次サイクルドロワーから目標と振り返りを保存できる", async () => {
+  it("週次サイクルパネルから目標とふりかえりを保存できる", async () => {
     setMockWeeklyCycles([]);
     const requests: Array<{ week: string; body: unknown }> = [];
     server.use(
@@ -284,23 +323,25 @@ describe("CalendarPage", () => {
     renderWithQueryClient(<CalendarPage />);
 
     await user.click(
-      await screen.findByRole("button", { name: "週次サイクル" }),
+      await screen.findByRole("button", { name: "週次サイクルを開く" }),
     );
-    const dialog = await screen.findByRole("dialog");
+    const panel = await screen.findByRole("complementary", {
+      name: "週次サイクル",
+    });
     const [goalTextarea, reviewTextarea] =
-      within(dialog).getAllByRole("textbox");
+      within(panel).getAllByRole("textbox");
     await user.type(goalTextarea, "新しい目標");
-    await user.type(reviewTextarea, "新しい振り返り");
-    await user.click(screen.getByRole("button", { name: "保存" }));
+    await user.type(reviewTextarea, "新しいふりかえり");
+    await user.click(within(panel).getByRole("button", { name: "保存" }));
 
     expect(await screen.findByText("保存しました")).toBeInTheDocument();
     expect(requests).toContainEqual({
       week: "2026-W23",
-      body: { goalContent: "新しい目標", reviewContent: "新しい振り返り" },
+      body: { goalContent: "新しい目標", reviewContent: "新しいふりかえり" },
     });
   });
 
-  it("週を移動すると開いている週次サイクルドロワーの内容も切り替わる", async () => {
+  it("週を移動すると開いている週次サイクルパネルの内容も切り替わる", async () => {
     setMockWeeklyCycles([
       makeWeeklyCycle({
         id: 1,
@@ -321,27 +362,26 @@ describe("CalendarPage", () => {
     renderWithQueryClient(<CalendarPage />);
 
     await user.click(
-      await screen.findByRole("button", { name: "週次サイクル" }),
+      await screen.findByRole("button", { name: "週次サイクルを開く" }),
     );
-    let dialog = await screen.findByRole("dialog");
+    const panel = await screen.findByRole("complementary", {
+      name: "週次サイクル",
+    });
     expect(
-      await within(dialog).findByDisplayValue("今週の目標"),
+      await within(panel).findByDisplayValue("今週の目標"),
     ).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "次へ" }));
 
-    dialog = await screen.findByRole("dialog", {
-      name: "6/8週の週次サイクル",
-    });
     expect(
-      await within(dialog).findByDisplayValue("次週の目標"),
+      await within(panel).findByDisplayValue("次週の目標"),
     ).toBeInTheDocument();
     expect(
-      within(dialog).getByDisplayValue("次週の振り返り"),
+      within(panel).getByDisplayValue("次週の振り返り"),
     ).toBeInTheDocument();
   });
 
-  it("月表示では週次サイクルボタンとドロワーが表示されない", async () => {
+  it("月表示では週次サイクルパネルが表示されない", async () => {
     const user = userEvent.setup({
       advanceTimers: vi.advanceTimersByTime.bind(vi),
     });
@@ -351,35 +391,48 @@ describe("CalendarPage", () => {
     await user.click(screen.getByRole("button", { name: "月" }));
 
     expect(
-      screen.queryByRole("button", { name: "週次サイクル" }),
+      screen.queryByRole("button", { name: "週次サイクルを開く" }),
     ).not.toBeInTheDocument();
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("complementary", { name: "週次サイクル" }),
+    ).not.toBeInTheDocument();
   });
 
-  it("週次サイクルドロワーを背景クリックとEscで閉じられる", async () => {
+  it("週次サイクルパネルを最小化して再度開ける", async () => {
     const user = userEvent.setup({
       advanceTimers: vi.advanceTimersByTime.bind(vi),
     });
     renderWithQueryClient(<CalendarPage />);
 
     await user.click(
-      await screen.findByRole("button", { name: "週次サイクル" }),
+      await screen.findByRole("button", { name: "週次サイクルを開く" }),
     );
-    const trigger = screen.getByRole("button", { name: "週次サイクル" });
-    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+    const panel = await screen.findByRole("complementary", {
+      name: "週次サイクル",
+    });
     expect(
-      screen.getAllByRole("button", { name: "週次サイクルを閉じる" })[1],
-    ).toHaveFocus();
-    await user.click(
-      screen.getAllByRole("button", { name: "週次サイクルを閉じる" })[0],
-    );
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      within(panel).getByRole("button", { name: "週次サイクルを最小化" }),
+    ).toBeInTheDocument();
+    expect(
+      within(panel).getByRole("textbox", { name: "目標" }),
+    ).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "週次サイクル" }));
-    expect(await screen.findByRole("dialog")).toBeInTheDocument();
-    await user.keyboard("{Escape}");
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(trigger).toHaveFocus();
+    await user.click(
+      within(panel).getByRole("button", { name: "週次サイクルを最小化" }),
+    );
+    expect(
+      within(panel).queryByRole("textbox", { name: "目標" }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(panel).getByRole("button", { name: "週次サイクルを開く" }),
+    ).toBeInTheDocument();
+
+    await user.click(
+      within(panel).getByRole("button", { name: "週次サイクルを開く" }),
+    );
+    expect(
+      within(panel).getByRole("textbox", { name: "目標" }),
+    ).toBeInTheDocument();
   });
 
   it("週表示の長いタスク名に全文確認用のtitleが付く", async () => {
@@ -976,12 +1029,15 @@ describe("CalendarPage", () => {
     const user = userEvent.setup({
       advanceTimers: vi.advanceTimersByTime.bind(vi),
     });
-    renderWithQueryClient(<CalendarPage />);
+    const { container } = renderWithQueryClient(<CalendarPage />);
 
     await screen.findByText("月表示タスク");
     await user.click(screen.getByRole("button", { name: "月" }));
 
-    const inputs = screen.getAllByPlaceholderText("タスクを追加");
+    const calendarMain = container.querySelector(
+      "[data-calendar-main]",
+    ) as HTMLElement;
+    const inputs = within(calendarMain).getAllByPlaceholderText("タスクを追加");
     await user.click(inputs[0]);
     await user.type(inputs[0], "月表示追加{Enter}");
 
