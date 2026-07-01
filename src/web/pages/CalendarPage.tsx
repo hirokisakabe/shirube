@@ -50,72 +50,118 @@ export function CalendarPage() {
           <StorageNotice />
         </div>
 
-        <div className="flex items-center justify-self-center gap-2 max-[760px]:justify-self-start">
-          <button
-            type="button"
-            className={ui.navIconButton}
-            onClick={goPrev}
-            aria-label="前へ"
-          >
-            ‹
-          </button>
-          <span className="min-w-[170px] text-center font-[var(--num)] text-[15px] font-medium tracking-[0.02em] max-[760px]:min-w-[150px]">
-            {view === "week"
-              ? DateU.fmtWeek(weekStart)
-              : DateU.fmtMonth(monthAnchor)}
-          </span>
-          <button
-            type="button"
-            className={ui.navIconButton}
-            onClick={goNext}
-            aria-label="次へ"
-          >
-            ›
-          </button>
-          <button
-            type="button"
-            className={cn(ui.subtleButton, "ml-1.5 text-[var(--ink-soft)]")}
-            onClick={goToday}
-          >
-            今日
-          </button>
-        </div>
+        <span className="min-w-[170px] justify-self-center text-center font-[var(--num)] text-[15px] font-medium tracking-[0.02em] max-[760px]:min-w-0 max-[760px]:justify-self-start">
+          {view === "week"
+            ? DateU.fmtWeek(weekStart)
+            : DateU.fmtMonth(monthAnchor)}
+        </span>
 
-        <div className="flex items-center justify-self-end gap-2.5 max-[760px]:flex-wrap max-[760px]:justify-self-start">
-          <button
-            type="button"
-            className={cn(
-              ui.subtleButton,
-              showWeekend && "border-[var(--ink-faint)] text-[var(--ink-soft)]",
-            )}
-            onClick={() => setShowWeekend((v) => !v)}
-            title="週末の表示切替"
-          >
-            土日
-          </button>
-          <div className={ui.segmentGroup}>
+        <div className="flex items-center justify-self-end gap-6 max-[760px]:flex-wrap max-[760px]:justify-self-start">
+          <div className="flex items-center gap-1.5">
             <button
               type="button"
               className={cn(
-                ui.segmentButton,
-                view === "week" && ui.segmentButtonActive,
+                ui.navIconButton,
+                "h-[30px] w-[30px] rounded-md text-[18px] leading-none",
               )}
-              data-active={view === "week" ? "true" : "false"}
-              onClick={() => setView("week")}
+              onClick={goPrev}
+              aria-label="前へ"
             >
-              週
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 16 16"
+                className="h-3.5 w-3.5"
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.6"
+              >
+                <path d="M10 3.5 5.5 8l4.5 4.5" />
+              </svg>
             </button>
             <button
               type="button"
               className={cn(
-                ui.segmentButton,
-                view === "month" && ui.segmentButtonActive,
+                "flex h-[30px] flex-none items-center rounded-md border border-[var(--hair)] bg-[var(--surface-2)] p-0.5 text-xs text-[var(--ink-faint)] transition-all duration-150 hover:border-[var(--accent)] hover:text-[var(--accent)]",
               )}
-              data-active={view === "month" ? "true" : "false"}
-              onClick={() => setView("month")}
+              onClick={goToday}
             >
-              月
+              <span className="flex h-[26px] items-center whitespace-nowrap rounded-[4px] px-[10.5px] leading-none">
+                今日
+              </span>
             </button>
+            <button
+              type="button"
+              className={cn(
+                ui.navIconButton,
+                "h-[30px] w-[30px] rounded-md text-[18px] leading-none",
+              )}
+              onClick={goNext}
+              aria-label="次へ"
+            >
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 16 16"
+                className="h-3.5 w-3.5"
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.6"
+              >
+                <path d="m6 3.5 4.5 4.5L6 12.5" />
+              </svg>
+            </button>
+          </div>
+          <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              className={cn(
+                "flex h-[30px] flex-none items-center rounded-md border border-[var(--hair)] bg-[var(--surface-2)] p-0.5 text-xs text-[var(--ink-faint)] transition-all duration-150",
+                showWeekend
+                  ? "hover:border-[var(--hair)]"
+                  : "hover:border-[var(--accent)] hover:text-[var(--accent)]",
+              )}
+              onClick={() => setShowWeekend((v) => !v)}
+              title="週末の表示切替"
+            >
+              <span
+                className={cn(
+                  "flex h-[26px] items-center rounded-[4px] px-[10.5px] leading-none",
+                  "whitespace-nowrap",
+                  showWeekend && "bg-[var(--ink)] text-[var(--surface)]",
+                )}
+              >
+                土日
+              </span>
+            </button>
+            <div className={cn(ui.segmentGroup, "h-[30px] items-center")}>
+              <button
+                type="button"
+                className={cn(
+                  ui.segmentButton,
+                  "flex h-[26px] items-center px-4 py-0",
+                  view === "week" && ui.segmentButtonActive,
+                )}
+                data-active={view === "week" ? "true" : "false"}
+                onClick={() => setView("week")}
+              >
+                週
+              </button>
+              <button
+                type="button"
+                className={cn(
+                  ui.segmentButton,
+                  "flex h-[26px] items-center px-4 py-0",
+                  view === "month" && ui.segmentButtonActive,
+                )}
+                data-active={view === "month" ? "true" : "false"}
+                onClick={() => setView("month")}
+              >
+                月
+              </button>
+            </div>
           </div>
         </div>
       </header>

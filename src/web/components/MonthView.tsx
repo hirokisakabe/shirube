@@ -110,14 +110,11 @@ function MonthCell({
             "font-[var(--num)] text-sm font-medium",
             !inMonth && "text-[var(--ink-faint)]",
             today &&
-              "inline-flex h-[22px] w-[22px] items-center justify-center rounded-full bg-[var(--accent)] text-xs text-white",
+              "inline-flex h-[22px] w-[22px] items-center justify-center rounded-full bg-[var(--accent)] text-xs leading-none text-white",
           )}
         >
           {date.getDate()}
         </span>
-        {today && (
-          <span className="h-[5px] w-[5px] rounded-full bg-[var(--accent)]" />
-        )}
       </div>
       <div
         className={cn(

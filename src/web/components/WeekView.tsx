@@ -72,7 +72,7 @@ function DayHead({ date }: { date: Date }) {
   return (
     <div
       className={cn(
-        "flex items-baseline gap-[7px] border-b border-[var(--hair)] px-0.5 pb-2 pt-1",
+        "flex items-center gap-[7px] border-b border-[var(--hair)] px-0.5 pb-2 pt-1",
         isToday && "border-[var(--accent)]",
       )}
     >
@@ -90,14 +90,11 @@ function DayHead({ date }: { date: Date }) {
         className={cn(
           "font-[var(--num)] text-[19px] font-medium",
           isToday &&
-            "inline-flex h-[27px] w-[27px] items-center justify-center rounded-full bg-[var(--accent)] text-sm text-white",
+            "inline-flex h-[27px] w-[27px] items-center justify-center rounded-full bg-[var(--accent)] text-sm leading-none text-white",
         )}
       >
         {date.getDate()}
       </span>
-      {isToday && (
-        <span className="h-[5px] w-[5px] rounded-full bg-[var(--accent)]" />
-      )}
     </div>
   );
 }
