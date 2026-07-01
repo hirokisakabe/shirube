@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Task } from "../api/tasks";
 import { isOptimisticTaskId } from "../hooks/useTasks";
-import { cn } from "../styles";
+import { cn, ui } from "../styles";
 
 type Props = {
   todo: Task;
@@ -132,7 +132,7 @@ export function TodoItem({
           <button
             type="button"
             className={cn(
-              "flex items-center justify-center rounded text-[15px] text-[var(--ink-faint)] hover:bg-[color-mix(in_srgb,var(--accent)_14%,transparent)] hover:text-[var(--accent)] disabled:cursor-wait disabled:hover:bg-transparent disabled:hover:text-[var(--ink-faint)]",
+              ui.taskActionButton,
               compact ? "h-4 w-4 text-xs" : "h-5 w-5",
             )}
             data-task-action="move-to-inbox"
@@ -146,7 +146,7 @@ export function TodoItem({
         <button
           type="button"
           className={cn(
-            "flex items-center justify-center rounded text-[15px] text-[var(--ink-faint)] hover:bg-[color-mix(in_srgb,var(--accent)_14%,transparent)] hover:text-[var(--accent)] disabled:cursor-wait disabled:hover:bg-transparent disabled:hover:text-[var(--ink-faint)]",
+            ui.taskActionButton,
             compact ? "h-4 w-4 text-xs" : "h-5 w-5",
           )}
           data-task-action="remove"
