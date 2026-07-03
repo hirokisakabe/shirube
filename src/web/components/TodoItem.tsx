@@ -269,7 +269,7 @@ export function TodoItem({
           className={cn(
             "rounded-full bg-transparent transition-colors duration-150",
             compact ? "h-1.5 w-1.5" : "h-2 w-2",
-            done && "scale-[0.85] bg-white",
+            done && "scale-[0.85]",
           )}
         />
       </button>
