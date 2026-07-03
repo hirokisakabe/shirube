@@ -113,6 +113,13 @@ describe("CalendarPage", () => {
     expect(within(inbox).getByText("Inbox完了移動")).toBeInTheDocument();
     expect(within(inbox).getByText("Inbox編集")).toBeInTheDocument();
     expect(within(inbox).getByText("Inbox削除")).toBeInTheDocument();
+    const inboxTaskNodes = inbox.querySelectorAll("[data-inbox-task]");
+    expect(inboxTaskNodes).toHaveLength(3);
+    expect(
+      inboxTaskNodes[2].compareDocumentPosition(
+        within(inbox).getByPlaceholderText("タスクを追加"),
+      ) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     const calendarMain = container.querySelector(
       "[data-calendar-main]",
     ) as HTMLElement;

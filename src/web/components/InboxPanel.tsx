@@ -107,7 +107,6 @@ export function InboxPanel({
       </div>
       {!collapsed && (
         <div className={cn(ui.panelScroller, "gap-2.5 pt-2")}>
-          <AddInput onAdd={onAdd} placeholder="タスクを追加" />
           {tasks.length > 0 && (
             <div className="flex flex-col gap-2">
               {tasks.map((task) => (
@@ -123,6 +122,7 @@ export function InboxPanel({
               ))}
             </div>
           )}
+          <AddInput onAdd={onAdd} placeholder="タスクを追加" />
         </div>
       )}
     </aside>
