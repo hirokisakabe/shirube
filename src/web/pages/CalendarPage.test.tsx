@@ -175,13 +175,21 @@ describe("CalendarPage", () => {
       expect(requests).toContainEqual({ method: "DELETE", id: "3" });
     });
 
-    const moveDateInput =
-      within(inbox).getByLabelText("Inbox完了移動の移動先日付");
-    fireEvent.change(moveDateInput, { target: { value: "2026-06-03" } });
     await user.click(
       within(
-        moveDateInput.closest("[data-inbox-task]") as HTMLElement,
-      ).getByRole("button", { name: "移動" }),
+        within(inbox)
+          .getByText("Inbox完了移動")
+          .closest("[data-todo-done]") as HTMLElement,
+      ).getByLabelText("Inbox完了移動の予定日を設定"),
+    );
+    const inboxDatePicker = screen
+      .getByText("2026年 6月")
+      .closest("[data-date-picker]") as HTMLElement;
+    expect(
+      within(inboxDatePicker).queryByRole("button", { name: "2026-06-06" }),
+    ).not.toBeInTheDocument();
+    await user.click(
+      within(inboxDatePicker).getByRole("button", { name: "2026-06-03" }),
     );
     await waitFor(() => {
       expect(requests).toContainEqual({
@@ -198,7 +206,21 @@ describe("CalendarPage", () => {
       within(wednesdayColumn).getByText("Inbox完了移動"),
     ).toBeInTheDocument();
 
-    await user.click(within(wednesdayColumn).getByTitle("Inboxへ戻す"));
+    await user.click(
+      within(
+        within(wednesdayColumn)
+          .getByText("Inbox完了移動")
+          .closest("[data-todo-done]") as HTMLElement,
+      ).getByLabelText("Inbox完了移動の予定日を変更"),
+    );
+    const scheduledDatePicker = screen
+      .getByText("2026年 6月")
+      .closest("[data-date-picker]") as HTMLElement;
+    await user.click(
+      within(scheduledDatePicker).getByRole("button", {
+        name: "日付なしにする",
+      }),
+    );
     await waitFor(() => {
       expect(requests).toContainEqual({
         method: "PATCH",
