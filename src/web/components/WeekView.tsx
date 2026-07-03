@@ -114,7 +114,8 @@ export function WeekView({ weekStart, ctx, layout, showWeekend }: Props) {
         onToggle={ctx.toggle}
         onRemove={ctx.remove}
         onEdit={ctx.edit}
-        onMoveToInbox={(id) => ctx.moveTo(id, null)}
+        onMoveToDate={ctx.moveTo}
+        showWeekend={showWeekend}
       />
     ));
   };

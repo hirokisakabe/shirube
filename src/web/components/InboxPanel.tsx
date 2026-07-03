@@ -13,6 +13,7 @@ type Props = {
   onEdit: (id: number, text: string) => void;
   onMoveToDate: (id: number, date: string | null) => void;
   onToggleCollapsed: () => void;
+  showWeekend: boolean;
 };
 
 function InboxTask({
@@ -21,51 +22,25 @@ function InboxTask({
   onRemove,
   onEdit,
   onMoveToDate,
+  showWeekend,
 }: {
   task: Task;
   onToggle: (id: number) => void;
   onRemove: (id: number) => void;
   onEdit: (id: number, text: string) => void;
   onMoveToDate: (id: number, date: string | null) => void;
+  showWeekend: boolean;
 }) {
-  const [date, setDate] = useState("");
-
-  const move = () => {
-    if (!date) return;
-    onMoveToDate(task.id, date);
-    setDate("");
-  };
-
   return (
-    <div className="flex flex-col gap-[5px]" data-inbox-task>
+    <div data-inbox-task>
       <TodoItem
         todo={task}
         onToggle={onToggle}
         onRemove={onRemove}
         onEdit={onEdit}
+        onMoveToDate={onMoveToDate}
+        showWeekend={showWeekend}
       />
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-1.5 pl-[25px]">
-        <input
-          type="date"
-          className={cn(ui.field, "h-[27px] px-1.5 font-[var(--num)] text-xs")}
-          aria-label={`${task.title}の移動先日付`}
-          value={date}
-          onChange={(event) => setDate(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" && !event.nativeEvent.isComposing) {
-              move();
-            }
-          }}
-        />
-        <button
-          type="button"
-          className={cn(ui.button, ui.buttonCompact, "h-[27px]")}
-          disabled={!date}
-          onClick={move}
-        >
-          移動
-        </button>
-      </div>
     </div>
   );
 }
@@ -79,6 +54,7 @@ export function InboxPanel({
   onEdit,
   onMoveToDate,
   onToggleCollapsed,
+  showWeekend,
 }: Props) {
   const [over, setOver] = useState(false);
 
@@ -142,6 +118,7 @@ export function InboxPanel({
                   onRemove={onRemove}
                   onEdit={onEdit}
                   onMoveToDate={onMoveToDate}
+                  showWeekend={showWeekend}
                 />
               ))}
             </div>

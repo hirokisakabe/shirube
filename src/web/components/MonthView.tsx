@@ -73,6 +73,7 @@ function MonthCell({
   today,
   isLastColumn,
   onPickDay,
+  showWeekend,
 }: {
   date: Date;
   ctx: Ctx;
@@ -80,6 +81,7 @@ function MonthCell({
   today: boolean;
   isLastColumn: boolean;
   onPickDay: (date: Date) => void;
+  showWeekend: boolean;
 }) {
   const k = DateU.key(date);
   const items = dayItems(ctx.tasks, k);
@@ -138,7 +140,8 @@ function MonthCell({
             onToggle={ctx.toggle}
             onRemove={ctx.remove}
             onEdit={ctx.edit}
-            onMoveToInbox={(id) => ctx.moveTo(id, null)}
+            onMoveToDate={ctx.moveTo}
+            showWeekend={showWeekend}
             variant="compact"
           />
         ))}
@@ -205,6 +208,7 @@ export function MonthView({ monthDate, ctx, onPickDay, showWeekend }: Props) {
             today={DateU.isToday(date)}
             isLastColumn={(index + 1) % cols === 0}
             onPickDay={onPickDay}
+            showWeekend={showWeekend}
           />
         ))}
       </div>

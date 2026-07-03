@@ -214,6 +214,7 @@ export function CalendarPage() {
             onEdit={ctx.edit}
             onMoveToDate={ctx.moveTo}
             onToggleCollapsed={() => setInboxCollapsed((value) => !value)}
+            showWeekend={showWeekend}
           />
           <div className="min-h-0 min-w-0" data-calendar-main>
             {view === "week" ? (
