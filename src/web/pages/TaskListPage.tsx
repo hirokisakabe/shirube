@@ -1,10 +1,11 @@
+import { AppErrorState } from "../components/AppErrorState";
 import { useTasks } from "../hooks/useTasks";
 
 export function TaskListPage() {
   const { tasks, error, loading } = useTasks();
 
   if (loading) return <p>読み込み中...</p>;
-  if (error) return <p>エラー: {error}</p>;
+  if (error) return <AppErrorState error={error} />;
 
   return (
     <main>

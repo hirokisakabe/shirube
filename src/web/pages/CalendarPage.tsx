@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { AppErrorState } from "../components/AppErrorState";
 import { InboxPanel } from "../components/InboxPanel";
 import { MonthView } from "../components/MonthView";
 import { StorageNotice } from "../components/StorageNotice";
@@ -39,8 +40,7 @@ export function CalendarPage() {
 
   if (ctx.loading)
     return <div className="p-8 text-[var(--ink-soft)]">読み込み中…</div>;
-  if (ctx.error)
-    return <div className="p-8 text-[var(--accent)]">エラー: {ctx.error}</div>;
+  if (ctx.error) return <AppErrorState error={ctx.error} />;
 
   return (
     <div className="flex h-full flex-col">

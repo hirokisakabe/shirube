@@ -25,7 +25,7 @@ describe("TaskListPage", () => {
     expect(await screen.findByText("タスクがありません")).toBeInTheDocument();
   });
 
-  it("API エラー時にエラーメッセージを表示する", async () => {
+  it("API エラー時にユーザー向けのエラー表示を出す", async () => {
     server.use(
       http.get("/api/tasks", () =>
         HttpResponse.json({ error: "network error" }, { status: 500 }),
@@ -33,6 +33,8 @@ describe("TaskListPage", () => {
     );
 
     renderWithQueryClient(<TaskListPage />);
-    expect(await screen.findByText(/エラー/)).toBeInTheDocument();
+    expect(await screen.findByText("通信エラー")).toBeInTheDocument();
+    expect(screen.getByText("再読み込み")).toBeInTheDocument();
+    expect(screen.queryByText(/Failed to fetch/)).not.toBeInTheDocument();
   });
 });

@@ -54,6 +54,21 @@ describe("CalendarPage", () => {
     expect(screen.queryByText("%")).not.toBeInTheDocument();
   });
 
+  it("初期読み込み失敗時にユーザー向けのエラー表示を出す", async () => {
+    server.use(http.get("/api/tasks", () => HttpResponse.error()));
+
+    renderWithQueryClient(<CalendarPage />);
+
+    expect(await screen.findByText("通信エラー")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "通信に失敗しました。サーバーに接続できないか、ネットワークが不安定です。",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText("再読み込み")).toBeInTheDocument();
+    expect(screen.queryByText(/Failed to fetch/)).not.toBeInTheDocument();
+  });
+
   it("Inboxで日付未設定タスクを追加・編集・完了・削除・日付移動できる", async () => {
     let tasks = [
       makeTask({ id: 1, title: "Inbox完了移動", date: null }),
