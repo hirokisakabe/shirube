@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getUserFacingErrorMessage } from "./AppErrorState";
+import { getUserFacingErrorMessage } from "./errorMessage";
 
 describe("getUserFacingErrorMessage", () => {
   it("fetch 自体の失敗を通信失敗として表示する", () => {

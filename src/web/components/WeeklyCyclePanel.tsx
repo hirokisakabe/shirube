@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useWeeklyCycle } from "../hooks/useWeeklyCycles";
 import { cn, ui } from "../styles";
 import { DateU } from "../utils/date";
-import { getUserFacingErrorMessage } from "./AppErrorState";
+import { getUserFacingErrorMessage } from "../utils/errorMessage";
 
 type Props = {
   week: string;
