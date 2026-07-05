@@ -54,6 +54,21 @@ describe("CalendarPage", () => {
     expect(screen.queryByText("%")).not.toBeInTheDocument();
   });
 
+  it("初期読み込み失敗時にユーザー向けのエラー表示を出す", async () => {
+    server.use(http.get("/api/tasks", () => HttpResponse.error()));
+
+    renderWithQueryClient(<CalendarPage />);
+
+    expect(await screen.findByText("通信エラー")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "通信に失敗しました。サーバーに接続できないか、ネットワークが不安定です。",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText("再読み込み")).toBeInTheDocument();
+    expect(screen.queryByText(/Failed to fetch/)).not.toBeInTheDocument();
+  });
+
   it("Inboxで日付未設定タスクを追加・編集・完了・削除・日付移動できる", async () => {
     let tasks = [
       makeTask({ id: 1, title: "Inbox完了移動", date: null }),
@@ -368,6 +383,36 @@ describe("CalendarPage", () => {
       week: "2026-W23",
       body: { goalContent: "新しい目標", reviewContent: "新しいふりかえり" },
     });
+  });
+
+  it("週次サイクルの読み込み失敗時にユーザー向けのエラー表示を出す", async () => {
+    setMockTasks([]);
+    server.use(
+      http.get("/api/weekly-cycles/:week", () =>
+        HttpResponse.json({ error: "network error" }, { status: 500 }),
+      ),
+    );
+
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime.bind(vi),
+    });
+    renderWithQueryClient(<CalendarPage />);
+
+    await user.click(
+      await screen.findByRole("button", { name: "週次サイクルを開く" }),
+    );
+    const panel = screen.getByRole("complementary", {
+      name: "週次サイクル",
+    });
+
+    expect(
+      await within(panel).findByText(
+        "データの読み込みまたは保存に失敗しました。通信状態を確認してください。",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(panel).queryByText(/Failed to fetch/),
+    ).not.toBeInTheDocument();
   });
 
   it("週を移動すると開いている週次サイクルパネルの内容も切り替わる", async () => {
