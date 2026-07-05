@@ -6,12 +6,12 @@ type Props = {
 };
 
 export function getUserFacingErrorMessage(error: string) {
-  if (/Failed to fetch|NetworkError|Load failed/i.test(error)) {
-    return "通信に失敗しました。サーバーに接続できないか、ネットワークが不安定です。";
-  }
-
   if (/Failed to (fetch|create|update|delete|save)/i.test(error)) {
     return "データの読み込みまたは保存に失敗しました。通信状態を確認してください。";
+  }
+
+  if (/Failed to fetch|NetworkError|Load failed/i.test(error)) {
+    return "通信に失敗しました。サーバーに接続できないか、ネットワークが不安定です。";
   }
 
   return "データを読み込めませんでした。しばらくしてからもう一度お試しください。";

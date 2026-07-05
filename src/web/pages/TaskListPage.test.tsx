@@ -34,6 +34,11 @@ describe("TaskListPage", () => {
 
     renderWithQueryClient(<TaskListPage />);
     expect(await screen.findByText("通信エラー")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "データの読み込みまたは保存に失敗しました。通信状態を確認してください。",
+      ),
+    ).toBeInTheDocument();
     expect(screen.getByText("再読み込み")).toBeInTheDocument();
     expect(screen.queryByText(/Failed to fetch/)).not.toBeInTheDocument();
   });

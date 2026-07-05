@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useWeeklyCycle } from "../hooks/useWeeklyCycles";
 import { cn, ui } from "../styles";
 import { DateU } from "../utils/date";
+import { getUserFacingErrorMessage } from "./AppErrorState";
 
 type Props = {
   week: string;
@@ -96,7 +97,7 @@ export function WeeklyCyclePanel({
         <div className={cn(ui.panelScroller, "gap-3 pt-3")}>
           {error && (
             <div className={ui.inlineAlert} role="alert">
-              エラー: {error}
+              {getUserFacingErrorMessage(error)}
             </div>
           )}
           {loading ? (
