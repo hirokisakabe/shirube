@@ -62,7 +62,7 @@ describe("CalendarPage", () => {
     expect(await screen.findByText("通信エラー")).toBeInTheDocument();
     expect(
       screen.getByText(
-        "データの読み込みまたは保存に失敗しました。通信状態を確認してください。",
+        "通信に失敗しました。サーバーに接続できないか、ネットワークが不安定です。",
       ),
     ).toBeInTheDocument();
     expect(screen.getByText("再読み込み")).toBeInTheDocument();
