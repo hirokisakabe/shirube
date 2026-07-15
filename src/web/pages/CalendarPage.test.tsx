@@ -122,12 +122,12 @@ describe("CalendarPage", () => {
     });
     const { container } = renderWithQueryClient(<CalendarPage />);
 
+    await user.click(
+      await screen.findByRole("button", { name: "日付未設定を開く" }),
+    );
     const inbox = await screen.findByRole("complementary", {
       name: "日付未設定",
     });
-    await user.click(
-      within(inbox).getByRole("button", { name: "日付未設定を開く" }),
-    );
     expect(within(inbox).getByText("Inbox完了移動")).toBeInTheDocument();
     expect(within(inbox).getByText("Inbox編集")).toBeInTheDocument();
     expect(within(inbox).getByText("Inbox削除")).toBeInTheDocument();
@@ -278,6 +278,35 @@ describe("CalendarPage", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
+  it("Inboxのバッジには未完了タスク数だけを表示する", async () => {
+    setMockTasks([
+      makeTask({ id: 1, title: "未完了", date: null }),
+      makeTask({
+        id: 2,
+        title: "完了済み",
+        date: null,
+        doneAt: "2026-06-01T10:00:00.000Z",
+      }),
+    ]);
+    const user = userEvent.setup({
+      advanceTimers: vi.advanceTimersByTime.bind(vi),
+    });
+    renderWithQueryClient(<CalendarPage />);
+
+    const openButton = await screen.findByRole("button", {
+      name: "日付未設定を開く",
+    });
+    expect(openButton.querySelector("[data-inbox-count]")).toHaveTextContent(
+      "1",
+    );
+
+    await user.click(openButton);
+    const inbox = await screen.findByRole("complementary", {
+      name: "日付未設定",
+    });
+    expect(inbox.querySelector("[data-inbox-count]")).toHaveTextContent("1");
+  });
+
   it("日付未設定はデフォルトで非表示になり、開閉できる", async () => {
     setMockTasks([makeTask({ id: 1, title: "Inboxタスク", date: null })]);
     const user = userEvent.setup({
@@ -285,33 +314,32 @@ describe("CalendarPage", () => {
     });
     renderWithQueryClient(<CalendarPage />);
 
+    expect(
+      screen.queryByRole("complementary", { name: "日付未設定" }),
+    ).not.toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: "日付未設定を開く" }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "日付未設定を開く" }));
+
     const inbox = await screen.findByRole("complementary", {
       name: "日付未設定",
     });
-    expect(within(inbox).queryByText("Inboxタスク")).not.toBeInTheDocument();
-    expect(
-      within(inbox).queryByPlaceholderText("タスクを追加"),
-    ).not.toBeInTheDocument();
-    expect(
-      within(inbox).getByRole("button", { name: "日付未設定を開く" }),
-    ).toBeInTheDocument();
-
-    await user.click(
-      within(inbox).getByRole("button", { name: "日付未設定を開く" }),
-    );
-
     expect(await within(inbox).findByText("Inboxタスク")).toBeInTheDocument();
     expect(
       within(inbox).getByPlaceholderText("タスクを追加"),
     ).toBeInTheDocument();
 
     await user.click(
-      within(inbox).getByRole("button", { name: "日付未設定を最小化" }),
+      screen.getByRole("button", { name: "日付未設定を最小化" }),
     );
 
-    expect(within(inbox).queryByText("Inboxタスク")).not.toBeInTheDocument();
     expect(
-      within(inbox).getByRole("button", { name: "日付未設定を開く" }),
+      screen.queryByRole("complementary", { name: "日付未設定" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "日付未設定を開く" }),
     ).toBeInTheDocument();
   });
 
@@ -337,7 +365,7 @@ describe("CalendarPage", () => {
       name: "週次サイクル",
     });
     expect(
-      within(panel).getByRole("button", { name: "週次サイクルを最小化" }),
+      screen.getByRole("button", { name: "週次サイクルを最小化" }),
     ).toBeInTheDocument();
     expect(
       await within(panel).findByDisplayValue("今週の目標内容"),
@@ -488,27 +516,29 @@ describe("CalendarPage", () => {
       name: "週次サイクル",
     });
     expect(
-      within(panel).getByRole("button", { name: "週次サイクルを最小化" }),
+      screen.getByRole("button", { name: "週次サイクルを最小化" }),
     ).toBeInTheDocument();
     expect(
       within(panel).getByRole("textbox", { name: "目標" }),
     ).toBeInTheDocument();
 
     await user.click(
-      within(panel).getByRole("button", { name: "週次サイクルを最小化" }),
+      screen.getByRole("button", { name: "週次サイクルを最小化" }),
     );
     expect(
-      within(panel).queryByRole("textbox", { name: "目標" }),
+      screen.queryByRole("complementary", { name: "週次サイクル" }),
     ).not.toBeInTheDocument();
     expect(
-      within(panel).getByRole("button", { name: "週次サイクルを開く" }),
+      screen.getByRole("button", { name: "週次サイクルを開く" }),
     ).toBeInTheDocument();
 
     await user.click(
-      within(panel).getByRole("button", { name: "週次サイクルを開く" }),
+      screen.getByRole("button", { name: "週次サイクルを開く" }),
     );
     expect(
-      within(panel).getByRole("textbox", { name: "目標" }),
+      within(
+        await screen.findByRole("complementary", { name: "週次サイクル" }),
+      ).getByRole("textbox", { name: "目標" }),
     ).toBeInTheDocument();
   });
 

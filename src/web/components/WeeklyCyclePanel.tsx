@@ -8,12 +8,14 @@ type Props = {
   week: string;
   collapsed: boolean;
   onToggleCollapsed: () => void;
+  showToggle?: boolean;
 };
 
 export function WeeklyCyclePanel({
   week,
   collapsed,
   onToggleCollapsed,
+  showToggle = true,
 }: Props) {
   const [goalDraft, setGoalDraft] = useState("");
   const [reviewDraft, setReviewDraft] = useState("");
@@ -61,7 +63,9 @@ export function WeeklyCyclePanel({
     >
       <div
         className={cn(
-          ui.panelHeader,
+          showToggle
+            ? ui.panelHeader
+            : "grid h-[33px] items-center border-b border-[var(--hair-soft)] px-0.5",
           // Keep the cycle toggle in the outer 36px rail in both states. When
           // collapsed, switch to a single 36px column so the lone button does
           // not auto-place into the content column and jump on the x-axis. Keep
@@ -69,55 +73,62 @@ export function WeeklyCyclePanel({
           // right-aligned like the collapsed Inbox panel.
           collapsed
             ? "w-full grid-cols-[36px] justify-center justify-items-center border-b-0 px-0 pb-0 pt-1 max-[860px]:justify-end"
-            : "grid-cols-[minmax(0,1fr)_36px] px-0",
+            : showToggle
+              ? "grid-cols-[minmax(0,1fr)_36px] px-0"
+              : "grid-cols-[minmax(0,1fr)] px-0",
         )}
         style={{ paddingLeft: 0, paddingRight: 0 }}
       >
         {!collapsed && (
           <div className="flex min-w-0 items-center gap-2.5 pl-0.5">
+            {!showToggle && <h2 className={ui.panelTitle}>週次</h2>}
             <span className="font-[var(--num)] text-xs text-[var(--ink-faint)]">
               {DateU.fmtIsoWeek(week)}
             </span>
           </div>
         )}
-        <button
-          type="button"
-          className={ui.collapseButton}
-          onClick={onToggleCollapsed}
-          aria-label={collapsed ? "週次サイクルを開く" : "週次サイクルを最小化"}
-          title={collapsed ? "週次サイクルを開く" : "週次サイクルを最小化"}
-        >
-          {collapsed ? (
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 18 18"
-              className="h-[17px] w-[17px]"
-              fill="none"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="1.45"
-            >
-              <path d="M14.4 6.8A5.75 5.75 0 0 0 4.3 5.1" />
-              <path d="M4.15 2.9v2.4h2.4" />
-              <path d="M3.6 11.2a5.75 5.75 0 0 0 10.1 1.7" />
-              <path d="M13.85 15.1v-2.4h-2.4" />
-            </svg>
-          ) : (
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 16 16"
-              className="h-3.5 w-3.5"
-              fill="none"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="1.6"
-            >
-              <path d="m6 3.5 4.5 4.5L6 12.5" />
-            </svg>
-          )}
-        </button>
+        {showToggle && (
+          <button
+            type="button"
+            className={ui.collapseButton}
+            onClick={onToggleCollapsed}
+            aria-label={
+              collapsed ? "週次サイクルを開く" : "週次サイクルを最小化"
+            }
+            title={collapsed ? "週次サイクルを開く" : "週次サイクルを最小化"}
+          >
+            {collapsed ? (
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 18 18"
+                className="h-[17px] w-[17px]"
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.45"
+              >
+                <path d="M14.4 6.8A5.75 5.75 0 0 0 4.3 5.1" />
+                <path d="M4.15 2.9v2.4h2.4" />
+                <path d="M3.6 11.2a5.75 5.75 0 0 0 10.1 1.7" />
+                <path d="M13.85 15.1v-2.4h-2.4" />
+              </svg>
+            ) : (
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 16 16"
+                className="h-3.5 w-3.5"
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.6"
+              >
+                <path d="m6 3.5 4.5 4.5L6 12.5" />
+              </svg>
+            )}
+          </button>
+        )}
       </div>
 
       {!collapsed && (

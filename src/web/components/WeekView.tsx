@@ -70,7 +70,7 @@ function DayHead({ date }: { date: Date }) {
   const dow = DateU.dowMon(date);
   const isToday = DateU.isToday(date);
   return (
-    <div className="-mx-3 flex items-center gap-1.5 border-b border-[var(--hair-soft)] px-3 pb-1.5 pt-0.5">
+    <div className="-mx-3 flex h-[33px] items-center gap-1.5 border-b border-[var(--hair-soft)] px-3">
       <span
         className={cn(
           "text-xs font-medium text-[var(--ink-soft)]",
