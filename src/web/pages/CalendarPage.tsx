@@ -17,7 +17,7 @@ export function CalendarPage() {
   const [layout] = useState<WeekLayout>("columns");
   const [anchor, setAnchor] = useState(() => DateU.today());
   const [showWeekend, setShowWeekend] = useState(false);
-  const [inboxCollapsed, setInboxCollapsed] = useState(false);
+  const [inboxCollapsed, setInboxCollapsed] = useState(true);
   const [cyclePanelCollapsed, setCyclePanelCollapsed] = useState(true);
 
   const weekStart = DateU.startOfWeek(anchor);
