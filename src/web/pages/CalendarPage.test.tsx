@@ -125,6 +125,9 @@ describe("CalendarPage", () => {
     const inbox = await screen.findByRole("complementary", {
       name: "日付未設定",
     });
+    await user.click(
+      within(inbox).getByRole("button", { name: "日付未設定を開く" }),
+    );
     expect(within(inbox).getByText("Inbox完了移動")).toBeInTheDocument();
     expect(within(inbox).getByText("Inbox編集")).toBeInTheDocument();
     expect(within(inbox).getByText("Inbox削除")).toBeInTheDocument();
@@ -275,7 +278,7 @@ describe("CalendarPage", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("日付未設定を最小化して再度開ける", async () => {
+  it("日付未設定はデフォルトで非表示になり、開閉できる", async () => {
     setMockTasks([makeTask({ id: 1, title: "Inboxタスク", date: null })]);
     const user = userEvent.setup({
       advanceTimers: vi.advanceTimersByTime.bind(vi),
@@ -285,15 +288,6 @@ describe("CalendarPage", () => {
     const inbox = await screen.findByRole("complementary", {
       name: "日付未設定",
     });
-    expect(within(inbox).getByText("Inboxタスク")).toBeInTheDocument();
-    expect(
-      within(inbox).getByPlaceholderText("タスクを追加"),
-    ).toBeInTheDocument();
-
-    await user.click(
-      within(inbox).getByRole("button", { name: "日付未設定を最小化" }),
-    );
-
     expect(within(inbox).queryByText("Inboxタスク")).not.toBeInTheDocument();
     expect(
       within(inbox).queryByPlaceholderText("タスクを追加"),
@@ -309,6 +303,15 @@ describe("CalendarPage", () => {
     expect(await within(inbox).findByText("Inboxタスク")).toBeInTheDocument();
     expect(
       within(inbox).getByPlaceholderText("タスクを追加"),
+    ).toBeInTheDocument();
+
+    await user.click(
+      within(inbox).getByRole("button", { name: "日付未設定を最小化" }),
+    );
+
+    expect(within(inbox).queryByText("Inboxタスク")).not.toBeInTheDocument();
+    expect(
+      within(inbox).getByRole("button", { name: "日付未設定を開く" }),
     ).toBeInTheDocument();
   });
 
