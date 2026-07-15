@@ -132,7 +132,7 @@ export function WeekView({ weekStart, ctx, layout, showWeekend }: Props) {
               className={cn(
                 "flex min-h-0 min-w-0 flex-col border-l border-[var(--hair-soft)] px-3 transition-colors duration-150 first:border-l-0",
                 DateU.isToday(date) &&
-                  "bg-[linear-gradient(180deg,color-mix(in_srgb,var(--accent)_8%,white)_0%,white_34%)]",
+                  "bg-[linear-gradient(180deg,color-mix(in_srgb,var(--accent)_8%,var(--surface))_0%,var(--surface)_34%)]",
               )}
             >
               <DayHead date={date} />

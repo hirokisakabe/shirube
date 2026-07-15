@@ -299,6 +299,7 @@ describe("CalendarPage", () => {
     expect(openButton.querySelector("[data-inbox-count]")).toHaveTextContent(
       "1",
     );
+    expect(openButton).toHaveAccessibleDescription("未完了1件");
 
     await user.click(openButton);
     const inbox = await screen.findByRole("complementary", {
@@ -521,6 +522,9 @@ describe("CalendarPage", () => {
     expect(
       within(panel).getByRole("textbox", { name: "目標" }),
     ).toBeInTheDocument();
+    const goal = within(panel).getByRole("textbox", { name: "目標" });
+    await user.clear(goal);
+    await user.type(goal, "保存前の下書き");
 
     await user.click(
       screen.getByRole("button", { name: "週次サイクルを最小化" }),
@@ -540,6 +544,9 @@ describe("CalendarPage", () => {
         await screen.findByRole("complementary", { name: "週次サイクル" }),
       ).getByRole("textbox", { name: "目標" }),
     ).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "目標" })).toHaveValue(
+      "保存前の下書き",
+    );
   });
 
   it("週表示の長いタスク名に全文確認用のtitleが付く", async () => {

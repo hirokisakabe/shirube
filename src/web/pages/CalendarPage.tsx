@@ -214,8 +214,9 @@ export function CalendarPage() {
                 ui.collapseButton,
                 "relative",
                 sidePanel === "inbox" &&
-                  "bg-[color-mix(in_srgb,var(--accent)_10%,white)] text-[var(--accent)]",
+                  "bg-[color-mix(in_srgb,var(--accent)_10%,var(--surface))] text-[var(--accent)]",
               )}
+              aria-describedby="inbox-task-count"
               aria-label={
                 sidePanel === "inbox"
                   ? "日付未設定を最小化"
@@ -256,6 +257,9 @@ export function CalendarPage() {
                   {inboxOpenCount}
                 </span>
               )}
+              <span id="inbox-task-count" className="sr-only">
+                未完了{inboxOpenCount}件
+              </span>
             </button>
             {view === "week" && (
               <button
@@ -263,7 +267,7 @@ export function CalendarPage() {
                 className={cn(
                   ui.collapseButton,
                   sidePanel === "cycle" &&
-                    "bg-[color-mix(in_srgb,var(--accent)_10%,white)] text-[var(--accent)]",
+                    "bg-[color-mix(in_srgb,var(--accent)_10%,var(--surface))] text-[var(--accent)]",
                 )}
                 aria-label={
                   sidePanel === "cycle"
@@ -309,13 +313,18 @@ export function CalendarPage() {
               showToggle={false}
             />
           )}
-          {sidePanel === "cycle" && view === "week" && (
-            <WeeklyCyclePanel
-              week={currentWeek}
-              collapsed={false}
-              onToggleCollapsed={() => setSidePanel(null)}
-              showToggle={false}
-            />
+          {view === "week" && (
+            <div
+              className={sidePanel === "cycle" ? "contents" : "hidden"}
+              hidden={sidePanel !== "cycle"}
+            >
+              <WeeklyCyclePanel
+                week={currentWeek}
+                collapsed={false}
+                onToggleCollapsed={() => setSidePanel(null)}
+                showToggle={false}
+              />
+            </div>
           )}
           <div
             className="min-h-0 min-w-0 overflow-hidden rounded-md border border-[var(--hair)] bg-[var(--surface)]"

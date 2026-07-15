@@ -3,12 +3,12 @@
 :root {
   --accent: #1268e8;
   --accent-deep: #0648bf;
-  --accent-bright: #2f8cff;
+  --accent-bright: #1971d4;
   --accent-gradient: linear-gradient(
     135deg,
     #0648bf 0%,
     #1268e8 48%,
-    #2f8cff 100%
+    #1971d4 100%
   );
   --paper: #f5f8fc;
   --surface: #ffffff;
@@ -52,9 +52,18 @@ textarea {
   color: transparent;
 }
 
-.accent-fill {
-  background: var(--accent-gradient);
-  box-shadow: 0 5px 14px -8px rgba(18, 104, 232, 0.9);
+@layer components {
+  .accent-fill {
+    background: var(--accent-gradient);
+    box-shadow: 0 5px 14px -8px rgba(18, 104, 232, 0.9);
+  }
+}
+
+@media (forced-colors: active) {
+  .brand-mark {
+    background: none;
+    color: CanvasText;
+  }
 }
 :root[data-mononums="on"] {
   --num: "DM Mono", monospace;

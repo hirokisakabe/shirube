@@ -23,7 +23,7 @@ export const ui = {
   panelTitle:
     "m-0 text-[13px] font-medium tracking-normal text-[var(--ink-soft)]",
   countBadge:
-    "inline-flex h-[22px] min-w-6 items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--accent)_22%,var(--hair))] bg-[color-mix(in_srgb,var(--accent)_6%,white)] px-1 font-[var(--num)] text-xs text-[var(--accent-deep)]",
+    "inline-flex h-[22px] min-w-6 items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--accent)_22%,var(--hair))] bg-[color-mix(in_srgb,var(--accent)_6%,var(--surface))] px-1 font-[var(--num)] text-xs text-[var(--accent-deep)]",
   field:
     "min-w-0 rounded-md border border-[var(--hair)] bg-[var(--surface)] text-[var(--ink)] outline-none focus:border-[var(--ink-faint)]",
   textarea:
