@@ -4,9 +4,9 @@ export function cn(...values: Array<string | false | null | undefined>) {
 
 export const ui = {
   toast:
-    "flex max-w-[min(360px,calc(100vw-48px))] items-center justify-between gap-3 rounded-[7px] border border-[var(--hair)] bg-[var(--surface)] px-3 py-2.5 text-[13px] text-[var(--ink)] shadow-[0_10px_34px_-22px_rgba(40,30,20,0.55)]",
+    "flex max-w-[min(360px,calc(100vw-48px))] items-center justify-between gap-3 rounded-[7px] border border-[var(--hair)] bg-[var(--surface)] px-3 py-2.5 text-[13px] text-[var(--ink)] shadow-[var(--shadow)]",
   button:
-    "inline-flex min-h-[30px] flex-none items-center justify-center rounded-md border border-[var(--hair)] bg-[var(--surface-2)] px-3 text-[13px] text-[var(--ink)] transition-[border-color,color,opacity] duration-150 hover:not-disabled:border-[var(--accent)] hover:not-disabled:text-[var(--accent)] disabled:cursor-default disabled:opacity-55",
+    "inline-flex min-h-[30px] flex-none items-center justify-center rounded-md border border-[var(--hair)] bg-[var(--surface)] px-3 text-[13px] font-medium text-[var(--ink)] shadow-[0_1px_2px_rgba(16,24,40,0.04)] transition-[border-color,color,box-shadow,opacity] duration-150 hover:not-disabled:border-[var(--accent)] hover:not-disabled:text-[var(--accent)] hover:not-disabled:shadow-[0_2px_8px_rgba(18,104,232,0.12)] disabled:cursor-default disabled:opacity-55",
   buttonCompact: "min-h-[26px] px-2.5",
   subtleButton:
     "rounded-md border border-[var(--hair)] px-[11px] py-[5px] text-xs text-[var(--ink-faint)] transition-all duration-150 hover:border-[var(--accent)] hover:text-[var(--accent)]",
@@ -23,7 +23,7 @@ export const ui = {
   panelTitle:
     "m-0 text-[13px] font-medium tracking-normal text-[var(--ink-soft)]",
   countBadge:
-    "inline-flex h-[22px] min-w-6 items-center justify-center rounded-full border border-[var(--hair)] px-1 font-[var(--num)] text-xs text-[var(--ink-soft)]",
+    "inline-flex h-[22px] min-w-6 items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--accent)_22%,var(--hair))] bg-[color-mix(in_srgb,var(--accent)_6%,var(--surface))] px-1 font-[var(--num)] text-xs text-[var(--accent-deep)]",
   field:
     "min-w-0 rounded-md border border-[var(--hair)] bg-[var(--surface)] text-[var(--ink)] outline-none focus:border-[var(--ink-faint)]",
   textarea:
@@ -34,10 +34,10 @@ export const ui = {
   inlineAlert:
     "rounded-[var(--radius)] border border-[color-mix(in_srgb,var(--accent)_30%,transparent)] bg-[color-mix(in_srgb,var(--accent)_6%,transparent)] px-3 py-2 text-[13px] text-[var(--accent)]",
   segmentGroup:
-    "flex rounded-md border border-[var(--hair)] bg-[var(--surface-2)] p-0.5",
+    "flex rounded-md border border-[var(--hair)] bg-[var(--surface-2)] p-0.5 shadow-[inset_0_1px_2px_rgba(16,24,40,0.03)]",
   segmentButton:
     "rounded-[4px] px-4 py-[5px] text-sm text-[var(--ink-soft)] transition-all duration-150",
-  segmentButtonActive: "bg-[var(--ink)] text-[var(--surface)]",
+  segmentButtonActive: "accent-fill bg-[var(--accent)] font-medium text-white",
   taskActionButton:
     "flex items-center justify-center rounded text-[15px] text-[var(--ink-faint)] hover:bg-[color-mix(in_srgb,var(--accent)_14%,transparent)] hover:text-[var(--accent)] disabled:cursor-wait disabled:hover:bg-transparent disabled:hover:text-[var(--ink-faint)]",
 };

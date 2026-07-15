@@ -1,15 +1,23 @@
 @import "tailwindcss";
 
 :root {
-  --accent: #bd5440;
-  --paper: #f3f1ea;
-  --surface: #fbfaf6;
-  --surface-2: #f7f5ee;
-  --ink: #21201c;
-  --ink-soft: #6b675f;
-  --ink-faint: #a7a399;
-  --hair: #e4e0d6;
-  --hair-soft: #ece8df;
+  --accent: #1268e8;
+  --accent-deep: #0648bf;
+  --accent-bright: #1971d4;
+  --accent-gradient: linear-gradient(
+    135deg,
+    #0648bf 0%,
+    #1268e8 48%,
+    #1971d4 100%
+  );
+  --paper: #f5f8fc;
+  --surface: #ffffff;
+  --surface-2: #f7f9fc;
+  --ink: #101828;
+  --ink-soft: #526075;
+  --ink-faint: #8c98a9;
+  --hair: #d8e0eb;
+  --hair-soft: #e8edf4;
   /* UI primitive scale: use these for shared spacing, radius, borders, shadows, and compact text. */
   --space-2: 8px;
   --space-3: 12px;
@@ -17,13 +25,45 @@
   --radius-sm: 6px;
   --radius-md: 7px;
   --border-subtle: 1px solid var(--hair);
-  --shadow-float: 0 10px 34px -22px rgba(40, 30, 20, 0.55);
+  --shadow-float: 0 14px 36px -22px rgba(17, 56, 110, 0.3);
   --text-sm: 13px;
   --gap: 14px;
   --pad: 16px;
   --radius: var(--radius-md);
   --shadow: var(--shadow-float);
   --num: "Zen Kaku Gothic New", sans-serif;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 22%, white);
+  color: var(--ink);
+}
+
+button,
+input,
+textarea {
+  outline-color: var(--accent);
+}
+
+.brand-mark {
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@layer components {
+  .accent-fill {
+    background: var(--accent-gradient);
+    box-shadow: 0 5px 14px -8px rgba(18, 104, 232, 0.9);
+  }
+}
+
+@media (forced-colors: active) {
+  .brand-mark {
+    background: none;
+    color: CanvasText;
+  }
 }
 :root[data-mononums="on"] {
   --num: "DM Mono", monospace;

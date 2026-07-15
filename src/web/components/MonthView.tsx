@@ -112,7 +112,7 @@ function MonthCell({
             "font-[var(--num)] text-sm font-medium",
             !inMonth && "text-[var(--ink-faint)]",
             today &&
-              "inline-flex h-[22px] w-[22px] items-center justify-center rounded-full bg-[var(--accent)] text-xs leading-none text-white",
+              "accent-fill inline-flex h-[22px] w-[22px] items-center justify-center rounded-full bg-[var(--accent)] text-xs leading-none text-white",
           )}
         >
           {date.getDate()}

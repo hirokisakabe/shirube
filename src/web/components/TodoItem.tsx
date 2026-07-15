@@ -134,7 +134,7 @@ function DatePicker({
                 today &&
                   "shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--accent)_42%,transparent)]",
                 selected &&
-                  "bg-[var(--ink)] text-[var(--surface)] shadow-none hover:bg-[var(--ink)] hover:text-[var(--surface)]",
+                  "accent-fill bg-[var(--accent)] text-white shadow-none hover:bg-[var(--accent)] hover:text-white",
               )}
               aria-current={today ? "date" : undefined}
               aria-label={key}
@@ -239,12 +239,9 @@ export function TodoItem({
       className={cn(
         "group relative flex min-w-0 items-center rounded-md transition-[border-color,background,box-shadow] duration-150",
         compact
-          ? "min-h-[18px] gap-[5px] border border-transparent bg-transparent px-0.5 py-px hover:bg-[color-mix(in_srgb,var(--surface)_74%,transparent)]"
-          : "gap-2 border border-[var(--hair)] bg-[var(--surface)] px-[9px] py-1.5 hover:border-[var(--ink-faint)] hover:shadow-[0_1px_2px_rgba(40,30,20,0.05)]",
-        !compact &&
-          done &&
-          "border-[var(--hair-soft)] bg-[var(--surface-2)] shadow-none",
-        done && compact && "bg-transparent",
+          ? "min-h-5 gap-1 border border-[var(--hair)] bg-[var(--surface)] px-1.5 py-0.5 hover:border-[var(--ink-faint)] hover:shadow-[0_1px_2px_rgba(16,24,40,0.05)]"
+          : "gap-2 border border-[var(--hair)] bg-[var(--surface)] px-[9px] py-1.5 hover:border-[var(--ink-faint)] hover:shadow-[0_1px_2px_rgba(16,24,40,0.05)]",
+        done && "border-[var(--hair-soft)] bg-[var(--surface-2)] shadow-none",
         pending && "cursor-wait opacity-65",
         !pending && !editing && "cursor-grab",
       )}
@@ -259,7 +256,7 @@ export function TodoItem({
         className={cn(
           "flex flex-none items-center justify-center rounded-full border-[1.5px] border-[var(--ink-faint)] transition-all duration-150 hover:border-[var(--accent)] disabled:cursor-wait disabled:hover:border-[var(--ink-faint)]",
           compact ? "h-3 w-3 border-[1.25px]" : "h-[17px] w-[17px]",
-          done && "border-[var(--accent)] bg-[var(--accent)]",
+          done && "accent-fill border-[var(--accent)] bg-[var(--accent)]",
         )}
         aria-label={done ? "未完了に戻す" : "完了にする"}
         disabled={pending}
