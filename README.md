@@ -58,8 +58,10 @@ shirube done <id>
 shirube rm <id>              # 確認プロンプトあり
 shirube rm <id> --yes        # 確認なし（AI エージェント向け）
 
-# タスクのタイトルを変更する
+# タスクのタイトルや日付を変更する
 shirube edit <id> --title "新しいタイトル"
+shirube edit <id> --date 2026-06-16
+shirube edit <id> --date none # 日付未設定に移動
 
 # タスクの詳細を表示
 shirube show <id>
