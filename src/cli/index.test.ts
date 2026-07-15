@@ -225,6 +225,92 @@ describe("shirube CLI", () => {
       expect(updated.title).toBe("新しいタイトル");
     });
 
+    it("--date でタスクの日付を変更する", () => {
+      const task = JSON.parse(
+        runCli(
+          ["add", "移動するタスク", "--date", "2026-07-15", "--format", "json"],
+          dbPath,
+        ).stdout,
+      );
+
+      const result = runCli(
+        ["edit", String(task.id), "--date", "2026-07-20", "--format", "json"],
+        dbPath,
+      );
+
+      expect(result.status).toBe(0);
+      expect(JSON.parse(result.stdout)).toMatchObject({
+        id: task.id,
+        title: "移動するタスク",
+        date: "2026-07-20",
+      });
+    });
+
+    it("--date none でタスクを日付未設定にする", () => {
+      const task = JSON.parse(
+        runCli(["add", "日付を外すタスク", "--format", "json"], dbPath).stdout,
+      );
+
+      const result = runCli(
+        ["edit", String(task.id), "--date", "none", "--format", "json"],
+        dbPath,
+      );
+
+      expect(result.status).toBe(0);
+      expect(JSON.parse(result.stdout).date).toBeNull();
+    });
+
+    it("--title と --date を同時に変更できる", () => {
+      const task = JSON.parse(
+        runCli(["add", "変更前", "--format", "json"], dbPath).stdout,
+      );
+
+      const result = runCli(
+        [
+          "edit",
+          String(task.id),
+          "--title",
+          "変更後",
+          "--date",
+          "2026-07-20",
+          "--format",
+          "json",
+        ],
+        dbPath,
+      );
+
+      expect(result.status).toBe(0);
+      expect(JSON.parse(result.stdout)).toMatchObject({
+        title: "変更後",
+        date: "2026-07-20",
+      });
+    });
+
+    it("変更項目がない場合は 1 で終了する", () => {
+      const task = JSON.parse(
+        runCli(["add", "変更しないタスク", "--format", "json"], dbPath).stdout,
+      );
+
+      const result = runCli(["edit", String(task.id)], dbPath);
+
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain("Specify --title or --date");
+    });
+
+    it("不正な日付は Invalid date エラーになる", () => {
+      const task = JSON.parse(
+        runCli(["add", "日付検証タスク", "--format", "json"], dbPath).stdout,
+      );
+
+      const result = runCli(
+        ["edit", String(task.id), "--date", "2026-02-30"],
+        dbPath,
+      );
+
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain("Invalid date");
+    });
+
     it("存在しない ID は 1 で終了する", () => {
       const result = runCli(
         ["edit", "99999", "--title", "新しいタイトル"],

@@ -29,6 +29,29 @@ function localDateStr(d: Date = new Date()): string {
   return `${y}-${m}-${day}`;
 }
 
+function parseTaskDate(value: string): string | null {
+  if (value === "none") return null;
+
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (match) {
+    const [, yearString, monthString, dayString] = match;
+    const year = Number(yearString);
+    const month = Number(monthString);
+    const day = Number(dayString);
+    const date = new Date(Date.UTC(year, month - 1, day));
+    if (
+      date.getUTCFullYear() === year &&
+      date.getUTCMonth() === month - 1 &&
+      date.getUTCDate() === day
+    ) {
+      return value;
+    }
+  }
+
+  writeError(`Invalid date: ${value} (expected YYYY-MM-DD or none)`);
+  process.exit(1);
+}
+
 function isoWeek(date: Date = new Date()): string {
   const d = new Date(
     Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()),
@@ -240,28 +263,41 @@ program
 
 program
   .command("edit")
-  .description("タスクのタイトルを変更する")
+  .description("タスクのタイトルまたは日付を変更する")
   .argument("<id>", "タスクID")
-  .requiredOption("--title <title>", "新しいタイトル")
+  .option("--title <title>", "新しいタイトル")
+  .option("--date <date>", "新しい日付 (YYYY-MM-DD形式、noneで日付未設定)")
   .addOption(formatOption())
-  .action(async (id: string, options: { title: string; format: Format }) => {
-    const db = getDb();
-    if (!/^\d+$/.test(id)) {
-      writeError(`Invalid id: ${id}`);
-      process.exit(1);
-    }
-    const taskId = Number(id);
-    const [task] = await db
-      .update(tasks)
-      .set({ title: options.title })
-      .where(and(eq(tasks.id, taskId), isNull(tasks.deletedAt)))
-      .returning();
-    if (!task) {
-      writeError(`Task not found: ${id}`);
-      process.exit(1);
-    }
-    writeData(task, options.format);
-  });
+  .action(
+    async (
+      id: string,
+      options: { title?: string; date?: string; format: Format },
+    ) => {
+      const db = getDb();
+      if (!/^\d+$/.test(id)) {
+        writeError(`Invalid id: ${id}`);
+        process.exit(1);
+      }
+      if (options.title === undefined && options.date === undefined) {
+        writeError("Specify --title or --date");
+        process.exit(1);
+      }
+      const taskId = Number(id);
+      const values: { title?: string; date?: string | null } = {};
+      if (options.title !== undefined) values.title = options.title;
+      if (options.date !== undefined) values.date = parseTaskDate(options.date);
+      const [task] = await db
+        .update(tasks)
+        .set(values)
+        .where(and(eq(tasks.id, taskId), isNull(tasks.deletedAt)))
+        .returning();
+      if (!task) {
+        writeError(`Task not found: ${id}`);
+        process.exit(1);
+      }
+      writeData(task, options.format);
+    },
+  );
 
 program
   .command("show")
