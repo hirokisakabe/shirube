@@ -44,9 +44,11 @@ export function CalendarPage() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="grid grid-cols-[1fr_auto_1fr] items-center gap-4 border-b border-[var(--hair)] bg-[var(--surface)] px-[26px] py-3.5 max-[760px]:grid-cols-1 max-[760px]:justify-items-start max-[760px]:gap-2.5 max-[760px]:px-[18px] max-[760px]:py-3">
+      <header className="grid grid-cols-[1fr_auto_1fr] items-center gap-4 border-b border-[var(--hair)] bg-[var(--surface)] px-[26px] py-3.5 shadow-[0_1px_0_rgba(16,24,40,0.02)] max-[760px]:grid-cols-1 max-[760px]:justify-items-start max-[760px]:gap-2.5 max-[760px]:px-[18px] max-[760px]:py-3">
         <div className="flex items-baseline gap-[9px]">
-          <span className="text-xl font-bold tracking-[0.04em]">shirube</span>
+          <span className="brand-mark text-xl font-bold tracking-[0.04em]">
+            shirube
+          </span>
           <StorageNotice />
         </div>
 
@@ -130,7 +132,7 @@ export function CalendarPage() {
                 className={cn(
                   "flex h-[26px] items-center rounded-[4px] px-[10.5px] leading-none",
                   "whitespace-nowrap",
-                  showWeekend && "bg-[var(--ink)] text-[var(--surface)]",
+                  showWeekend && "accent-fill bg-[var(--accent)] text-white",
                 )}
               >
                 土日
@@ -188,7 +190,7 @@ export function CalendarPage() {
         </div>
       )}
 
-      <main className="min-h-0 flex-1 overflow-hidden px-[26px] pb-[26px] pt-[18px] max-[760px]:px-[18px] max-[760px]:pb-[18px]">
+      <main className="min-h-0 flex-1 overflow-hidden p-[18px]">
         <div
           className={cn(
             "grid h-full min-h-0 gap-[18px] max-[860px]:grid-cols-[minmax(0,1fr)] max-[860px]:gap-4",
@@ -216,7 +218,10 @@ export function CalendarPage() {
             onToggleCollapsed={() => setInboxCollapsed((value) => !value)}
             showWeekend={showWeekend}
           />
-          <div className="min-h-0 min-w-0" data-calendar-main>
+          <div
+            className="min-h-0 min-w-0 overflow-hidden rounded-md border border-[var(--hair)] bg-[var(--surface)]"
+            data-calendar-main
+          >
             {view === "week" ? (
               <WeekView
                 weekStart={weekStart}

@@ -87,9 +87,36 @@ export function WeeklyCyclePanel({
           aria-label={collapsed ? "週次サイクルを開く" : "週次サイクルを最小化"}
           title={collapsed ? "週次サイクルを開く" : "週次サイクルを最小化"}
         >
-          <span className="h-px w-3.5 rounded-full bg-current" />
-          <span className="h-px w-3.5 rounded-full bg-current" />
-          <span className="h-px w-3.5 rounded-full bg-current" />
+          {collapsed ? (
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 18 18"
+              className="h-[17px] w-[17px]"
+              fill="none"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1.45"
+            >
+              <path d="M14.4 6.8A5.75 5.75 0 0 0 4.3 5.1" />
+              <path d="M4.15 2.9v2.4h2.4" />
+              <path d="M3.6 11.2a5.75 5.75 0 0 0 10.1 1.7" />
+              <path d="M13.85 15.1v-2.4h-2.4" />
+            </svg>
+          ) : (
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 16 16"
+              className="h-3.5 w-3.5"
+              fill="none"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1.6"
+            >
+              <path d="m6 3.5 4.5 4.5L6 12.5" />
+            </svg>
+          )}
         </button>
       </div>
 

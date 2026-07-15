@@ -70,12 +70,7 @@ function DayHead({ date }: { date: Date }) {
   const dow = DateU.dowMon(date);
   const isToday = DateU.isToday(date);
   return (
-    <div
-      className={cn(
-        "flex items-center gap-[7px] border-b border-[var(--hair)] px-0.5 pb-2 pt-1",
-        isToday && "border-[var(--accent)]",
-      )}
-    >
+    <div className="-mx-3 flex items-center gap-1.5 border-b border-[var(--hair-soft)] px-3 pb-1.5 pt-0.5">
       <span
         className={cn(
           "text-xs font-medium text-[var(--ink-soft)]",
@@ -88,9 +83,9 @@ function DayHead({ date }: { date: Date }) {
       </span>
       <span
         className={cn(
-          "font-[var(--num)] text-[19px] font-medium",
+          "font-[var(--num)] text-[17px] font-medium",
           isToday &&
-            "inline-flex h-[27px] w-[27px] items-center justify-center rounded-full bg-[var(--accent)] text-sm leading-none text-white",
+            "accent-fill inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--accent)] text-[13px] leading-none text-white",
         )}
       >
         {date.getDate()}
@@ -129,7 +124,6 @@ export function WeekView({ weekStart, ctx, layout, showWeekend }: Props) {
       >
         {days.map((date) => {
           const k = DateU.key(date);
-          const dim = DateU.isPast(date);
           return (
             <DropZone
               key={k}
@@ -138,17 +132,11 @@ export function WeekView({ weekStart, ctx, layout, showWeekend }: Props) {
               className={cn(
                 "flex min-h-0 min-w-0 flex-col border-l border-[var(--hair-soft)] px-3 transition-colors duration-150 first:border-l-0",
                 DateU.isToday(date) &&
-                  "bg-[color-mix(in_srgb,var(--accent)_5%,transparent)]",
-                dim && "bg-[var(--surface-2)]",
+                  "bg-[linear-gradient(180deg,color-mix(in_srgb,var(--accent)_8%,white)_0%,white_34%)]",
               )}
             >
               <DayHead date={date} />
-              <div
-                className={cn(
-                  "flex min-h-0 flex-1 flex-col gap-[5px] overflow-y-auto pt-2 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:bg-[var(--hair)] [&::-webkit-scrollbar]:w-[7px]",
-                  dim && "opacity-80",
-                )}
-              >
+              <div className="flex min-h-0 flex-1 flex-col gap-[5px] overflow-y-auto pt-3 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:bg-[var(--hair)] [&::-webkit-scrollbar]:w-[7px]">
                 {renderItems(date)}
                 <AddInput onAdd={(text) => ctx.add(k, text)} />
               </div>
@@ -166,7 +154,6 @@ export function WeekView({ weekStart, ctx, layout, showWeekend }: Props) {
         {days.map((date) => {
           const k = DateU.key(date);
           const today = DateU.isToday(date);
-          const dim = DateU.isPast(date);
           return (
             <DropZone
               key={k}
@@ -174,18 +161,12 @@ export function WeekView({ weekStart, ctx, layout, showWeekend }: Props) {
               onMove={ctx.moveTo}
               className={cn(
                 "flex min-h-0 min-w-0 flex-[1_1_0] flex-col border-l border-[var(--hair-soft)] px-3 transition-colors duration-150 first:border-l-0",
-                dim && "bg-[var(--surface-2)]",
                 today &&
                   "mx-1 flex-[2.6_1_0] rounded-[9px] border-l-0 bg-[var(--surface)] shadow-[0_0_0_1px_var(--hair),0_8px_30px_-20px_rgba(40,30,20,0.35)]",
               )}
             >
               <DayHead date={date} />
-              <div
-                className={cn(
-                  "flex min-h-0 flex-1 flex-col gap-[5px] overflow-y-auto pt-2 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:bg-[var(--hair)] [&::-webkit-scrollbar]:w-[7px]",
-                  dim && "opacity-80",
-                )}
-              >
+              <div className="flex min-h-0 flex-1 flex-col gap-[5px] overflow-y-auto pt-3 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:bg-[var(--hair)] [&::-webkit-scrollbar]:w-[7px]">
                 {renderItems(date)}
                 <AddInput
                   onAdd={(text) => ctx.add(k, text)}
@@ -205,7 +186,6 @@ export function WeekView({ weekStart, ctx, layout, showWeekend }: Props) {
       {days.map((date) => {
         const k = DateU.key(date);
         const today = DateU.isToday(date);
-        const dim = DateU.isPast(date);
         const st = dayStats(ctx.tasks, k);
         const dow = DateU.dowMon(date);
         return (
@@ -215,7 +195,6 @@ export function WeekView({ weekStart, ctx, layout, showWeekend }: Props) {
             onMove={ctx.moveTo}
             className={cn(
               "flex min-h-[54px] gap-[18px] border-b border-[var(--hair-soft)] px-1.5 py-[11px] transition-colors duration-150",
-              dim && "bg-[var(--surface-2)]",
               today && "bg-[color-mix(in_srgb,var(--accent)_5%,transparent)]",
             )}
           >
@@ -232,7 +211,7 @@ export function WeekView({ weekStart, ctx, layout, showWeekend }: Props) {
                 {date.getDate()}
               </span>
               {today && (
-                <span className="self-center whitespace-nowrap rounded-full bg-[var(--accent)] px-1.5 py-px text-[10px] text-white">
+                <span className="accent-fill self-center whitespace-nowrap rounded-full bg-[var(--accent)] px-1.5 py-px text-[10px] text-white">
                   今日
                 </span>
               )}

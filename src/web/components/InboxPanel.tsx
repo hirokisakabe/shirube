@@ -89,14 +89,44 @@ export function InboxPanel({
       >
         <button
           type="button"
-          className={ui.collapseButton}
+          className={cn(ui.collapseButton, "relative")}
           onClick={onToggleCollapsed}
           aria-label={collapsed ? "日付未設定を開く" : "日付未設定を最小化"}
           title={collapsed ? "日付未設定を開く" : "日付未設定を最小化"}
         >
-          <span className="h-px w-3.5 rounded-full bg-current" />
-          <span className="h-px w-3.5 rounded-full bg-current" />
-          <span className="h-px w-3.5 rounded-full bg-current" />
+          {collapsed ? (
+            <>
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 18 18"
+                className="h-[17px] w-[17px]"
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.45"
+              >
+                <path d="M3 7.25 4.6 4h8.8L15 7.25v6.25H3V7.25Z" />
+                <path d="M3 8h3.25l1 1.75h3.5l1-1.75H15" />
+              </svg>
+              {tasks.length > 0 && (
+                <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-[var(--accent)] ring-2 ring-[var(--paper)]" />
+              )}
+            </>
+          ) : (
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 16 16"
+              className="h-3.5 w-3.5"
+              fill="none"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1.6"
+            >
+              <path d="M10 3.5 5.5 8l4.5 4.5" />
+            </svg>
+          )}
         </button>
         {!collapsed && (
           <div className="flex items-center gap-2.5">
