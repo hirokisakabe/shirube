@@ -71,6 +71,13 @@ jobs:
       - name: Test global install
         run: |
           package=$(npm pack --silent)
-          prefix="$RUNNER_TEMP/shirube-global"
-          npm install --global --prefix "$prefix" "./$package"
-          SHIRUBE_DB_PATH="$RUNNER_TEMP/shirube.sqlite" "$prefix/bin/shirube" --format json add "package smoke test"
+          docker run --rm \
+            --volume "$PWD:/workspace" \
+            --workdir /workspace \
+            --env PACKAGE="$package" \
+            "node:${{ matrix.node }}-bookworm-slim" \
+            sh -eu -c '
+              prefix=/tmp/shirube-global
+              npm install --global --prefix "$prefix" "./$PACKAGE"
+              SHIRUBE_DB_PATH=/tmp/shirube.sqlite "$prefix/bin/shirube" --format json add "package smoke test"
+            '
