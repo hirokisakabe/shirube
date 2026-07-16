@@ -1,5 +1,11 @@
 # shirube
 
+## 1.3.1
+
+### Patch Changes
+
+- 649e57d: Node.js 26 でグローバルインストールした CLI が起動できない問題を修正しました。
+
 ## 1.3.0
 
 ### Minor Changes
