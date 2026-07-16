@@ -42,3 +42,75 @@ jobs:
 
       - name: Test
         run: pnpm test
+
+  package-smoke:
+    name: Package smoke (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [22, 24, 26]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build package
+        run: pnpm build
+
+      - name: Test global install
+        run: |
+          package=$(npm pack --silent)
+          docker run --rm \
+            --volume "$PWD:/workspace" \
+            --workdir /workspace \
+            --env PACKAGE="$package" \
+            "node:${{ matrix.node }}-bookworm-slim" \
+            sh -eu -c '
+              ! command -v make
+              ! command -v cc
+              ! command -v c++
+              ! command -v python3
+              prefix=/tmp/shirube-global
+              npm install --global --prefix "$prefix" "./$PACKAGE"
+              SHIRUBE_DB_PATH=/tmp/shirube.sqlite "$prefix/bin/shirube" --format json add "package smoke test"
+            '
+
+  package-smoke-macos:
+    name: Package smoke (Node 26, macOS)
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build package
+        run: pnpm build
+
+      - name: Test global install without compiler fallback
+        run: |
+          package=$(npm pack --silent)
+          prefix="$RUNNER_TEMP/shirube-global"
+          CC=/usr/bin/false CXX=/usr/bin/false npm install --global --prefix "$prefix" "./$package"
+          SHIRUBE_DB_PATH="$RUNNER_TEMP/shirube.sqlite" "$prefix/bin/shirube" --format json add "package smoke test"
