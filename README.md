@@ -17,7 +17,7 @@ npm install -g shirube
 
 ## 動作環境
 
-- Node.js >= 22.12.0 < 27
+- Node.js 22.12.0 以上、または Node.js 24 / 26
 - macOS
 
 ## Web preview

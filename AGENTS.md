@@ -16,7 +16,7 @@ dist/
 
 ## Build, Test, and Development Commands
 
-Use pnpm with Node.js `>=22.12.0 <27`.
+Use pnpm with Node.js `>=22.12.0 <23 || >=24 <25 || >=26 <27`.
 
 - `pnpm install` installs dependencies from `pnpm-lock.yaml`.
 - `pnpm dev:server` starts the API server on port 3000.
